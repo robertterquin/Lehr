@@ -1,0 +1,64 @@
+:root {
+  --font-ui: 'Manrope Variable', 'Avenir Next', 'Segoe UI', sans-serif;
+  --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-mark: 'Cinzel', 'Trajan Pro', Georgia, serif;
+  --soot: #15100d;
+  --text: #f6ece1;
+  --muted: #c4b2a1;
+  --gold: #ffd27a;
+  font-family: var(--font-ui);
+  color: var(--text);
+  background: var(--soot);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-variant-numeric: tabular-nums;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: var(--soot);
+}
+
+body {
+  min-width: 320px;
+  min-height: 100svh;
+  margin: 0;
+}
+
+button {
+  font: inherit;
+}
+
+.placeholder {
+  min-height: 100svh;
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  background: radial-gradient(90% 60% at 50% 40%, #2a1a12 0%, var(--soot) 70%);
+}
+
+.wordmark {
+  margin: 0;
+  font-family: var(--font-mark);
+  font-weight: 600;
+  font-size: clamp(40px, 9vw, 72px);
+  letter-spacing: 0.18em;
+}
+
+.tagline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(20px, 4vw, 28px);
+  color: var(--muted);
+}

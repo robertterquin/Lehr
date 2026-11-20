@@ -6,7 +6,7 @@ Mockups: https://claude.ai/artifact/BeJLjVTA2yueCCfdX9AK2q
 
 **The name.** A lehr is the long oven where finished glass cools slowly so it doesn't crack. Earlier working names were dropped: "Kiln" (Double Fine, 2026) and "Leadlight" (2025 puzzle game) are taken, and "Dawnglass" was replaced by the shorter Lehr.
 
-The numbers below were balanced with `scripts/balance-sim.js`. If the code and this document disagree, update this document.
+The rules are implemented in `src/engine/engine.ts` and balanced with `npm run sim` (`scripts/balance-sim.ts`, which plays the real engine). If the code and this document disagree, update this document.
 
 ## Premise
 
@@ -23,7 +23,7 @@ All sizes are percentages of the current target size. `e` is the release error: 
 
 - **Growth.** The bubble starts at 40% and grows exponentially: size = 40 · e^(k·t), k = 0.8 per second, so it reaches the target in about 1.15 s. It speeds up as it grows, like real glass as the wall thins.
 - **Warm-up.** The first 10 gathers start at 60% (about 0.6 s each), so a retry gets back into the run fast. Difficulty is the same; only the wait is shorter.
-- **Speed.** k rises 5% every 10 gathers, up to 2× the starting speed.
+- **Speed.** k rises 5% every 10 gathers, up to 2× the starting speed. The cap applies after the daily wind, as in Afterlight.
 - **Daily wind.** Each gather after the first 10 gets a seeded speed change of −8% to +8%. Everyone gets the same sequence that day.
 - **Heat.** Heat starts at 16 and never goes above 16. The crack ring is drawn at (100 + heat)% of the target, so heat is the visible gap between the target outline and the crack ring.
 
@@ -34,10 +34,11 @@ On release:
 | **Cracked** | e > heat | Run ends. |
 | **Too thick** | e < −30 | Run ends (glass too thick to spin flat). |
 | **Flawless** | −3 ≤ e ≤ 3 | Fills 1 pane. Reheat: heat +2 (max 16). Streak +1. |
-| **Brilliant** | heat was ≥ 15 when the gather started, and e ≥ 6 | Fills **3** panes. No heat cost, no reheat. Streak unchanged. |
+| **Brilliant** | heat was ≥ 15 when the gather started, and e ≥ 6 | Fills **4** panes. No heat cost, no reheat. Streak unchanged. |
 | **Over** | 3 < e ≤ heat, not brilliant | Fills 1 pane. Heat −0.18 × e. Streak resets. |
 | **Under** | −30 ≤ e < −3 | Fills 1 pane. Heat −0.3 × \|e\|. Streak resets. |
 
+- **Holding too long.** If the bubble grows past the crack ring while still held, it cracks at once and the run ends.
 - **Cooling.** After every gather that doesn't end the run, heat drops by 0.2 + 0.008 × (gathers set so far). This keeps even expert runs finite (a few minutes).
 - **Flawless streak.** Every 5th flawless in a row fills 2 panes instead of 1.
 - **Fair window.** The flawless band always covers at least 2 simulation ticks of growth at the current speed. At high speed it widens to stay fair, like Afterlight's perfect window.
@@ -79,16 +80,18 @@ On release:
 
 ## Expected scores (simulated)
 
-From `node scripts/balance-sim.js`, 3,000 runs per row. Players are modelled as timing noise in milliseconds.
+From `npm run sim` on the real engine, 3,000 endless runs per cell across 28 daily courses. Players are modelled as timing noise in milliseconds.
 
 | Player | Always safe: median / best 10% | Brilliant at full heat: median / best 10% |
 |---|---|---|
-| Casual (90 ms) | 13 / 23 | 12 / 22 |
-| Average (60 ms) | 28 / 49 | 27 / 64 |
-| Good (40 ms) | 74 / 98 | 78 / 138 |
-| Great (28 ms) | 126 / 152 | 205 / 244 |
+| Casual (90 ms) | 12 / 21 | 12 / 22 |
+| Average (60 ms) | 27 / 48 | 22 / 55 |
+| Good (40 ms) | 73 / 99 | 56 / 124 |
+| Great (28 ms) | 125 / 149 | 184 / 231 |
 
-Always letting go early (aiming at 92%) ends at about 10 panes, so the safe-play exploit doesn't work.
+Going for brilliant is a gamble for most players (a lower typical score, better best runs) and pays off for experts. Always letting go early (aiming at 92%) ends at about 9 panes, so the safe-play exploit doesn't work.
+
+A brilliant release is worth 4 panes, decided in Phase 1. The early prototype simulation counted it as 4, and the push-your-luck balance was tuned on that; at 3, going for brilliant hurt everyone except experts.
 
 ## Daily course
 
@@ -108,7 +111,7 @@ Always letting go early (aiming at 92%) ends at about 10 panes, so the safe-play
 
 **Playtest bar for v1:** 3–5 people, first session, no prompting. Pass if most of them retry at least 3 times on their own and nobody calls the crack "random".
 
-**Playtest logging (v1):** each run saves, on the device, every gather's release error `e`, result, heat before and after, and growth speed, plus how many retries happened in the session. An export button copies it as JSON. Use it to compare real players with `scripts/balance-sim.js` and retune before launch.
+**Playtest logging (v1):** each run saves, on the device, every gather's release error `e`, result, heat before and after, and growth speed, plus how many retries happened in the session. An export button copies it as JSON. Use it to compare real players with `npm run sim` and retune before launch.
 
 ## Tech stack
 
