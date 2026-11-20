@@ -9,6 +9,7 @@ export const BRILLIANT_FROM = 6
 export const FLAWLESS_TOLERANCE = 3
 export const TOO_THICK = -30
 export const SET_TICKS = 24 // 0.4 s setting animation, input ignored
+export const MIS_TAP_TICKS = 9 // a release within 0.15 s of the press is a mis-tap, not a release
 
 const START_SIZE = 40
 const WARMUP_START_SIZE = 60
@@ -62,6 +63,9 @@ export type GameState = {
   setUntil: number
   log: GatherLog[]
   endReason: EndReason | null
+  /** The last press was a quick tap that got ignored (shown as a "hold to blow" hint). */
+  misTap: boolean
+  misTaps: number
 }
 
 export const getUtcDate = (date = new Date()) => date.toISOString().slice(0, 10)
@@ -150,14 +154,21 @@ export const createGame = (challenge = createDailyChallenge(), { endless = false
   setUntil: 0,
   log: [],
   endReason: null,
+  misTap: false,
+  misTaps: 0,
 })
 
 export const startRun = (game: GameState): GameState => (game.phase === 'ready' ? prepareGather(game) : game)
 
 /** A fresh press starts blowing. Ignored unless waiting for the next gather. */
-export const press = (game: GameState): GameState => (game.phase === 'idle' ? { ...game, phase: 'blowing' } : game)
+export const press = (game: GameState): GameState => (game.phase === 'idle' ? { ...game, phase: 'blowing', misTap: false } : game)
 
-export const release = (game: GameState): GameState => (game.phase === 'blowing' ? resolve(game, sizeOf(game) - 100) : game)
+/** Releasing sets the pane, unless it came so soon after the press that it was only a tap. */
+export const release = (game: GameState): GameState => {
+  if (game.phase !== 'blowing') return game
+  if (game.blowTicks < MIS_TAP_TICKS) return { ...game, phase: 'idle', blowTicks: 0, misTap: true, misTaps: game.misTaps + 1 }
+  return resolve(game, sizeOf(game) - 100)
+}
 
 /** Pausing scraps the gather in progress; heat, streak and score stay. */
 export const pause = (game: GameState): GameState =>

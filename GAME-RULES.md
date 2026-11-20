@@ -44,6 +44,7 @@ On release:
 - **Fair window.** The flawless band always covers at least 2 simulation ticks of growth at the current speed. At high speed it widens to stay fair, like Afterlight's perfect window.
 - **Brilliant zone** is shown only while it is open (heat ≥ 15 at the start of the gather), as a bright band between 106% and the crack ring.
   - Because cooling grows each gather, even a flawless release can't lift heat back to 15 after 100 gathers (16 − (0.2 + 0.008 × 100) = 15), so the zone closes for good late in a run. This is intended: it's a natural late-run limit, not a bug.
+- **Quick taps don't count.** A release within 0.15 s (9 ticks) of the press is a mis-tap: no pane, no penalty, heat and streak unchanged. The bubble goes back to its start, a "Hold to blow, then let go" hint shows, and the next fresh press starts it over. Real releases always take longer (the warm-up bubble needs about 0.64 s), so this never affects balance. Mis-taps are counted for playtests.
 - **Between gathers.** After a release, the pane sets with a short animation (about 0.4 s) and input is ignored. The next gather starts only on a **fresh press**; holding through doesn't start it.
 - **Pause and tab switch.** Pausing, switching tabs or minimising scraps the gather in progress, and that gather starts over on resume. Nothing else changes (heat, streak and score stay). This stops players pausing near the target to line up their timing.
 - **Simulation:** 60 ticks per second, fixed step, same as Afterlight. Press and release are mapped to the tick they happened on.

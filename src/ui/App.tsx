@@ -49,7 +49,7 @@ export default function App() {
         <div className="furnace-area">
           <LookAhead seed={challenge.seed} gather={game.gathers} />
           <Furnace size={shownSize(game)} heat={game.heat} tolerance={tolerance} brilliantOpen={game.brilliantOpen} cracked={game.endReason === 'cracked'} />
-          <Gauge size={shownSize(game)} heat={game.heat} tolerance={tolerance} brilliantOpen={game.brilliantOpen} last={showResult} />
+          <Gauge size={shownSize(game)} heat={game.heat} tolerance={tolerance} brilliantOpen={game.brilliantOpen} last={showResult} misTap={game.misTap} />
         </div>
       </section>
 

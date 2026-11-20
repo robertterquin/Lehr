@@ -76,6 +76,7 @@ type GaugeProps = {
   tolerance: number
   brilliantOpen: boolean
   last?: GatherLog
+  misTap?: boolean
 }
 
 const GAUGE_MIN = 100 + TOO_THICK
@@ -99,16 +100,21 @@ const resultLabel = (entry: GatherLog) => {
   }
 }
 
-export function Gauge({ size, heat, tolerance, brilliantOpen, last }: GaugeProps) {
+export function Gauge({ size, heat, tolerance, brilliantOpen, last, misTap = false }: GaugeProps) {
   const crack = 100 + heat
+  const status = last
+    ? resultLabel(last)
+    : misTap
+      ? 'Hold to blow, then let go'
+      : `Flawless ${Math.round(100 - tolerance)}–${Math.round(100 + tolerance)}%`
   return (
     <div className="gauge">
       <div className="gauge-head">
         <span>
           Size <strong>{Math.round(size)}%</strong>
         </span>
-        <span className={last ? `gauge-result ${last.outcome}` : 'gauge-result'} aria-live="polite">
-          {last ? resultLabel(last) : `Flawless ${Math.round(100 - tolerance)}–${Math.round(100 + tolerance)}%`}
+        <span className={last ? `gauge-result ${last.outcome}` : misTap ? 'gauge-result tap' : 'gauge-result'} aria-live="polite">
+          {status}
         </span>
       </div>
       <div className="gauge-track" aria-hidden="true">

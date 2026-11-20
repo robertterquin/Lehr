@@ -279,6 +279,11 @@ button {
   color: var(--muted);
 }
 
+.gauge-result.tap {
+  color: var(--text);
+  font-weight: 700;
+}
+
 .gauge-result.cracked,
 .gauge-result.too-thick {
   color: #f0a08c;

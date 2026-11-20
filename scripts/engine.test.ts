@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
+  MIS_TAP_TICKS,
   SET_TICKS,
+  SIMULATION_HZ,
   advance,
   coolingAfter,
   createDailyChallenge,
@@ -30,9 +32,12 @@ const playing = (overrides: Partial<GameState> = {}, endless = false): GameState
   ...overrides,
 })
 
-/** Release with an exact error by starting the bubble at 100 + error and releasing at once. */
-const releaseAt = (error: number, overrides: Partial<GameState> = {}, endless = false) =>
-  release({ ...playing(overrides, endless), phase: 'blowing', startSize: 100 + error, blowTicks: 0 })
+/** Release with an exact error: start the bubble so it reaches 100 + error just as the mis-tap window ends. */
+const releaseAt = (error: number, overrides: Partial<GameState> = {}, endless = false) => {
+  const game = playing(overrides, endless)
+  const grown = Math.exp((game.speed * MIS_TAP_TICKS) / SIMULATION_HZ)
+  return release({ ...game, phase: 'blowing', startSize: (100 + error) / grown, blowTicks: MIS_TAP_TICKS })
+}
 
 const advanceUntil = (game: GameState, done: (g: GameState) => boolean) => {
   for (let guard = 0; guard < 10_000; guard += 1) {
@@ -187,9 +192,23 @@ test('in v1 the run ends as a win at 130 panes; endless runs keep counting', () 
   assert.equal(endless.panes, 130)
 })
 
+test('a quick tap is ignored: no pane, no penalty, and a fresh press starts the bubble over', () => {
+  let game = press(playing({ panes: 3, heat: 12, streak: 2 }))
+  for (let i = 0; i < MIS_TAP_TICKS - 1; i += 1) game = advance(game)
+  const tapped = release(game)
+  assert.equal(tapped.phase, 'idle')
+  assert.equal(tapped.blowTicks, 0)
+  assert.equal(tapped.misTap, true)
+  assert.equal(tapped.misTaps, 1)
+  assert.deepEqual([tapped.panes, tapped.heat, tapped.streak, tapped.gathers, tapped.log.length], [3, 12, 2, 0, 0])
+  assert.equal(press(tapped).misTap, false)
+  assert.equal(release(advance(game)).log.length, 1, 'held for 0.15 s, the release counts')
+})
+
 test('every release is logged for playtests', () => {
   const game = releaseAt(5, { brilliantOpen: false })
-  assert.deepEqual(game.log.at(-1), {
+  close(game.log.at(-1)!.error, 5)
+  assert.deepEqual({ ...game.log.at(-1), error: 5 }, {
     gather: 0,
     error: 5,
     outcome: 'over',
