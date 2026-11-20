@@ -57,8 +57,8 @@ On release:
 ## The window
 
 - 130 irregular pieces in a pointed stone arch, joined by lead lines, with two horizontal iron bars. Pieces not yet lit show the picture faintly, like the glazier's full-size drawing.
-- **Hybrid art:** a hand-designed theme (picture, palette, regions) per window. Code cuts it into irregular pieces with a daily seed and sets the reveal order.
-- **Reveal order follows the story,** not bottom-up: lower sea, then the sun (panes 37–45 in Harbour sunrise), then upward to the rays. Panes light one at a time.
+- **Hybrid art:** a hand-designed theme (picture, palette, regions) per window. Code cuts it into irregular pieces and sets the reveal order. The daily seed bends the lead lines and picks the glass shades, but which pieces exist is decided on a regular grid, so every day has exactly 130 (`src/window/geometry.ts`).
+- **Reveal order follows the story,** not bottom-up: lower sea, then the sun (panes 37–47 in Harbour sunrise: a core and a ring of 10), then upward to the rays. Panes light one at a time.
 - **Every 10th pane** sends a light flare across the lit part of the window, like Afterlight's beacon flare. Visual and sound only.
 - **After 130 (later version):** play continues into **tomorrow's window** as a sneak peek, and the score keeps counting.
 - **After 130 (v1):** the run ends as a win and shows the "The window is whole" screen.
