@@ -11,7 +11,7 @@ Sizes are relative effort, not dates.
 - [ ] Phase 0 · Setup — app scaffolded and building; Vercel deploy still to do
 - [x] Phase 1 · Game engine, no visuals — 17 tests pass; brilliant set to 4 panes
 - [ ] Phase 2 · The window — built and tested (130 pieces every day, SVG, ~3 ms redraw on desktop); real-phone check waits for the Vercel deploy
-- [ ] Phase 3 · A playable run
+- [x] Phase 3 · A playable run — full runs play on phone and desktop layouts (Space, touch, mouse; Esc and tab switch pause); real-phone check waits for the Vercel deploy
 - [ ] Phase 4 · Feel
 - [ ] Phase 5 · The other screens and playtest logging
 - [ ] Phase 6 · Playtest and tune
