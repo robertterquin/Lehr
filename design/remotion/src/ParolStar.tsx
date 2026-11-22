@@ -32,13 +32,17 @@ type Props = {
   sway?: number
   /** Star only, no tails, in a square box: for small icons. */
   compact?: boolean
+  /** Animation: how far the trimmed sliver has fallen, 0 (just cut) to 1 (gone). Omit for the still pose. */
+  fall?: number
+  /** Animation: strength of the last ring's perfect-lock glow, 0 to 1. */
+  glow?: number
 };
 
 /**
  * A parol: concentric five-pointed rings of backlit paper on a bamboo frame, a tambor (drum) at the
  * centre, two fringed tails (buntot) with tassels, and optional halos with bulbs like Pampanga lanterns.
  */
-export const Parol: React.FC<Props> = ({ size, locks, spin = null, trimLast = false, glowLast = false, light = 1, halo: haloProp, dim = false, danger = false, sway = 0, compact = false }) => {
+export const Parol: React.FC<Props> = ({ size, locks, spin = null, trimLast = false, glowLast = false, light = 1, halo: haloProp, dim = false, danger = false, sway = 0, compact = false, fall, glow: glowAmount }) => {
   const id = useId().replace(/:/g, '');
   const rings = playLocks(locks);
   const count = locks.length;
@@ -168,14 +172,26 @@ export const Parol: React.FC<Props> = ({ size, locks, spin = null, trimLast = fa
           fill={ringFill(last.index)}
           stroke={BAMBOO}
           strokeWidth="1.2"
-          opacity="0.8"
-          style={{ translate: '16px 52px', rotate: '14deg', transformOrigin: '150px 150px' }}
+          opacity={fall === undefined ? 0.8 : 0.9 * (1 - fall)}
+          // Still pose, or falling under gravity: drifts aside, drops faster and faster, tumbles.
+          style={
+            fall === undefined
+              ? { translate: '16px 52px', rotate: '14deg', transformOrigin: '150px 150px' }
+              : { translate: `${10 * fall}px ${20 * fall + 260 * fall * fall}px`, rotate: `${8 * fall}deg`, transformOrigin: '150px 150px' }
+          }
         />
       )}
 
       {/* Locked rings, outside in, so each inner ring leaves a coloured rim */}
       {[...rings].reverse().map((ring) => (
-        <g key={ring.index} style={glowLast && ring.index === last?.index ? { filter: 'drop-shadow(0 0 9px rgba(255, 214, 130, 0.95))' } : undefined}>
+        <g
+          key={ring.index}
+          style={
+            (glowLast || (glowAmount ?? 0) > 0.01) && ring.index === last?.index
+              ? { filter: `drop-shadow(0 0 ${4 + 8 * (glowAmount ?? 1)}px rgba(255, 214, 130, ${0.95 * (glowAmount ?? 1)}))` }
+              : undefined
+          }
+        >
           {/* Non-scaling strokes keep the bamboo frame crisp when the camera pulls back on a big star */}
           <path d={starPath(ring.index, ring.width, ring.rotation)} fill={ringFill(ring.index)} fillOpacity={dim ? 0.3 : 1} stroke={dim ? 'rgba(244,236,216,0.35)' : BAMBOO} strokeWidth={frame} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
           {!dim && <path d={starPath(ring.index, ring.width, ring.rotation)} fill="none" stroke={BAMBOO_SHEEN} strokeWidth={frame * 0.35} opacity="0.5" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}

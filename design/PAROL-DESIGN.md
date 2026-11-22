@@ -53,6 +53,24 @@ Drawn from Filipino references so every element can be named at a glance:
 - A concrete **utility pole** with crossarm, insulators, transformer and sagging wires; a **sodium street lamp** casting light on the road; **Christmas bulbs** strung across the street; two **coconut palms**; the **parish church** with its bell tower at the end of the street; real **mini parols** (star, hoop, tambor, tails) in every window.
 - Milestones change the scene: lights at 20, parols at 30, carolers (a parol on a stick, a bottle-cap tambourine) at 40, far hills at 50, Pampanga-style giant lanterns at 70, fireworks at 80, dawn at 90, when the moon sets and the church lights up.
 
+## Motion and sound
+
+Watch and listen: [parol-run-prototype.mp4](parol-run-prototype.mp4) (a 23-ring run with every sound in place). Timings, curves and cues: [mockups/MS01-Motion-storyboard.png](mockups/MS01-Motion-storyboard.png); sounds: [mockups/DS02-Sound-design.png](mockups/DS02-Sound-design.png).
+
+| Moment | Motion | Sound |
+|---|---|---|
+| Ring spins in | Fades in 0.15 s; constant spin, 6°/s faster per ring, direction flips every 5 rings | Paper whoosh, −9 dB |
+| Perfect | Snaps 0.08 s; gold glow 0.06 s in, 0.6 s out | Capiz bell climbing D5 E5 F♯5 A5 B5 with the streak |
+| Perfect ×5 | Points widen 0.35 s back-out; star swells 5% | Five bells run up |
+| Off-angle | Sliver falls 1.2 s under gravity; 2 px shake 0.25 s | Paper tear |
+| Danger (under 15°) | Red edge breathes at 1 Hz; meter glows | Low double thump on each ring |
+| Milestone | Toast drops in 0.3 s, holds 2.1 s; street changes (lights flicker on left to right over 0.8 s); next ring waits 1.5 s | Kulintang gong with bells |
+| Run ends | Star shrinks and dims 1.2 s; results rise 0.4 s | Three falling bells, D B G |
+| 100 rings | Parol lifts off its wire 2.5 s; rays open | Gong under bells climbing two octaves |
+| Reduced motion | Shakes, pulses, slivers and fireworks become 0.15 s fades; the spin stays | Unchanged |
+
+All sounds are synthesized (Web Audio in the game; [remotion/sound/gen-sounds.ts](remotion/sound/gen-sounds.ts) for these previews), start after the first tap, and mute from the HUD or Settings.
+
 ## Look
 
 - Night indigo sky; capiz/papel de Japon colours: pearl, red, gold, green, blue, magenta; bamboo brown frame.
@@ -71,4 +89,4 @@ The whole app on one page: [mockups/A01-App-map.png](mockups/A01-App-map.png).
 | Desktop | D01 Ready · D02 Spinning · D03 Run ended · D04 Board |
 | Edge cases | S01 First visit · S02 Offline · S03 Name not allowed · S04 New day · S05 Empty board · S06 Reduced motion |
 | Brand | B01 Logo · B02 App icon (1024, platform masks the corners) · B03 Link preview (1200×630) |
-| System | DS01 Design system: colours with measured WCAG contrast, type scale, components, rules for building |
+| System | DS01 Design system: colours with measured WCAG contrast, type scale, components, rules for building · MS01 Motion storyboard · DS02 Sound design |

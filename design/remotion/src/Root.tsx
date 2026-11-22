@@ -2,6 +2,8 @@ import React from 'react';
 import { Composition, Folder, Still } from 'remotion';
 import { GAMEPLAY_SECONDS } from './parol';
 import { DEMO_SECONDS, ParolDemo } from './ParolDemo';
+import { RUN_SECONDS, RunPrototype } from './RunPrototype';
+import { DS02SoundDesign, MS01MotionStoryboard } from './mockups/motion';
 import { EndCard, FinaleScene, GameplayScene, TitleScene } from './scenes';
 import { D01Ready, D02Spinning, D03Results, D04Board } from './mockups/desktop';
 import {
@@ -17,6 +19,7 @@ export const RemotionRoot: React.FC = () => {
   return (
     <>
       <Composition id="ParolDemo" component={ParolDemo} durationInFrames={Math.round(DEMO_SECONDS * 30)} fps={30} width={1080} height={1920} />
+      <Composition id="Run-prototype" component={RunPrototype} durationInFrames={Math.round(RUN_SECONDS * 30)} fps={30} width={390} height={844} />
       <Composition id="Title" component={TitleScene} durationInFrames={75} fps={30} width={1080} height={1920} />
       <Composition id="Gameplay" component={GameplayScene} durationInFrames={Math.round(GAMEPLAY_SECONDS * 30)} fps={30} width={1080} height={1920} />
       <Composition id="Finale" component={FinaleScene} durationInFrames={135} fps={30} width={1080} height={1920} />
@@ -61,6 +64,8 @@ export const RemotionRoot: React.FC = () => {
         <Still id="B03-Link-preview" component={B03LinkPreview} width={1200} height={630} />
         <Still id="A01-App-map" component={A01AppMap} width={2640} height={2560} />
         <Still id="DS01-Design-system" component={DS01DesignSystem} width={1800} height={2260} />
+        <Still id="MS01-Motion-storyboard" component={MS01MotionStoryboard} width={1900} height={2080} />
+        <Still id="DS02-Sound-design" component={DS02SoundDesign} width={1900} height={1440} />
       </Folder>
       <Folder name="Desktop">
         <Still id="D01-Ready" component={D01Ready} width={1440} height={900} />
