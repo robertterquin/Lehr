@@ -11,7 +11,7 @@ The numbers live in [src/game/rules.ts](src/game/rules.ts) and are checked by `n
 
 ## A run
 
-1. A new ring spins in around the star. Taps in its first **0.15 s** (while it fades in) are ignored.
+1. A new ring spins in around the star, starting **36° from alignment** (halfway between two), so it first lines up after turning 36°. Taps in its first **0.15 s** (while it fades in) are ignored. Each ring starts the moment the one before it locks.
 2. The player taps (or clicks, or presses Space) to lock it. One tap locks one ring.
 3. The lock's **error** is how far the ring sits from the nearest alignment, from −36° to 36°.
    - **Perfect** (error within **2.5°** either way): nothing is trimmed and the streak grows.
@@ -44,8 +44,8 @@ The numbers live in [src/game/rules.ts](src/game/rules.ts) and are checked by `n
 
 ## Timing
 
-- The game advances in fixed 60 Hz ticks, but a tap is timed to the millisecond and the lock error is worked out from the exact tap time, not the tick. At 100° a second one tick is 1.7°, close to the whole perfect window, so rounding taps to ticks would make perfects luck.
-- A run is recorded as the day's seed plus each tap's time, so the server can replay it and check the score (Phase 9).
+- Time drives everything: the spinning ring's angle comes from when it started, its speed and its direction, and the lock error from the exact time of the tap, to the millisecond. Nothing is rounded to screen frames: at 100° a second one 60 Hz frame is 1.7°, nearly the whole perfect window, so frame-rounded taps would make perfects luck.
+- A run is the day's seed plus its inputs (taps, pauses, resumes) with their times. Replaying them always gives the same run, so the server can check a score (Phase 9); inputs that go back in time are rejected. The engine is [src/game/engine.ts](src/game/engine.ts).
 
 ## Pause
 

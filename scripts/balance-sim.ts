@@ -1,9 +1,10 @@
-// Parol balance simulation: simulated players of four skill levels play many days on the real rules.
-// A player aims each tap at an alignment; their timing is off by a normal error (ms) that depends on skill,
+// Parol balance simulation: simulated players of four skill levels play many days on the real engine.
+// A player aims each tap at the ring's next alignment; their timing is off by a normal error (ms) that depends on skill,
 // with an occasional lapse three times as wide, and a little worse on the first ring after the spin reverses.
 // Usage: npm run sim            → the reach table for the rules in src/game/rules.ts
 import { randomForSeed, seedForDate } from '../src/game/daily.ts'
-import { RULES, lock, lockError, ringDirection, ringSpeed, startRun, type Rules } from '../src/game/rules.ts'
+import { createEngine, nextAlignmentMs, tap } from '../src/game/engine.ts'
+import { RULES, ringDirection, type Rules } from '../src/game/rules.ts'
 
 export type Skill = { name: string; timingMs: number; lapseRate: number; target: number }
 
@@ -21,15 +22,15 @@ const normal = (random: () => number) => Math.sqrt(-2 * Math.log(1 - random())) 
 
 /** One run: returns rings locked and perfects. */
 export const playRun = (seed: number, skill: Skill, random: () => number, rules: Rules = RULES) => {
-  let run = startRun(rules)
-  while (!run.ended && run.rings < MAX_RINGS) {
-    const ring = run.rings
+  let engine = createEngine(seed, rules)
+  while (!engine.run.ended && engine.run.rings < MAX_RINGS) {
+    const ring = engine.ring.index
     const reversed = ring > 0 && ringDirection(ring, rules) !== ringDirection(ring - 1, rules)
     const spread = skill.timingMs * (reversed ? 1.25 : 1) * (random() < skill.lapseRate ? 3 : 1)
-    const offMs = normal(random) * spread
-    run = lock(run, lockError((ringSpeed(seed, ring, rules) * offMs) / 1000), rules)
+    // A tap that would land during spin-in is held until the ring can take it.
+    engine = tap(engine, Math.max(engine.ring.startMs + rules.spinInMs, nextAlignmentMs(engine, rules) + normal(random) * spread), rules)
   }
-  return run
+  return engine.run
 }
 
 const percentile = (sorted: number[], p: number) => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))]

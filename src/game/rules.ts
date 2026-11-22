@@ -23,6 +23,8 @@ export const RULES = {
   speedJitter: 8,
   /** The spin reverses direction every this many rings. */
   reverseEvery: 5,
+  /** A new ring fades in for this long; taps in that time are ignored. */
+  spinInMs: 150,
 }
 export type Rules = typeof RULES
 
