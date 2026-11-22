@@ -8,7 +8,7 @@ Sizes are relative effort, not dates.
 
 ## Status
 
-- [ ] Phase 0 · Keep the old game, rename everything — `lehr-prototype` tagged, GitHub repo and remote are Parol; local folder rename still to do
+- [x] Phase 0 · Keep the old game, rename everything — `lehr-prototype` tagged; repo, remote and folder are Parol (no Vercel project existed yet)
 - [ ] Phase 1 · Clear Lehr out — Lehr code gone, empty Parol screen builds and runs; Vercel deploy still to do
 - [ ] Phase 2 · The rules on paper
 - [ ] Phase 3 · Game engine, no visuals
