@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { getManilaDate, seedForDate, weekdayIndex } from './game/daily.ts'
-import { createEngine, pause, resume, ringOffset, tap, type Engine } from './game/engine.ts'
+import { createEngine, nextAlignmentMs, pause, resume, ringOffset, tap, type Engine } from './game/engine.ts'
 import { endNote, milestoneText } from './game/feedback.ts'
 import { bestOn, deviceStore, logRun, loggedRuns, readSettings, writeSettings, type Settings as SavedSettings } from './game/local.ts'
 import { RULES } from './game/rules.ts'
@@ -18,6 +18,8 @@ const tonight: Night = params.get('night') ? nightById(params.get('night') as Ni
 const seed = seedForDate(today)
 // ?bench records how long each lock takes to draw, for checking phones.
 const BENCH: number[] | null = params.has('bench') ? ((window as unknown as { lockMs: number[] }).lockMs = []) : null
+// Development only: ?from=98 starts a run 98 perfect rings in, to check the late screens. Never logged.
+const FROM = import.meta.env.DEV ? Math.max(0, Number(params.get('from')) || 0) : 0
 const store = deviceStore()
 /** The dim preview star on the Ready screen. */
 const PREVIEW = Array.from({ length: 12 }, () => 0)
@@ -142,7 +144,7 @@ export default function App() {
     const inputs = done.inputs
     const durationMs = inputs.length ? inputs[inputs.length - 1].atMs : 0
     setBestBefore(bestOn(store, today))
-    logRun(store, {
+    if (!FROM) logRun(store, {
       date: today,
       night: tonight.id,
       seed,
@@ -162,8 +164,10 @@ export default function App() {
 
   const start = useCallback((stamp: number) => {
     unlockAudio()
-    baseRef.current = stamp
-    const next = createEngine(seed)
+    let next = createEngine(seed)
+    while (next.run.rings < FROM) next = tap(next, nextAlignmentMs(next))
+    // Run time starts so that the ring now spinning in starts now.
+    baseRef.current = stamp - next.ring.startMs
     commit(next)
     setPanel(null)
     setPhase('playing')
