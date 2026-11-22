@@ -47,4 +47,16 @@ The street comes alive as the star grows, and the run never stops at a milestone
 
 - Night indigo sky; capiz/papel de Japon colours: pearl, red, gold, green, blue, magenta; bamboo brown frame.
 - Type: Young Serif for titles and numbers, Manrope for everything else.
-- Mockup pages: P01–P18 (phone, plus the share cards) and D01–D04 (desktop).
+
+## Every screen
+
+The whole app on one page: [mockups/A01-App-map.png](mockups/A01-App-map.png).
+
+| Flow | Screens (files in `mockups/`) |
+|---|---|
+| Start | P01 Loading · P02 Ready · P03 How to play · P14 Settings · P26 Tonight's journey (milestone map) |
+| Play | P04 Spinning · P05 Perfect · P06 Perfect ×5 · P07 Off-angle trim · P08 Danger · P10 Paused |
+| Journey | P19 20 · P09 30 · P20 40 · P21 50 · P22 60 · P16 70 · P23 80 · P24 90 · P17 100 (star rises) · P25 past 100 (constellation) |
+| After the run | P11 Run ended · P13 Share · P12 Today's board · P15 share card · P18 gold share card (100+) |
+| Desktop | D01 Ready · D02 Spinning · D03 Run ended · D04 Board |
+| Brand | B01 Logo · B02 App icon (1024, platform masks the corners) · B03 Link preview (1200×630) |

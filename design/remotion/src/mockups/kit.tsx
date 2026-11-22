@@ -159,15 +159,16 @@ export const Street: React.FC<{ stage?: Stage; width?: number | string; height?:
   );
 };
 
-export const Screen: React.FC<{ width?: number; height?: number; stage?: Stage; children: React.ReactNode; background?: string }> = ({
+export const Screen: React.FC<{ width?: number; height?: number; stage?: Stage; children: React.ReactNode; background?: string; street?: boolean }> = ({
   width = 390,
   height = 844,
   stage = 0,
   background = C.night,
+  street = true,
   children,
 }) => (
   <div style={{ width, height, position: 'relative', overflow: 'hidden', background, color: C.ink, fontFamily: SANS }}>
-    <Street stage={stage} />
+    {street && <Street stage={stage} />}
     {children}
   </div>
 );

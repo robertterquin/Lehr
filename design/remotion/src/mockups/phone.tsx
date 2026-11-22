@@ -5,18 +5,18 @@ import {
 } from './kit';
 
 // Lock sequences (degrees off, 0 = perfect) that produce each screen's star under the real rules.
-const OPENING = [0, 0, 0, 4, 0, 0, -5];
-const SHORT_RUN = [0, 0, 3, 0, -4, 0, 6, 0, 0, -7, 5, 0];
+export const OPENING = [0, 0, 0, 4, 0, 0, -5];
+export const SHORT_RUN = [0, 0, 3, 0, -4, 0, 6, 0, 0, -7, 5, 0];
 const THIN = [0, 3, 0, -6, 0, 7, 0, 0, -5, 4];
 const LONG_RUN = [0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, -4, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, -3, 0, 0, 0, 0];
-const TONIGHT = Array.from({ length: 12 }, () => 0);
+export const TONIGHT = Array.from({ length: 12 }, () => 0);
 /** A long, skilled run: an occasional small miss, mostly perfect locks. */
-const expertRun = (rings: number) => Array.from({ length: rings }, (_, i) => (i % 9 === 4 ? 3 : i % 13 === 7 ? -2 : 0));
-const FESTIVAL = expertRun(70);
-const HUNDRED = expertRun(100);
+export const expertRun = (rings: number) => Array.from({ length: rings }, (_, i) => (i % 9 === 4 ? 3 : i % 13 === 7 ? -2 : 0));
+export const FESTIVAL = expertRun(70);
+export const HUNDRED = expertRun(100);
 
 /** Light rays of a star that has risen into the sky. */
-const Glints: React.FC<{ size: number }> = ({ size }) => (
+export const Glints: React.FC<{ size: number }> = ({ size }) => (
   <svg width={size} height={size} viewBox="0 0 200 200" style={{ position: 'absolute', inset: 0 }}>
     <defs>
       <radialGradient id="glint-core">
@@ -43,30 +43,30 @@ const Glints: React.FC<{ size: number }> = ({ size }) => (
   </svg>
 );
 
-const StarStage: React.FC<{ top?: number; size?: number; children: React.ReactNode }> = ({ top = 84, size = 330, children }) => (
+export const StarStage: React.FC<{ top?: number; size?: number; children: React.ReactNode }> = ({ top = 84, size = 330, children }) => (
   <div style={{ position: 'absolute', left: (390 - size) / 2, top, width: size }}>{children}</div>
 );
 
-const Callout: React.FC<{ title: string; note?: string; color?: string; top?: number }> = ({ title, note, color = C.ink, top = 548 }) => (
+export const Callout: React.FC<{ title: string; note?: string; color?: string; top?: number }> = ({ title, note, color = C.ink, top = 548 }) => (
   <div style={{ position: 'absolute', left: 20, right: 20, top, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, textAlign: 'center' }}>
     <span style={{ fontFamily: SERIF, fontSize: 30, lineHeight: 1.1, color }}>{title}</span>
     {note && <span style={{ fontSize: 13, color: C.muted }}>{note}</span>}
   </div>
 );
 
-const Meter: React.FC<{ width: number; danger?: boolean; spin?: string }> = (props) => (
+export const Meter: React.FC<{ width: number; danger?: boolean; spin?: string }> = (props) => (
   <div style={{ position: 'absolute', left: 40, right: 40, top: 624 }}>
     <WidthMeter {...props} />
   </div>
 );
 
-const TapHint: React.FC<{ text?: string }> = ({ text = 'Tap to lock the spinning ring' }) => (
+export const TapHint: React.FC<{ text?: string }> = ({ text = 'Tap to lock the spinning ring' }) => (
   <div style={{ position: 'absolute', left: 0, right: 0, bottom: 26, display: 'flex', justifyContent: 'center' }}>
     <span style={{ fontSize: 13, padding: '7px 14px', borderRadius: 16, background: 'rgba(10,9,24,0.7)', color: C.ink }}>{text}</span>
   </div>
 );
 
-const RunScreen: React.FC<{ stage?: Stage; rings: number; streak: number; note?: string; children: React.ReactNode }> = ({ stage = 0, rings, streak, note, children }) => (
+export const RunScreen: React.FC<{ stage?: Stage; rings: number; streak: number; note?: string; children: React.ReactNode }> = ({ stage = 0, rings, streak, note, children }) => (
   <Screen stage={stage}>
     <Hud rings={rings} streak={streak} note={note} />
     {children}
@@ -247,7 +247,7 @@ export const P10Paused: React.FC = () => (
   </RunScreen>
 );
 
-const Wire: React.FC = () => (
+export const Wire: React.FC = () => (
   <svg width="390" height="120" viewBox="0 0 390 120" style={{ position: 'absolute', left: 0, top: 0 }}>
     <path d="M0 34C120 66 270 66 390 34" stroke="#4a4166" strokeWidth="1.5" fill="none" />
     <path d="M195 58V86" stroke="#4a4166" strokeWidth="1.5" />
@@ -443,7 +443,7 @@ export const P14Settings: React.FC = () => (
   </Screen>
 );
 
-const MilestoneToast: React.FC<{ rings: number; text: string; top?: number }> = ({ rings, text, top = 88 }) => (
+export const MilestoneToast: React.FC<{ rings: number; text: string; top?: number }> = ({ rings, text, top = 88 }) => (
   <div style={{ position: 'absolute', left: 24, right: 24, top, display: 'flex', justifyContent: 'center' }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', borderRadius: 18, background: 'rgba(20,15,48,0.9)', border: '1px solid rgba(255,210,122,0.5)' }}>
       <span style={{ fontFamily: SERIF, fontSize: 18, color: C.gold, whiteSpace: 'nowrap' }}>{rings} rings</span>
