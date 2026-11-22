@@ -15,4 +15,5 @@ npx remotion still P04-Spinning out.png --scale=2      # one page
 node parol.test.ts                                     # rules self-check
 node sound/gen-sounds.ts && node sound/check-sounds.ts # make and check the sounds
 npx remotion render Run-prototype out.mp4 --scale=2    # the run with sound
+node canvas/build.mjs                                  # every screen as Design-canvas artboards → canvas/out/project/
 ```

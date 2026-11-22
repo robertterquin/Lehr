@@ -1,0 +1,4 @@
+import { build } from 'esbuild';
+const stub = (family) => ({ name: family, setup(b) { b.onResolve({ filter: new RegExp(`google-fonts/${family}$`) }, () => ({ path: family, namespace: 'font' })); b.onLoad({ filter: new RegExp(`^${family}$`), namespace: 'font' }, () => ({ contents: `export const loadFont = () => ({ fontFamily: ${JSON.stringify(family === 'YoungSerif' ? 'Young Serif' : family)} });`, loader: 'js' })); } });
+await build({ entryPoints: [new URL('./export-canvas.tsx', import.meta.url).pathname], bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', outfile: new URL('./out/export.mjs', import.meta.url).pathname, plugins: [stub('YoungSerif'), stub('Manrope')], external: ['react', 'react-dom', 'react-dom/server'], logLevel: 'error' });
+await import(new URL('./out/export.mjs', import.meta.url).href);
