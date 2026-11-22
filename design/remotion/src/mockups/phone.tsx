@@ -47,7 +47,7 @@ export const StarStage: React.FC<{ top?: number; size?: number; children: React.
   <div style={{ position: 'absolute', left: (390 - size) / 2, top, width: size }}>{children}</div>
 );
 
-export const Callout: React.FC<{ title: string; note?: string; color?: string; top?: number }> = ({ title, note, color = C.ink, top = 548 }) => (
+export const Callout: React.FC<{ title: string; note?: string; color?: string; top?: number }> = ({ title, note, color = C.ink, top = 538 }) => (
   <div style={{ position: 'absolute', left: 20, right: 20, top, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, textAlign: 'center' }}>
     <span style={{ fontFamily: SERIF, fontSize: 30, lineHeight: 1.1, color }}>{title}</span>
     {note && <span style={{ fontSize: 13, color: C.muted }}>{note}</span>}
@@ -55,7 +55,7 @@ export const Callout: React.FC<{ title: string; note?: string; color?: string; t
 );
 
 export const Meter: React.FC<{ width: number; danger?: boolean; spin?: string }> = (props) => (
-  <div style={{ position: 'absolute', left: 40, right: 40, top: 624 }}>
+  <div style={{ position: 'absolute', left: 40, right: 40, top: 608 }}>
     <WidthMeter {...props} />
   </div>
 );

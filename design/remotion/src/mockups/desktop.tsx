@@ -10,7 +10,7 @@ const DesktopScreen: React.FC<{ stage?: Stage; children: React.ReactNode }> = ({
   <div style={{ width: 1440, height: 900, position: 'relative', overflow: 'hidden', background: C.night, color: C.ink, fontFamily: SANS }}>
     {[0, 1, 2, 3].map((i) => (
       <div key={i} style={{ position: 'absolute', left: i * 360, bottom: 0, width: 360, height: 779 }}>
-        <Street stage={stage} moon={false} />
+        <Street stage={stage} moon={false} tile={i} />
       </div>
     ))}
     <svg width="40" height="40" viewBox="0 0 40 40" style={{ position: 'absolute', left: 1352, top: 120 }}>

@@ -54,6 +54,8 @@ export const Parol: React.FC<Props> = ({ size, locks, spin = null, trimLast = fa
   // The camera pulls back as the star grows, so even a 40-ring parol fits the frame.
   const fit = Math.min(1, 138 / (halo > 0 ? haloR + (halo - 1) * 12 : outer));
   const camera = `translate(${CENTER} ${CENTER}) scale(${fit.toFixed(4)}) translate(${-CENTER} ${-CENTER})`;
+  // Frame lines thin out as the camera pulls back, so a 70-ring star keeps its colours instead of turning to bamboo.
+  const frame = Math.max(0.3, Math.min(1.4, fit * 3));
 
   // Tails hang from the tips of the two lower points of the outermost ring.
   const tails = [54, 126].map((deg, side) => {
@@ -131,15 +133,33 @@ export const Parol: React.FC<Props> = ({ size, locks, spin = null, trimLast = fa
         ))}
 
       {/* The ring spinning in, with a gold guide where the points sit */}
-      {spin !== null && (
-        <g>
-          <path d={starPath(rings.length, last?.width ?? 36, last?.rotation ?? 0)} fill="none" stroke="#ffd27a" strokeWidth="1.6" strokeDasharray="4 4" />
-          {[0.12, 0.24].map((opacity, n) => (
-            <path key={n} d={starPath(rings.length, last?.width ?? 36, (last?.rotation ?? 0) + spin - (n === 0 ? 14 : 7))} fill={PALETTE[rings.length % PALETTE.length]} opacity={opacity} />
-          ))}
-          <path d={starPath(rings.length, last?.width ?? 36, (last?.rotation ?? 0) + spin)} fill={ringFill(rings.length)} fillOpacity="0.92" stroke={BAMBOO} strokeWidth="2" strokeLinejoin="round" />
-        </g>
-      )}
+      {spin !== null &&
+        (() => {
+          // The new ring arrives as a frame of bamboo with translucent paper: spokes to each tip and a
+          // short streak of light behind each tip, instead of a solid block of colour.
+          const index = rings.length;
+          const width = last?.width ?? 36;
+          const rotation = (last?.rotation ?? 0) + spin;
+          const { ro } = radii(index);
+          return (
+            <g>
+              <path d={starPath(index, width, last?.rotation ?? 0)} fill="none" stroke="#ffd27a" strokeWidth="1.5" strokeDasharray="5 4" vectorEffect="non-scaling-stroke" />
+              <path d={starPath(index, width, rotation)} fill={ringFill(index)} fillOpacity="0.5" stroke={BAMBOO} strokeWidth="1.6" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+              {[0, 1, 2, 3, 4].map((k) => {
+                const t = rotation + k * 72 - 90;
+                const [tx, ty] = tip(ro - 2, t);
+                const [sx, sy] = tip(ro - 2, t - 16);
+                return (
+                  <g key={k}>
+                    <path d={`M${CENTER} ${CENTER}L${tx} ${ty}`} stroke={BAMBOO_SHEEN} strokeWidth="1" opacity="0.75" vectorEffect="non-scaling-stroke" />
+                    <path d={`M${sx} ${sy}A${ro - 2} ${ro - 2} 0 0 1 ${tx} ${ty}`} fill="none" stroke="#fff1c2" strokeWidth="1.6" strokeLinecap="round" opacity="0.55" vectorEffect="non-scaling-stroke" />
+                    <circle cx={tx} cy={ty} r={2.2 / fit} fill="#fffaf0" opacity="0.9" />
+                  </g>
+                );
+              })}
+            </g>
+          );
+        })()}
 
       {/* Trimmed overhang falling away */}
       {trimLast && last && !last.perfect && (
@@ -156,8 +176,9 @@ export const Parol: React.FC<Props> = ({ size, locks, spin = null, trimLast = fa
       {/* Locked rings, outside in, so each inner ring leaves a coloured rim */}
       {[...rings].reverse().map((ring) => (
         <g key={ring.index} style={glowLast && ring.index === last?.index ? { filter: 'drop-shadow(0 0 9px rgba(255, 214, 130, 0.95))' } : undefined}>
-          <path d={starPath(ring.index, ring.width, ring.rotation)} fill={ringFill(ring.index)} fillOpacity={dim ? 0.3 : 1} stroke={dim ? 'rgba(244,236,216,0.35)' : BAMBOO} strokeWidth="2" strokeLinejoin="round" />
-          {!dim && <path d={starPath(ring.index, ring.width, ring.rotation)} fill="none" stroke={BAMBOO_SHEEN} strokeWidth="0.6" opacity="0.5" strokeLinejoin="round" />}
+          {/* Non-scaling strokes keep the bamboo frame crisp when the camera pulls back on a big star */}
+          <path d={starPath(ring.index, ring.width, ring.rotation)} fill={ringFill(ring.index)} fillOpacity={dim ? 0.3 : 1} stroke={dim ? 'rgba(244,236,216,0.35)' : BAMBOO} strokeWidth={frame} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+          {!dim && <path d={starPath(ring.index, ring.width, ring.rotation)} fill="none" stroke={BAMBOO_SHEEN} strokeWidth={frame * 0.35} opacity="0.5" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
         </g>
       ))}
 

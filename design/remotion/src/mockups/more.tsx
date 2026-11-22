@@ -6,6 +6,7 @@ import {
   Callout, Glints, Meter, MilestoneToast, RunScreen, StarStage, TapHint, TONIGHT, expertRun,
   P01Loading, P02Ready, P03HowToPlay, P04Spinning, P05Perfect, P06PerfectFive, P07Trim, P08Danger, P09Milestone, P10Paused, P11Results, P12Board, P13Share, P14Settings, P16Festival, P17StarRises,
 } from './phone';
+import { S01FirstTime, S02Offline, S03NameError, S04NewDay, S05EmptyBoard, S06ReducedMotion } from './states';
 
 type Milestone = { rings: number; stage: Stage; toast: string; title: string; note: string; spin: string };
 
@@ -150,7 +151,7 @@ export const B03LinkPreview: React.FC = () => (
   <div style={{ width: 1200, height: 630, position: 'relative', overflow: 'hidden', background: C.night, color: C.ink, fontFamily: SANS }}>
     {[0, 1, 2, 3].map((i) => (
       <div key={i} style={{ position: 'absolute', left: i * 300, bottom: 0, width: 300, height: 649 }}>
-        <Street stage={3} moon={false} />
+        <Street stage={3} moon={false} tile={i} />
       </div>
     ))}
     <div style={{ position: 'absolute', left: 90, top: 150, display: 'flex', flexDirection: 'column', gap: 18, width: 560 }}>
@@ -210,7 +211,7 @@ const Row: React.FC<{ title: string; note: string; items: [string, React.FC][]; 
 );
 
 export const A01AppMap: React.FC = () => (
-  <div style={{ width: 2640, height: 2120, background: 'linear-gradient(180deg, #120f2c 0%, #0a0918 100%)', color: C.ink, fontFamily: SANS, padding: '70px 80px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 50 }}>
+  <div style={{ width: 2640, height: 2560, background: 'linear-gradient(180deg, #120f2c 0%, #0a0918 100%)', color: C.ink, fontFamily: SANS, padding: '70px 80px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 50 }}>
     <div style={{ display: 'flex', alignItems: 'baseline', gap: 24 }}>
       <Wordmark size={72} />
       <span style={{ fontSize: 28, color: C.muted }}>App map · every screen, in the order players move through them</span>
@@ -219,5 +220,6 @@ export const A01AppMap: React.FC = () => (
     <Row title="Play" note="Rings spin in; tap to lock. Each lock is perfect, trimmed, or close to the end." items={[['Spinning', P04Spinning], ['Perfect', P05Perfect], ['Perfect ×5', P06PerfectFive], ['Off-angle trim', P07Trim], ['Danger', P08Danger]]} side={[['Paused', P10Paused]]} />
     <Row title="Journey" note="The street comes alive every 10 rings, up to the star rising at 100." items={[['20 · lights', P19Lights], ['30 · neighbours', P09Milestone], ['40 · carolers', P20Carolers], ['50 · barangay', P21Barangay], ['60 · rotor', P22Rotor], ['70 · festival', P16Festival], ['80 · fireworks', P23Fireworks], ['90 · dawn', P24Dawn], ['100 · star rises', P17StarRises], ['130 · constellation', P25Constellation]]} />
     <Row title="After the run" note="See how you did, share your star, and check the board." items={[['Run ended', P11Results], ['Share', P13Share], ['Today’s board', P12Board]]} />
+    <Row title="Edge cases" note="First visit, no signal, a rejected name, the day rolling over, an empty board, reduced motion." items={[['First visit', S01FirstTime], ['Offline', S02Offline], ['Name not allowed', S03NameError], ['New day', S04NewDay], ['Empty board', S05EmptyBoard], ['Reduced motion', S06ReducedMotion]]} />
   </div>
 );

@@ -7,6 +7,7 @@ import { D01Ready, D02Spinning, D03Results, D04Board } from './mockups/desktop';
 import {
   P01Loading, P02Ready, P03HowToPlay, P04Spinning, P05Perfect, P06PerfectFive, P07Trim, P08Danger, P09Milestone, P10Paused, P11Results, P12Board, P13Share, P14Settings, P16Festival, P17StarRises, ShareCard,
 } from './mockups/phone';
+import { DS01DesignSystem, S01FirstTime, S02Offline, S03NameError, S04NewDay, S05EmptyBoard, S06ReducedMotion } from './mockups/states';
 import { A01AppMap, B01Logo, B02AppIcon, B03LinkPreview, P19Lights, P20Carolers, P21Barangay, P22Rotor, P23Fireworks, P24Dawn, P25Constellation, P26JourneyMap } from './mockups/more';
 
 const ShareCardFull: React.FC = () => <ShareCard width={1080} />;
@@ -47,12 +48,19 @@ export const RemotionRoot: React.FC = () => {
         <Still id="P24-Milestone-90" component={P24Dawn} width={390} height={844} />
         <Still id="P25-Past-100" component={P25Constellation} width={390} height={844} />
         <Still id="P26-Journey-map" component={P26JourneyMap} width={390} height={844} />
+        <Still id="S01-First-visit" component={S01FirstTime} width={390} height={844} />
+        <Still id="S02-Offline" component={S02Offline} width={390} height={844} />
+        <Still id="S03-Name-not-allowed" component={S03NameError} width={390} height={844} />
+        <Still id="S04-New-day" component={S04NewDay} width={390} height={844} />
+        <Still id="S05-Empty-board" component={S05EmptyBoard} width={390} height={844} />
+        <Still id="S06-Reduced-motion" component={S06ReducedMotion} width={390} height={844} />
       </Folder>
       <Folder name="Brand">
         <Still id="B01-Logo" component={B01Logo} width={1600} height={800} />
         <Still id="B02-App-icon" component={B02AppIcon} width={1024} height={1024} />
         <Still id="B03-Link-preview" component={B03LinkPreview} width={1200} height={630} />
-        <Still id="A01-App-map" component={A01AppMap} width={2640} height={2120} />
+        <Still id="A01-App-map" component={A01AppMap} width={2640} height={2560} />
+        <Still id="DS01-Design-system" component={DS01DesignSystem} width={1800} height={2260} />
       </Folder>
       <Folder name="Desktop">
         <Still id="D01-Ready" component={D01Ready} width={1440} height={900} />

@@ -43,6 +43,16 @@ The street comes alive as the star grows, and the run never stops at a milestone
 | Good | ~60 | Rotor mode |
 | Great | 100+ | The star rises, on good days |
 
+## The street
+
+Drawn from Filipino references so every element can be named at a glance:
+
+- **Bahay kubo:** a thick, shaggy thatch hip roof with a wide overhang, walls of vertical bamboo poles, a window shutter propped open on a stick, the floor on bamboo stilts set on concrete footings, a bamboo ladder.
+- **Row house with a sari-sari store:** corrugated iron (yero) roof, a painted "SARI-SARI STORE" sign, goods on shelves behind a wire-mesh window, a steel grille gate. The store stays lit from the first ring.
+- **Bahay na bato:** a stone ground floor with an arched zaguan door; an overhanging wooden upper floor with sliding capiz windows over ventanillas with balusters; a clay tile hip roof.
+- A concrete **utility pole** with crossarm, insulators, transformer and sagging wires; a **sodium street lamp** casting light on the road; **Christmas bulbs** strung across the street; two **coconut palms**; the **parish church** with its bell tower at the end of the street; real **mini parols** (star, hoop, tambor, tails) in every window.
+- Milestones change the scene: lights at 20, parols at 30, carolers (a parol on a stick, a bottle-cap tambourine) at 40, far hills at 50, Pampanga-style giant lanterns at 70, fireworks at 80, dawn at 90, when the moon sets and the church lights up.
+
 ## Look
 
 - Night indigo sky; capiz/papel de Japon colours: pearl, red, gold, green, blue, magenta; bamboo brown frame.
@@ -59,4 +69,6 @@ The whole app on one page: [mockups/A01-App-map.png](mockups/A01-App-map.png).
 | Journey | P19 20 · P09 30 · P20 40 · P21 50 · P22 60 · P16 70 · P23 80 · P24 90 · P17 100 (star rises) · P25 past 100 (constellation) |
 | After the run | P11 Run ended · P13 Share · P12 Today's board · P15 share card · P18 gold share card (100+) |
 | Desktop | D01 Ready · D02 Spinning · D03 Run ended · D04 Board |
+| Edge cases | S01 First visit · S02 Offline · S03 Name not allowed · S04 New day · S05 Empty board · S06 Reduced motion |
 | Brand | B01 Logo · B02 App icon (1024, platform masks the corners) · B03 Link preview (1200×630) |
+| System | DS01 Design system: colours with measured WCAG contrast, type scale, components, rules for building |
