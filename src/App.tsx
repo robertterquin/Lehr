@@ -2,12 +2,14 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { getManilaDate, seedForDate, weekdayIndex } from './game/daily.ts'
 import { createEngine, pause, resume, ringOffset, tap, type Engine } from './game/engine.ts'
 import { endNote, milestoneText } from './game/feedback.ts'
+import { bestOn, deviceStore, logRun, loggedRuns, readSettings, writeSettings, type Settings as SavedSettings } from './game/local.ts'
 import { RULES } from './game/rules.ts'
 import { NIGHTS, night as nightById, type NightId, type Night } from './draw/nights.tsx'
 import { Star } from './draw/star.tsx'
 import type { Stage } from './draw/street.tsx'
-import { SOUNDS, buzz, isMuted, play, setMusic, setMuted, stopMusic, unlockAudio } from './sound/audio.ts'
+import { SOUNDS, buzz, isMuted, play, setMusic, setMuted, setVibration, stopMusic, unlockAudio } from './sound/audio.ts'
 import { Callout, IconButton, Meter, PauseIcon, SoundIcon, Streak } from './ui/parts.tsx'
+import { Glints, HowToPlay, Journey, NewDay, Settings, StarRises } from './ui/screens.tsx'
 
 const params = new URLSearchParams(location.search)
 const today = getManilaDate()
@@ -16,12 +18,17 @@ const tonight: Night = params.get('night') ? nightById(params.get('night') as Ni
 const seed = seedForDate(today)
 // ?bench records how long each lock takes to draw, for checking phones.
 const BENCH: number[] | null = params.has('bench') ? ((window as unknown as { lockMs: number[] }).lockMs = []) : null
+const store = deviceStore()
+/** The dim preview star on the Ready screen. */
+const PREVIEW = Array.from({ length: 12 }, () => 0)
 
-type Phase = 'ready' | 'playing' | 'paused' | 'ended'
+type Phase = 'ready' | 'playing' | 'paused' | 'risen' | 'ended'
+type Panel = 'how' | 'settings' | 'journey' | null
 
 const WIDE = '(min-width: 960px) and (min-height: 600px)'
-const calm = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 const DANGER_BELOW = 15
+/** Where the stars of the constellation past 100 sit, as fractions of the screen, clear of the star. */
+const SKY: [number, number][] = [[0.78, 0.17], [0.2, 0.5], [0.82, 0.52], [0.12, 0.22], [0.6, 0.08], [0.33, 0.1], [0.9, 0.33], [0.08, 0.38], [0.5, 0.03], [0.7, 0.42]]
 
 /** Window size, kept current: picks the layout and the star's size. */
 function useViewport() {
@@ -70,14 +77,47 @@ export default function App() {
   const { width, height, wide } = useViewport()
   const [phase, setPhase] = useState<Phase>('ready')
   const [engine, setEngine] = useState<Engine>(() => createEngine(seed))
+  const [settings, setSettings] = useState<SavedSettings>(() => readSettings(store))
+  const [panel, setPanel] = useState<Panel>(() => (readSettings(store).seenHowTo ? null : 'how'))
   const [muted, setMutedState] = useState(isMuted)
+  const [best, setBest] = useState(() => bestOn(store, today))
+  const [bestBefore, setBestBefore] = useState(0)
+  const [newDay, setNewDay] = useState(false)
+  const [systemCalm, setSystemCalm] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+  const calm = settings.calm ?? systemCalm
+  const firstVisit = loggedRuns(store).length === 0
+
   const engineRef = useRef(engine)
   const phaseRef = useRef(phase)
   phaseRef.current = phase
+  const calmRef = useRef(calm)
+  calmRef.current = calm
   /** performance.now() at the start of the run: run time is milliseconds since then. */
   const baseRef = useRef(0)
   const spinRef = useRef<SVGSVGElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => setVibration(settings.vibration), [settings.vibration])
+  useEffect(() => {
+    const query = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const update = () => setSystemCalm(query.matches)
+    query.addEventListener('change', update)
+    return () => query.removeEventListener('change', update)
+  }, [])
+  // The day changes at midnight in Manila: offer tonight's new star when the run in hand is over.
+  useEffect(() => {
+    const check = window.setInterval(() => setNewDay(getManilaDate() !== today), 30_000)
+    return () => window.clearInterval(check)
+  }, [])
+
+  const saveSettings = (next: SavedSettings) => {
+    setSettings(next)
+    writeSettings(store, next)
+  }
+  const closePanel = () => {
+    if (panel === 'how' && !settings.seenHowTo) saveSettings({ ...settings, seenHowTo: true })
+    setPanel(null)
+  }
 
   const commit = (next: Engine) => {
     engineRef.current = next
@@ -88,9 +128,9 @@ export default function App() {
     const inputs = engineRef.current.inputs
     return Math.max(inputs.length ? inputs[inputs.length - 1].atMs : 0, stamp - baseRef.current)
   }
-  /** Moves the star for a moment, on the GPU; skipped when the system asks for less motion. */
+  /** Moves the star for a moment, on the GPU; skipped with reduced motion. */
   const nudge = (frames: Keyframe[], duration: number) => {
-    if (!calm()) stageRef.current?.animate(frames, { duration, easing: 'ease-out' })
+    if (!calmRef.current) stageRef.current?.animate(frames, { duration, easing: 'ease-out' })
   }
   /** The whoosh (and, when the points are thin, the heartbeat) as a ring spins in, `delay` seconds from now. */
   const ringIn = (next: Engine, delay = 0) => {
@@ -98,22 +138,44 @@ export default function App() {
     if (next.run.width < DANGER_BELOW) play(SOUNDS.danger, delay + 0.05)
   }
 
+  const finish = (done: Engine) => {
+    const inputs = done.inputs
+    const durationMs = inputs.length ? inputs[inputs.length - 1].atMs : 0
+    setBestBefore(bestOn(store, today))
+    logRun(store, {
+      date: today,
+      night: tonight.id,
+      seed,
+      startedAt: new Date(Date.now() - (performance.now() - baseRef.current)).toISOString(),
+      durationMs: Math.round(durationMs),
+      rings: done.run.rings,
+      perfects: done.run.perfects,
+      endWidth: Math.round(done.run.width * 10) / 10,
+      endError: Math.round((done.endError ?? 0) * 10) / 10,
+      locks: done.locks.map((error) => Math.round(error * 10) / 10),
+      pauses: inputs.filter((input) => input.type === 'pause').length,
+      viewport: `${window.innerWidth}x${window.innerHeight}`,
+      pointer: window.matchMedia('(pointer: coarse)').matches ? 'coarse' : 'fine',
+    })
+    setBest(bestOn(store, today))
+  }
+
   const start = useCallback((stamp: number) => {
     unlockAudio()
     baseRef.current = stamp
     const next = createEngine(seed)
     commit(next)
+    setPanel(null)
     setPhase('playing')
     ringIn(next)
   }, [])
 
   const press = useCallback((stamp: number) => {
-    if (phaseRef.current === 'ready') return start(stamp)
     if (phaseRef.current !== 'playing') return
     const started = performance.now()
     const before = engineRef.current
     const next = tap(before, runTime(stamp))
-    if (next === before || next.run === before.run) return commit(next)
+    if (next.run === before.run) return commit(next)
     commit(next)
     if (BENCH) requestAnimationFrame(() => BENCH.push(performance.now() - started))
 
@@ -122,6 +184,7 @@ export default function App() {
       play(SOUNDS.end, 0.35)
       buzz(220)
       stopMusic()
+      finish(next)
       setPhase('ended')
       return
     }
@@ -138,11 +201,19 @@ export default function App() {
       buzz(16)
       nudge([{ translate: '0 0' }, { translate: '-2px 0' }, { translate: '2px 0' }, { translate: '-1px 0' }, { translate: '0 0' }], 250)
     }
+    if (rings === 100) {
+      // The star rises: the run holds on the celebration until Keep going, then the ring spins in again.
+      play(SOUNDS.starRises, 0.2)
+      buzz([20, 60, 20, 60, 40])
+      commit(pause(next, runTime(stamp)))
+      setPhase('risen')
+      return
+    }
     const milestone = rings % RULES.milestoneEvery === 0
-    if (milestone) play(rings === 100 ? SOUNDS.starRises : SOUNDS.milestone, 0.2)
+    if (milestone) play(SOUNDS.milestone, 0.2)
     setMusic(rings)
     ringIn(next, milestone ? RULES.milestoneBreakMs / 1000 : 0)
-  }, [start])
+  }, [])
 
   const pauseNow = useCallback((stamp: number) => {
     if (phaseRef.current !== 'playing') return
@@ -152,7 +223,7 @@ export default function App() {
   }, [])
 
   const resumeNow = useCallback((stamp: number) => {
-    if (phaseRef.current !== 'paused') return
+    if (phaseRef.current !== 'paused' && phaseRef.current !== 'risen') return
     unlockAudio()
     const next = resume(engineRef.current, runTime(stamp))
     commit(next)
@@ -161,25 +232,36 @@ export default function App() {
     setPhase('playing')
   }, [])
 
-  const toggleSound = () => {
+  const toggleSound = (on = muted) => {
     unlockAudio()
-    setMuted(!muted)
-    setMutedState(!muted)
-    if (muted && phaseRef.current === 'playing') setMusic(engineRef.current.run.rings)
+    setMuted(!on)
+    setMutedState(!on)
+    if (on && phaseRef.current === 'playing') setMusic(engineRef.current.run.rings)
   }
 
-  // Keyboard: Space or Enter locks (key repeat ignored), Esc pauses and resumes.
+  const downloadLog = () => {
+    const blob = new Blob([JSON.stringify(loggedRuns(store), null, 2)], { type: 'application/json' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `parol-playtest-${today}.json`
+    link.click()
+    window.setTimeout(() => URL.revokeObjectURL(link.href), 1000)
+  }
+
+  // Keyboard: Space or Enter starts and locks (key repeat ignored), Esc pauses, resumes and closes panels.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.repeat) return
       if (event.key === ' ' || event.key === 'Enter') {
-        // Let a focused button handle its own Space or Enter.
-        if (event.target instanceof HTMLButtonElement) return
+        // Let a focused button or switch handle its own Space or Enter.
+        if (event.target instanceof HTMLButtonElement || event.target instanceof HTMLInputElement) return
         event.preventDefault()
-        press(event.timeStamp)
+        if (phaseRef.current === 'ready') start(event.timeStamp)
+        else press(event.timeStamp)
       } else if (event.key === 'Escape') {
         if (phaseRef.current === 'playing') pauseNow(event.timeStamp)
-        else resumeNow(event.timeStamp)
+        else if (phaseRef.current === 'paused') resumeNow(event.timeStamp)
+        else setPanel(null)
       }
     }
     // Leaving the tab pauses, so the ring never spins on unseen.
@@ -192,7 +274,7 @@ export default function App() {
       window.removeEventListener('keydown', onKey)
       document.removeEventListener('visibilitychange', onVisibility)
     }
-  }, [press, pauseNow, resumeNow])
+  }, [start, press, pauseNow, resumeNow])
 
   // Turn the spinning ring every frame, from the clock: no re-render, no redraw.
   useEffect(() => {
@@ -207,21 +289,23 @@ export default function App() {
   }, [phase])
 
   const { run } = engine
-  const stage = Math.min(10, Math.floor(run.rings / 10)) as Stage
+  const inRun = phase !== 'ready'
+  const stage = (inRun ? Math.min(10, Math.floor(run.rings / 10)) : 0) as Stage
   const playing = phase === 'playing'
   const starSize = Math.round(wide ? Math.min(520, height - 260) : Math.max(220, Math.min(330, width - 60, height - 440)))
-  const danger = phase !== 'ready' && !run.ended && run.width < DANGER_BELOW
-  const milestone = phase !== 'ready' && !run.ended ? milestoneText(run.rings) : null
+  const danger = inRun && !run.ended && run.width < DANGER_BELOW
+  const milestone = inRun && !run.ended && phase !== 'risen' ? milestoneText(run.rings) : null
+  const skyStars = inRun ? Math.min(SKY.length, Math.max(0, Math.floor((run.rings - 100) / 10))) : 0
 
   const star = (
     <div className={`stage${phase === 'ended' ? ' stage-ended' : ''}`} ref={stageRef}>
       <Star
-        size={starSize}
-        locks={engine.locks}
-        spinning={phase === 'playing' || phase === 'paused'}
+        size={phase === 'ready' ? Math.round(starSize * 0.82) : starSize}
+        locks={inRun ? engine.locks : PREVIEW}
+        spinning={phase === 'playing' || phase === 'paused' || phase === 'risen'}
         spinRef={spinRef}
         palette={tonight.palette}
-        dim={phase === 'ready'}
+        dim={!inRun}
         danger={danger}
         failed={phase === 'ended' ? engine.endError : undefined}
       />
@@ -232,14 +316,24 @@ export default function App() {
       <span className="rings-label">Rings</span> <span className="rings-number">{run.rings}</span>
     </p>
   )
+  const soundButton = (
+    <IconButton label="Sound" pressed={!muted} onPress={() => toggleSound()}>
+      <SoundIcon off={muted} />
+    </IconButton>
+  )
   const buttons = (
     <div className="buttons">
-      <IconButton label="Sound" pressed={!muted} onPress={toggleSound}>
-        <SoundIcon off={muted} />
-      </IconButton>
-      {phase !== 'ready' && (
+      {soundButton}
+      {inRun ? (
         <IconButton label="Pause" onPress={() => pauseNow(performance.now())}>
           <PauseIcon />
+        </IconButton>
+      ) : (
+        <IconButton label="Settings" onPress={() => setPanel('settings')}>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+            <circle cx="10" cy="10" r="2.6" />
+            <path d="M10 2.5v2.2M10 15.3v2.2M2.5 10h2.2M15.3 10h2.2M4.7 4.7l1.6 1.6M13.7 13.7l1.6 1.6M4.7 15.3l1.6-1.6M13.7 6.3l1.6-1.6" />
+          </svg>
         </IconButton>
       )}
     </div>
@@ -250,20 +344,50 @@ export default function App() {
       <span className="toast-rings">{run.rings} rings</span> {milestone}
     </p>
   )
+  const newBest = phase === 'ended' && run.rings > bestBefore && run.rings > 0
+  const dateLabel = new Date(`${today}T00:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })
 
   return (
-    <main className={`game ${wide ? 'wide' : 'narrow'}${danger ? ' in-danger' : ''}`} onPointerDown={(event) => event.button === 0 && press(event.timeStamp)}>
+    <main className={`game ${wide ? 'wide' : 'narrow'}${danger ? ' in-danger' : ''}${calm ? ' calm' : ''}`} onPointerDown={(event) => event.button === 0 && press(event.timeStamp)}>
       <Scenery stage={stage} tiles={wide ? 4 : 1} />
+      {skyStars > 0 && (
+        <div className="sky" aria-hidden="true">
+          {SKY.slice(0, skyStars).map(([x, y]) => (
+            <div key={`${x}-${y}`} className="sky-star" style={{ left: `${x * 100}%`, top: `${y * 100}%` }}>
+              <Glints size={60} />
+            </div>
+          ))}
+        </div>
+      )}
+
       {phase === 'ready' ? (
         <div className="ready">
-          <header className="ready-bar">{buttons}</header>
+          <header className="ready-bar">
+            <span className="wordmark-small">Parol</span>
+            {buttons}
+          </header>
           <p className="date">
-            {tonight.araw} · {tonight.name}
+            {dateLabel} · {tonight.name}
           </p>
           {star}
-          <h1 className="ready-title">Tonight’s star</h1>
-          <p className="ready-note">Lock each spinning ring onto the one inside it. The same star for everyone today.</p>
-          <p className="ready-start">{wide ? 'Press Space or click to light the first ring' : 'Tap to light the first ring'}</p>
+          <h1 className="ready-title">{firstVisit ? 'Light your first parol' : 'Tonight’s star'}</h1>
+          <p className="ready-note">
+            Lock each spinning ring onto the one inside it. {firstVisit ? 'One tap, one ring. ' : ''}Everyone builds the same star tonight.
+          </p>
+          {best > 0 && <p className="chip">Your best today: {best} rings</p>}
+          <div className="ready-actions">
+            <div className="ready-links">
+              <button type="button" className="ghost" onClick={() => setPanel('how')}>
+                How to play
+              </button>
+              <button type="button" className="ghost" onClick={() => setPanel('journey')}>
+                Tonight’s journey
+              </button>
+            </div>
+            <button type="button" className="primary" onClick={() => start(performance.now())}>
+              {firstVisit ? 'Start · it takes a minute' : 'Light the first ring'}
+            </button>
+          </div>
         </div>
       ) : wide ? (
         <div className="desk">
@@ -309,8 +433,9 @@ export default function App() {
           </div>
         </div>
       )}
+      {phase === 'risen' && <StarRises locks={engine.locks} palette={tonight.palette} onKeepGoing={() => resumeNow(performance.now())} />}
       {phase === 'ended' && (
-        <div className="overlay overlay-ended" role="dialog" aria-modal="true" aria-labelledby="ended-title">
+        <div className="overlay overlay-ended" role="dialog" aria-modal="true" aria-labelledby="ended-title" onPointerDown={(event) => event.stopPropagation()}>
           <div className="card">
             <span className="card-label">Run ended</span>
             <h2 id="ended-title" className="card-title">The points got too thin</h2>
@@ -324,13 +449,39 @@ export default function App() {
                 <span className="stat-value gold">{run.perfects}</span>
                 <span className="stat-label">perfect</span>
               </div>
+              <div className="stat">
+                <span className="stat-value">{best}</span>
+                <span className="stat-label">best today</span>
+              </div>
             </div>
-            <button type="button" className="primary" autoFocus onPointerDown={(event) => event.stopPropagation()} onClick={() => start(performance.now())}>
+            {newBest && <p className="chip">New best today</p>}
+            <button type="button" className="primary" autoFocus onClick={() => start(performance.now())}>
               Light again
+            </button>
+            <button type="button" className="ghost wide-button" onClick={() => setPanel('journey')}>
+              Tonight’s journey
             </button>
           </div>
         </div>
       )}
+
+      {panel === 'how' && <HowToPlay palette={tonight.palette} onClose={closePanel} />}
+      {panel === 'settings' && (
+        <Settings
+          sound={!muted}
+          vibration={settings.vibration}
+          calm={calm}
+          runs={loggedRuns(store).length}
+          onSound={(on) => toggleSound(on)}
+          onVibration={(on) => saveSettings({ ...settings, vibration: on })}
+          onCalm={(on) => saveSettings({ ...settings, calm: on })}
+          onHowTo={() => setPanel('how')}
+          onDownloadLog={downloadLog}
+          onClose={closePanel}
+        />
+      )}
+      {panel === 'journey' && <Journey best={best} onBack={() => setPanel(null)} />}
+      {newDay && (phase === 'ready' || phase === 'ended') && <NewDay best={best} onSee={() => location.reload()} />}
     </main>
   )
 }

@@ -6,9 +6,17 @@
     <meta name="theme-color" content="#140f30" />
     <meta name="description" content="Lock each spinning ring onto the one inside it and light a Filipino Christmas parol, one ring at a time." />
     <title>Parol</title>
+    <link rel="stylesheet" href="/loading.css" />
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Shown until the game starts; React replaces it. -->
+    <div id="root">
+      <div class="loading" role="status">
+        <span class="loading-mark">Parol</span>
+        <span class="loading-note">Lighting tonight’s star…</span>
+        <span class="loading-bar"></span>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

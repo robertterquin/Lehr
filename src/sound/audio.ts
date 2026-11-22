@@ -8,6 +8,7 @@ let ctx: AudioContext | null = null
 let master: GainNode | null = null
 let noise: AudioBuffer | null = null
 let muted = false
+let vibration = true
 
 const MUTE_KEY = 'parol-muted'
 try {
@@ -33,7 +34,7 @@ export const unlockAudio = () => {
 
 export const isMuted = () => muted
 
-/** Mutes sound and vibration together; the choice is remembered on this device. */
+/** Mutes sound; the choice is remembered on this device. */
 export const setMuted = (value: boolean) => {
   muted = value
   try {
@@ -121,10 +122,15 @@ export const SOUNDS = {
 /** Plays a sound now (a few ms ahead, so its envelope starts cleanly). */
 export const play = (voice: Voice, delay = 0) => ctx && voice(ctx.currentTime + 0.005 + delay)
 
-/** A short vibration on phones that support it (Android); silent when sound is off. */
+/** Turns phone vibration on or off (the Settings switch). */
+export const setVibration = (on: boolean) => {
+  vibration = on
+}
+
+/** A short vibration on phones that support it (Android; iPhones don't allow it on the web). */
 export const buzz = (pattern: number | number[]) => {
   // Browsers refuse (and log) vibration before the person has tapped the page.
-  if (!muted && 'vibrate' in navigator && navigator.userActivation?.hasBeenActive !== false) navigator.vibrate(pattern)
+  if (vibration && 'vibrate' in navigator && navigator.userActivation?.hasBeenActive !== false) navigator.vibrate(pattern)
 }
 
 // ── Music: one loop that gains a layer every 10 rings ─────────────────────────────────────────────

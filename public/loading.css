@@ -1,0 +1,49 @@
+/* The loading screen, before any JavaScript: plain HTML and this file (the CSP forbids inline styles). */
+html,
+body {
+  margin: 0;
+  background: #0a0918;
+}
+
+.loading {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding-bottom: 80px;
+  box-sizing: border-box;
+  background: radial-gradient(120% 70% at 50% 28%, #2a1e55 0%, #140f30 55%, #0a0918 100%);
+  color: #f7f0e3;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.loading-mark {
+  font-size: 54px;
+  line-height: 1;
+}
+
+.loading-note {
+  font-family: 'Avenir Next', 'Segoe UI', sans-serif;
+  font-size: 14px;
+  color: #c9bfe0;
+}
+
+.loading-bar {
+  width: 120px;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #ffd27a 0 40%, #241d44 40% 100%) no-repeat;
+  background-size: 300% 100%;
+  animation: loading 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes loading {
+  from { background-position: 100% 0; }
+  to { background-position: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-bar { animation: none; }
+}

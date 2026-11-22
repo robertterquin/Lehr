@@ -31,7 +31,7 @@ const MILESTONES: Record<number, string> = {
   30: 'The neighbours light their parols',
   40: 'The carolers come down the street',
   50: 'A second halo · the barangay lights up',
-  60: 'Rotor mode: your rings start to dance',
+  60: 'Rotor mode: every ring lights up',
   70: 'The lantern festival begins',
   80: 'A third halo · fireworks over the town',
   90: 'Simbang Gabi dawn',
