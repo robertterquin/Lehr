@@ -9,7 +9,7 @@ import { Star } from './draw/star.tsx'
 import type { Stage } from './draw/street.tsx'
 import { SOUNDS, buzz, isMuted, play, setMusic, setMuted, setVibration, stopMusic, unlockAudio } from './sound/audio.ts'
 import { Callout, IconButton, Meter, PauseIcon, SoundIcon, Streak } from './ui/parts.tsx'
-import { Glints, HowToPlay, Journey, NewDay, Settings, StarRises } from './ui/screens.tsx'
+import { Glints, HowToPlay, NewDay, Settings, StarRises } from './ui/screens.tsx'
 
 const params = new URLSearchParams(location.search)
 const today = getManilaDate()
@@ -25,7 +25,7 @@ const store = deviceStore()
 const PREVIEW = Array.from({ length: 12 }, () => 0)
 
 type Phase = 'ready' | 'playing' | 'paused' | 'risen' | 'ended'
-type Panel = 'how' | 'settings' | 'journey' | null
+type Panel = 'how' | 'settings' | null
 
 const WIDE = '(min-width: 960px) and (min-height: 600px)'
 const DANGER_BELOW = 15
@@ -377,19 +377,9 @@ export default function App() {
           </p>
           {star}
           <h1 className="ready-title">{firstVisit ? 'Light your first parol' : 'Tonight’s star'}</h1>
-          <p className="ready-note">
-            Lock each spinning ring onto the one inside it. {firstVisit ? 'One tap, one ring. ' : ''}Everyone builds the same star tonight.
-          </p>
+          <p className="ready-note">Lock each spinning ring onto the one inside it.</p>
           {best > 0 && <p className="chip">Your best today: {best} rings</p>}
           <div className="ready-actions">
-            <div className="ready-links">
-              <button type="button" className="ghost" onClick={() => setPanel('how')}>
-                How to play
-              </button>
-              <button type="button" className="ghost" onClick={() => setPanel('journey')}>
-                Tonight’s journey
-              </button>
-            </div>
             <button type="button" className="primary" onClick={() => start(performance.now())}>
               {firstVisit ? 'Start · it takes a minute' : 'Light the first ring'}
             </button>
@@ -432,7 +422,6 @@ export default function App() {
         <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="paused-title">
           <div className="card">
             <h2 id="paused-title" className="card-title">Paused</h2>
-            <p className="card-note">The ring spins in again when you go back.</p>
             <button type="button" className="primary" autoFocus onPointerDown={(event) => event.stopPropagation()} onClick={() => resumeNow(performance.now())}>
               Resume
             </button>
@@ -462,9 +451,6 @@ export default function App() {
           <button type="button" className="primary over-button" autoFocus onClick={() => start(performance.now())}>
             Light again
           </button>
-          <button type="button" className="text-link" onClick={() => setPanel('journey')}>
-            Tonight’s journey
-          </button>
         </section>
       )}
 
@@ -483,7 +469,6 @@ export default function App() {
           onClose={closePanel}
         />
       )}
-      {panel === 'journey' && <Journey best={best} onBack={() => setPanel(null)} />}
       {newDay && (phase === 'ready' || phase === 'ended') && <NewDay best={best} onSee={() => location.reload()} />}
     </main>
   )

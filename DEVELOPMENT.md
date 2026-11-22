@@ -15,7 +15,7 @@ Sizes are relative effort, not dates.
 - [ ] Phase 4 · The star and the street — star, street and seven nights in `src/draw/`; production build at 100+ rings on a Mac: steady 120 fps, a lock redraws in 1.9 ms (`?bench`); real-phone check waits for the Vercel deploy
 - [x] Phase 5 · A playable run — tap, click, Space; Esc and tab switch pause; phone and desktop layouts; full runs checked in the browser at both sizes
 - [x] Phase 6 · Feel — sounds, music layers, vibration, lock / trim / widen / milestone / end motion and reduced motion (120 fps in the production build); played and approved with sound on. Not yet: rotor-mode bulb chase, the star rising at 100 (Phase 7 screen)
-- [x] Phase 7 · The other screens — Loading, Ready, first-visit How to play, Settings (sound, vibration, reduced motion, playtest log download), Tonight's journey, the star rising at 100, the sky past 100, Run ended with today's best, the new-day notice and a playtest log on the device; all checked in the browser (`?from=98` in dev starts a run 98 rings in). Offline waits for Phase 9 (v1 needs no network)
+- [x] Phase 7 · The other screens — Loading, Ready, first-visit How to play, Settings (sound, vibration, reduced motion, playtest log download), the star rising at 100, the sky past 100, Run ended with today's best, the new-day notice and a playtest log on the device; all checked in the browser (`?from=98` in dev starts a run 98 rings in). Offline waits for Phase 9 (v1 needs no network)
 - [ ] Phase 8 · Playtest and tune
 - [ ] Phase 9 · The daily online loop
 - [ ] Phase 10 · Launch polish
@@ -77,7 +77,7 @@ Sizes are relative effort, not dates.
 
 ## Phase 7 · The other screens *(medium)*
 
-- Loading, Ready, How to play, Settings, the milestone moments, the 100-ring star and past 100, Run ended, Tonight's journey.
+- Loading, Ready, How to play, Settings, the milestone moments, the 100-ring star and past 100, Run ended.
 - Offline and first-visit states.
 - Playtest logging, so we see where runs end.
 

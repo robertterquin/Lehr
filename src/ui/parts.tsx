@@ -1,6 +1,6 @@
 // The pieces of the run screen: streak stars, the width meter, the message after a lock and the pause button.
 import type { Engine } from '../game/engine.ts'
-import { lockFeedback, spinLabel } from '../game/feedback.ts'
+import { lockFeedback } from '../game/feedback.ts'
 import { RULES } from '../game/rules.ts'
 
 const STAR = 'M8 1L10 6H15L11 9.5L12.5 15L8 11.8L3.5 15L5 9.5L1 6H6Z'
@@ -9,37 +9,31 @@ const STAR = 'M8 1L10 6H15L11 9.5L12.5 15L8 11.8L3.5 15L5 9.5L1 6H6Z'
 export function Streak({ streak, size = 16 }: { streak: number; size?: number }) {
   const lit = streak > 0 && streak % RULES.widenEvery === 0 ? RULES.widenEvery : streak % RULES.widenEvery
   const label = streak === 0 ? 'No streak' : lit === RULES.widenEvery ? `${RULES.widenEvery} perfect · points widen` : `${streak} perfect in a row`
+  // The stars say it on screen; the label says it to screen readers.
   return (
-    <div className="streak">
-      <div className="streak-stars" aria-hidden="true">
-        {Array.from({ length: RULES.widenEvery }, (_, i) => (
-          <svg key={i} width={size} height={size} viewBox="0 0 16 16">
-            <path d={STAR} fill={i < lit ? '#ffd27a' : '#1d1838'} stroke={i < lit ? '#b8862a' : '#3a3160'} strokeWidth="1" />
-          </svg>
-        ))}
-      </div>
-      <span className="streak-label">{label}</span>
+    <div className="streak-stars" role="img" aria-label={label}>
+      {Array.from({ length: RULES.widenEvery }, (_, i) => (
+        <svg key={i} width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
+          <path d={STAR} fill={i < lit ? '#ffd27a' : '#1d1838'} stroke={i < lit ? '#b8862a' : '#3a3160'} strokeWidth="1" />
+        </svg>
+      ))}
     </div>
   )
 }
 
-/** Point width against the 8° minimum, with the spinning ring's speed and direction. */
+/** Point width against the 8° minimum (the red tick). */
 export function Meter({ engine }: { engine: Engine }) {
   const width = Math.max(0, engine.run.width)
   const danger = width < 15
   return (
     <div className={`meter${danger ? ' danger' : ''}`}>
-      <div className="meter-row">
-        <span>
-          Point width <strong>{Math.round(width)}°</strong>
-        </span>
-        <span>Spin {spinLabel(engine.ring.index)}</span>
-      </div>
+      <span className="meter-row">
+        Point width <strong>{Math.round(width)}°</strong>
+      </span>
       <div className="meter-track">
         <div className="meter-fill" style={{ width: `${(width / RULES.startWidth) * 100}%` }} />
         <div className="meter-min" style={{ left: `${(RULES.minWidth / RULES.startWidth) * 100}%` }} />
       </div>
-      <span className="meter-note">{danger ? 'Points are nearly too thin · lock perfect to widen them' : `Below ${RULES.minWidth}° the points can’t hold a ring`}</span>
     </div>
   )
 }
@@ -52,7 +46,6 @@ export function Callout({ engine }: { engine: Engine }) {
       {feedback && (
         <div key={engine.locks.length} className="callout-body">
           <span className={`callout-title ${feedback.tone}`}>{feedback.title}</span>
-          <span className="callout-note">{feedback.note}</span>
         </div>
       )}
     </div>
