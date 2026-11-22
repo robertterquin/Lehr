@@ -1,6 +1,6 @@
 # Parol — design reference
 
-Visual and journey design for Parol. Mockups: [mockups/](mockups/) (rendered from [remotion/](remotion/)). Rules, numbers and balance go in the game rules document once Parol replaces Lehr in this repo.
+Visual and journey design for Parol. Mockups: [mockups/](mockups/) (rendered from [remotion/](remotion/)). Rules, numbers and balance go in `GAME-RULES.md` (Phase 2 of [DEVELOPMENT.md](../DEVELOPMENT.md)).
 
 ## The star
 
