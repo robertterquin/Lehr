@@ -149,7 +149,7 @@ export const RunPrototype: React.FC = () => {
       )}
       {!ended && (
         <div style={{ position: 'absolute', left: 40, right: 40, top: 608 }}>
-          <WidthMeter width={width} danger={danger} spin={`${(speed / 115).toFixed(1)}× · ${active.direction === 1 ? 'clockwise' : 'counter-clockwise'}`} />
+          <WidthMeter width={width} rings={active.index} danger={danger} />
         </div>
       )}
       {t < RUN[0].startAt + 0.4 && (

@@ -133,13 +133,17 @@ export const Hud: React.FC<{ rings: number; streak: number; note?: string }> = (
 );
 
 /** Point width against the 8° minimum. */
-export const WidthMeter: React.FC<{ width: number; danger?: boolean; spin?: string }> = ({ width, danger = false, spin = '1.3× · clockwise' }) => (
+/** The spinning ring's speed and direction after `rings` locks: the speed curve and reversal from GAME-RULES.md. */
+export const spinLabel = (rings: number) =>
+  `${Math.min(2.5, 1 + 0.35 * Math.log(1 + rings / 2)).toFixed(1)}× · ${Math.floor(rings / 5) % 2 === 0 ? 'clockwise' : 'counter-clockwise'}`;
+
+export const WidthMeter: React.FC<{ width: number; rings: number; danger?: boolean }> = ({ width, rings, danger = false }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: C.muted }}>
       <span>
         Point width <strong style={{ color: danger ? C.coral : C.ink }}>{width}°</strong>
       </span>
-      <span>Spin {spin}</span>
+      <span>Spin {spinLabel(rings)}</span>
     </div>
     <div style={{ position: 'relative', height: 8, borderRadius: 4, background: '#241d44' }}>
       <div style={{ position: 'absolute', inset: 0, width: `${(width / 36) * 100}%`, borderRadius: 4, background: danger ? 'linear-gradient(90deg, #a8241e, #ff6a4a)' : 'linear-gradient(90deg, #d8342c, #f2b632)', boxShadow: danger ? '0 0 12px rgba(255,106,74,0.7)' : undefined }} />

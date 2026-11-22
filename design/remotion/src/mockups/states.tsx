@@ -154,7 +154,7 @@ export const S06ReducedMotion: React.FC = () => (
       <span style={{ fontSize: 13, lineHeight: 1.4, color: C.muted }}>Reduced motion: the ring turns in small steps and tells you how far it is</span>
     </div>
     <div style={{ position: 'absolute', left: 40, right: 40, top: 608 }}>
-      <WidthMeter width={27} />
+      <WidthMeter width={27} rings={7} />
     </div>
   </Screen>
 );
@@ -237,8 +237,8 @@ export const DS01DesignSystem: React.FC = () => (
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 360 }}>
           <span style={{ fontSize: 15, color: C.muted }}>Meters and streak</span>
-          <WidthMeter width={27} />
-          <WidthMeter width={11} danger spin="1.4× · counter-clockwise" />
+          <WidthMeter width={27} rings={7} />
+          <WidthMeter width={11} rings={10} danger />
           <StreakStars streak={3} size={22} />
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <Chip>New best today</Chip>

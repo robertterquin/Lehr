@@ -8,10 +8,10 @@ import {
 } from './phone';
 import { S01FirstTime, S02Offline, S03NameError, S04NewDay, S05EmptyBoard, S06ReducedMotion } from './states';
 
-type Milestone = { rings: number; stage: Stage; toast: string; title: string; note: string; spin: string };
+type Milestone = { rings: number; stage: Stage; toast: string; title: string; note: string };
 
 /** An in-run screen at a milestone; star width and streak come from replaying the run under the rules. */
-const MilestoneScreen: React.FC<Milestone> = ({ rings, stage, toast, title, note, spin }) => {
+const MilestoneScreen: React.FC<Milestone> = ({ rings, stage, toast, title, note }) => {
   const locks = expertRun(rings);
   const last = playLocks(locks)[rings - 1];
   return (
@@ -21,18 +21,18 @@ const MilestoneScreen: React.FC<Milestone> = ({ rings, stage, toast, title, note
         <Parol size={330} locks={locks} spin={12} />
       </StarStage>
       <Callout title={title} note={note} color={C.gold} />
-      <Meter width={last.width} spin={spin} />
+      <Meter width={last.width} rings={rings} />
       <TapHint />
     </RunScreen>
   );
 };
 
-export const P19Lights: React.FC = () => <MilestoneScreen rings={20} stage={2} toast="The street lights come on" title="Street lights" note="Next: the neighbours light their parols at 30" spin="1.6× · counter-clockwise" />;
-export const P20Carolers: React.FC = () => <MilestoneScreen rings={40} stage={4} toast="The carolers come down the street" title="Carolers" note="Next: the whole barangay lights up at 50" spin="1.8× · clockwise" />;
-export const P21Barangay: React.FC = () => <MilestoneScreen rings={50} stage={5} toast="A second halo · the barangay lights up" title="Halfway to the sky" note="Next: rotor mode at 60" spin="1.9× · counter-clockwise" />;
-export const P22Rotor: React.FC = () => <MilestoneScreen rings={60} stage={6} toast="Rotor mode: your rings start to dance" title="Rotor mode" note="Next: the lantern festival at 70" spin="2.0× · clockwise" />;
-export const P23Fireworks: React.FC = () => <MilestoneScreen rings={80} stage={8} toast="A third halo · fireworks over the town" title="Fireworks" note="Next: Simbang Gabi dawn at 90" spin="2.0× · counter-clockwise" />;
-export const P24Dawn: React.FC = () => <MilestoneScreen rings={90} stage={9} toast="Simbang Gabi dawn" title="Dawn is coming" note="10 more rings and your parol becomes a star" spin="2.0× · clockwise" />;
+export const P19Lights: React.FC = () => <MilestoneScreen rings={20} stage={2} toast="The street lights come on" title="Street lights" note="Next: the neighbours light their parols at 30" />;
+export const P20Carolers: React.FC = () => <MilestoneScreen rings={40} stage={4} toast="The carolers come down the street" title="Carolers" note="Next: the whole barangay lights up at 50" />;
+export const P21Barangay: React.FC = () => <MilestoneScreen rings={50} stage={5} toast="A second halo · the barangay lights up" title="Halfway to the sky" note="Next: rotor mode at 60" />;
+export const P22Rotor: React.FC = () => <MilestoneScreen rings={60} stage={6} toast="Rotor mode: your rings start to dance" title="Rotor mode" note="Next: the lantern festival at 70" />;
+export const P23Fireworks: React.FC = () => <MilestoneScreen rings={80} stage={8} toast="A third halo · fireworks over the town" title="Fireworks" note="Next: Simbang Gabi dawn at 90" />;
+export const P24Dawn: React.FC = () => <MilestoneScreen rings={90} stage={9} toast="Simbang Gabi dawn" title="Dawn is coming" note="10 more rings and your parol becomes a star" />;
 
 /** Past 100: the risen star keeps growing, and every 10 rings lights a star of the player's own constellation. */
 export const P25Constellation: React.FC = () => {
@@ -61,7 +61,7 @@ export const P25Constellation: React.FC = () => {
         </div>
       </div>
       <Callout title="Your constellation" note="Every 10 rings past 100 adds a star to your sky" color={C.gold} />
-      <Meter width={last.width} spin="2.0× · counter-clockwise" />
+      <Meter width={last.width} rings={130} />
       <TapHint />
     </RunScreen>
   );

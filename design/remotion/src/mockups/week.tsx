@@ -15,7 +15,7 @@ const NightRun: React.FC<{ night: Night }> = ({ night }) => (
       <Parol size={330} locks={expertRun(RINGS)} spin={12} palette={night.palette} />
     </StarStage>
     <Callout title={night.name} note={`${night.day} night · ${night.place}`} />
-    <Meter width={33} spin="1.8× · clockwise" />
+    <Meter width={33} rings={RINGS} />
   </div>
 );
 

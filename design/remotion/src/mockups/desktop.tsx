@@ -1,6 +1,6 @@
 import React from 'react';
 import { Parol } from '../ParolStar';
-import { Board, C, Card, GhostButton, Icon, IconButton, Label, PrimaryButton, SANS, SERIF, StatTile, Street, StreakStars, TODAY_ROWS, WeekStars, WidthMeter, Wordmark, type Stage } from './kit';
+import { Board, C, Card, GhostButton, Icon, IconButton, Label, PrimaryButton, SANS, SERIF, StatTile, Street, StreakStars, TODAY_ROWS, WeekStars, WidthMeter, Wordmark, spinLabel, type Stage } from './kit';
 
 const OPENING = [0, 0, 0, 4, 0, 0, -5];
 const SHORT_RUN = [0, 0, 3, 0, -4, 0, 6, 0, 0, -7, 5, 0];
@@ -83,7 +83,7 @@ export const D02Spinning: React.FC = () => (
         <StreakStars streak={1} size={22} />
         <span style={{ fontSize: 14, color: C.muted }}>1 perfect in a row · 5 widens the points</span>
       </div>
-      <WidthMeter width={27} />
+      <WidthMeter width={27} rings={7} />
     </div>
     <div style={{ position: 'absolute', left: 480, top: 96 }}>
       <Parol size={480} locks={OPENING} spin={16} />
@@ -91,12 +91,12 @@ export const D02Spinning: React.FC = () => (
     <div style={{ position: 'absolute', left: 1050, top: 230, width: 290, display: 'flex', flexDirection: 'column', gap: 26 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <span style={{ fontFamily: SERIF, fontSize: 36 }}>Line it up</span>
-        <span style={{ fontSize: 15, lineHeight: 1.55, color: C.muted }}>Lock when the points meet the gold dashes. Within 1.5° is perfect and keeps them 27° wide.</span>
+        <span style={{ fontSize: 15, lineHeight: 1.55, color: C.muted }}>Lock when the points meet the gold dashes. Within 2.5° is perfect and keeps them 27° wide.</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <Label>Spin</Label>
-        <span style={{ fontSize: 17 }}>1.3× · clockwise</span>
-        <span style={{ fontSize: 13, color: C.faint }}>Reverses every 4 rings</span>
+        <span style={{ fontSize: 17 }}>{spinLabel(7)}</span>
+        <span style={{ fontSize: 13, color: C.faint }}>Reverses every 5 rings</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <Kbd k="Space">or click to lock</Kbd>

@@ -54,7 +54,7 @@ export const Callout: React.FC<{ title: string; note?: string; color?: string; t
   </div>
 );
 
-export const Meter: React.FC<{ width: number; danger?: boolean; spin?: string }> = (props) => (
+export const Meter: React.FC<{ width: number; rings: number; danger?: boolean }> = (props) => (
   <div style={{ position: 'absolute', left: 40, right: 40, top: 608 }}>
     <WidthMeter {...props} />
   </div>
@@ -143,7 +143,7 @@ export const P03HowToPlay: React.FC = () => (
         <Step n={1} title="A ring spins in" text="Each new ring of the star turns around the centre.">
           <Parol size={66} compact locks={[0, 0]} spin={22} />
         </Step>
-        <Step n={2} title="Tap to lock it" text="Lock when its points meet the gold dashes. Within 1.5° is perfect.">
+        <Step n={2} title="Tap to lock it" text="Lock when its points meet the gold dashes. Within 2.5° is perfect.">
           <Parol size={66} compact locks={[0, 0, 0]} glowLast />
         </Step>
         <Step n={3} title="Off-angle gets trimmed" text="The overhang falls away and the points get thinner. Below 8° the run ends.">
@@ -164,7 +164,7 @@ export const P04Spinning: React.FC = () => (
       <Parol size={330} locks={OPENING} spin={16} />
     </StarStage>
     <Callout title="Line it up" note="Tap when the points meet the gold dashes" />
-    <Meter width={27} />
+    <Meter width={27} rings={7} />
     <TapHint />
   </RunScreen>
 );
@@ -174,8 +174,8 @@ export const P05Perfect: React.FC = () => (
     <StarStage>
       <Parol size={330} locks={[...OPENING, 0]} glowLast />
     </StarStage>
-    <Callout title="Perfect" note="Locked within 1.5° · the points stay 27°" color={C.gold} />
-    <Meter width={27} />
+    <Callout title="Perfect" note="Locked within 2.5° · the points stay 27°" color={C.gold} />
+    <Meter width={27} rings={8} />
     <TapHint />
   </RunScreen>
 );
@@ -186,7 +186,7 @@ export const P06PerfectFive: React.FC = () => (
       <Parol size={330} locks={[...OPENING, 0, 0, 0, 0, 0]} glowLast halo={1} />
     </StarStage>
     <Callout title="Perfect ×5" note="The points widen back to 33° · 10 rings earned a halo" color={C.gold} />
-    <Meter width={33} spin="1.5× · reverses next" />
+    <Meter width={33} rings={12} />
     <TapHint />
   </RunScreen>
 );
@@ -197,7 +197,7 @@ export const P07Trim: React.FC = () => (
       <Parol size={330} locks={[...OPENING, 9]} trimLast />
     </StarStage>
     <Callout title="9° off" note="The overhang is trimmed · the points are now 18°" color={C.coral} />
-    <Meter width={18} />
+    <Meter width={18} rings={8} />
     <TapHint />
   </RunScreen>
 );
@@ -209,7 +209,7 @@ export const P08Danger: React.FC = () => (
       <Parol size={330} locks={THIN} spin={-11} danger halo={1} />
     </StarStage>
     <Callout title="Careful" note="The points are 11° · one more 4° miss ends the run" color={C.coral} />
-    <Meter width={11} danger spin="1.4× · counter-clockwise" />
+    <Meter width={11} rings={10} danger />
     <TapHint />
   </RunScreen>
 );
@@ -226,7 +226,7 @@ export const P09Milestone: React.FC = () => (
       </div>
     </div>
     <Callout title="Keep going" note="At 40 the carolers come down the street" />
-    <Meter width={30} spin="1.9× · clockwise" />
+    <Meter width={30} rings={30} />
     <TapHint />
   </RunScreen>
 );
@@ -459,7 +459,7 @@ export const P16Festival: React.FC = () => (
       <Parol size={330} locks={FESTIVAL} spin={10} />
     </StarStage>
     <Callout title="Rotor mode" note="Rings dance like a giant lantern · fireworks at 80" color={C.gold} />
-    <Meter width={33} spin="2.0× · counter-clockwise" />
+    <Meter width={33} rings={70} />
     <TapHint />
   </RunScreen>
 );
