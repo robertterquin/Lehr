@@ -147,22 +147,22 @@ export function Glints({ size }: { size: number }) {
 /** 100 rings: the parol lifts off its wire and becomes the Star of Bethlehem; the run goes on after. */
 export function StarRises({ locks, palette, onKeepGoing }: { locks: number[]; palette: string[]; onKeepGoing: () => void }) {
   return (
-    <div className="overlay overlay-rise" role="dialog" aria-modal="true" aria-labelledby="rise-title" onPointerDown={(event) => event.stopPropagation()}>
-      <div className="rise">
-        <div className="rise-star">
-          <Glints size={240} />
-          <div className="rise-parol">
-            <Star size={150} locks={locks} palette={palette} />
-          </div>
+    <>
+      <div className="rise-star" aria-hidden="true">
+        <Glints size={240} />
+        <div className="rise-parol">
+          <Star size={150} locks={locks} palette={palette} />
         </div>
-        <span className="card-label gold">100 rings</span>
-        <h2 id="rise-title" className="rise-title">Your parol became a star</h2>
-        <p className="card-note">The Star of Bethlehem shines over the barangay.</p>
-        <button type="button" className="primary" autoFocus onClick={onKeepGoing}>
+      </div>
+      <section className="over now" role="dialog" aria-labelledby="rise-title" onPointerDown={(event) => event.stopPropagation()}>
+        <h2 id="rise-title" className="over-eyebrow">100 rings</h2>
+        <p className="rise-title">Your parol became a star</p>
+        <p className="over-reason">The Star of Bethlehem shines over the barangay.</p>
+        <button type="button" className="primary over-button" autoFocus onClick={onKeepGoing}>
           Keep going
         </button>
-      </div>
-    </div>
+      </section>
+    </>
   )
 }
 

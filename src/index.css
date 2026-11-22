@@ -235,7 +235,7 @@ body {
 
 /* The run-over, as in Afterlight: no card. The street dims, and the score floats near the bottom over a
    soft dark glow, with one button and a link. It fades and rises in after the star has settled (1 s). */
-.is-over .scenery {
+.is-dim .scenery {
   filter: saturate(0.8) brightness(0.68);
   transition: filter 0.8s ease-out;
 }
@@ -724,24 +724,29 @@ body {
 }
 
 /* 100 rings: the parol lifts off its wire (2.5 s) and its rays open. */
-.overlay-rise {
-  background: radial-gradient(80% 60% at 50% 30%, rgba(255, 210, 122, 0.18) 0%, rgba(10, 9, 24, 0.85) 70%);
-  backdrop-filter: none;
+/* Paused hides the star; at 100 the run's star gives way to the one rising above the street. */
+.is-paused .stage {
+  opacity: 0.15;
+  transition: opacity 0.2s ease-out;
 }
 
-.rise {
-  width: min(100%, 360px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  text-align: center;
+.is-risen .stage {
+  opacity: 0;
+}
+
+/* Pause and the 100-ring moment use the run-over's floating text, straight away rather than after 1 s. */
+.over.now {
+  animation: fade-in 0.3s ease-out both, rise 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .rise-star {
-  position: relative;
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 10%;
   width: 240px;
   height: 240px;
+  margin-left: -120px;
   animation: lift 2.5s ease-in-out both;
 }
 
@@ -768,12 +773,8 @@ body {
   from { opacity: 0; scale: 0.6; }
 }
 
-.card-label.gold {
-  color: var(--gold);
-}
-
 .rise-title {
-  margin: 0;
+  margin: 2px 0 0;
   font-family: var(--font-display);
   font-weight: 400;
   font-size: 34px;

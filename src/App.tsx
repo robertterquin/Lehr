@@ -328,7 +328,7 @@ export default function App() {
   const buttons = (
     <div className="buttons">
       {soundButton}
-      {inRun && phase !== 'ended' ? (
+      {phase === 'playing' ? (
         <IconButton label="Pause" onPress={() => pauseNow(performance.now())}>
           <PauseIcon />
         </IconButton>
@@ -349,12 +349,12 @@ export default function App() {
     </p>
   )
   const newBest = phase === 'ended' && run.rings > bestBefore && run.rings > 0
-  /** While a run is live the message and meter show; once it ends only the score does. */
-  const live = phase !== 'ended'
+  /** The message and meter show only while playing; paused, risen and ended show floating text instead. */
+  const live = phase === 'playing'
   const dateLabel = new Date(`${today}T00:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })
 
   return (
-    <main className={`game ${wide ? 'wide' : 'narrow'}${danger ? ' in-danger' : ''}${calm ? ' calm' : ''}${phase === 'ended' ? ' is-over' : ''}`} onPointerDown={(event) => event.button === 0 && press(event.timeStamp)}>
+    <main className={`game ${wide ? 'wide' : 'narrow'}${danger ? ' in-danger' : ''}${calm ? ' calm' : ''}${phase === 'ended' || phase === 'paused' || phase === 'risen' ? ` is-dim is-${phase}` : ''}`} onPointerDown={(event) => event.button === 0 && press(event.timeStamp)}>
       <Scenery stage={stage} tiles={wide ? 4 : 1} />
       {skyStars > 0 && (
         <div className="sky" aria-hidden="true">
@@ -419,14 +419,16 @@ export default function App() {
       )}
 
       {phase === 'paused' && (
-        <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="paused-title">
-          <div className="card">
-            <h2 id="paused-title" className="card-title">Paused</h2>
-            <button type="button" className="primary" autoFocus onPointerDown={(event) => event.stopPropagation()} onClick={() => resumeNow(performance.now())}>
-              Resume
-            </button>
-          </div>
-        </div>
+        <section className="over now" role="dialog" aria-labelledby="paused-title" onPointerDown={(event) => event.stopPropagation()}>
+          <h2 id="paused-title" className="over-eyebrow">Paused</h2>
+          <p className="over-score">
+            <strong>{run.rings}</strong>
+            <span>{run.rings === 1 ? 'ring' : 'rings'} so far</span>
+          </p>
+          <button type="button" className="primary over-button" autoFocus onClick={() => resumeNow(performance.now())}>
+            Resume
+          </button>
+        </section>
       )}
       {phase === 'risen' && <StarRises locks={engine.locks} palette={tonight.palette} onKeepGoing={() => resumeNow(performance.now())} />}
       {phase === 'ended' && (
