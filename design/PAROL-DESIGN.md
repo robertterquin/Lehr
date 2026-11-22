@@ -6,7 +6,7 @@ Visual and journey design for Parol. Mockups: [mockups/](mockups/) (rendered fro
 
 A traditional parol: concentric five-pointed rings of backlit paper on a bamboo frame (the Kapampangan parol is built from concentric layers), a **tambor** (drum) at the centre, two **buntot** tails of crepe paper ending in tassels, and halos with bulbs like Pampanga's giant lanterns. Every ring is the same star shape scaled up. The camera pulls back as the star grows, so any number of rings fits the screen.
 
-- A **perfect** lock (within 1.5°) keeps the points' width and lights bulbs on that ring's points.
+- A **perfect** lock (within 2.5°; every number is in [GAME-RULES.md](../GAME-RULES.md)) keeps the points' width and lights bulbs on that ring's points.
 - An **off-angle** lock trims the overhang, which falls away, and the points get thinner by the error.
 - **Five perfects in a row** widen the points back by 6° (never past the starting 36°).
 - Points below **8°** can't hold a ring: the run ends.

@@ -1,6 +1,6 @@
 # Parol — Development phases
 
-The plan for replacing Lehr with Parol and building Parol to launch. The design lives in [design/PAROL-DESIGN.md](design/PAROL-DESIGN.md) and on the [Parol Mockups canvas](https://claude.ai/artifact/SqEiH7UcVE4ntsC5gQPtBe); the rules will live in `GAME-RULES.md` (Phase 2). Each phase ends with a check before the next one starts.
+The plan for replacing Lehr with Parol and building Parol to launch. The design lives in [design/PAROL-DESIGN.md](design/PAROL-DESIGN.md) and on the [Parol Mockups canvas](https://claude.ai/artifact/SqEiH7UcVE4ntsC5gQPtBe); the rules in [GAME-RULES.md](GAME-RULES.md). Each phase ends with a check before the next one starts.
 
 Phases 0–8 are **v1**: the game played on the device, with no accounts or board. Phases 9–10 happen only if the v1 playtest passes.
 
@@ -10,7 +10,7 @@ Sizes are relative effort, not dates.
 
 - [x] Phase 0 · Keep the old game, rename everything — `lehr-prototype` tagged; repo, remote and folder are Parol (no Vercel project existed yet)
 - [ ] Phase 1 · Clear Lehr out — Lehr code gone, empty Parol screen builds and runs; Vercel deploy still to do
-- [ ] Phase 2 · The rules on paper
+- [x] Phase 2 · The rules on paper — rules in `src/game/rules.ts` and GAME-RULES.md; simulated medians 15 / 23 / 46 / 124 rings
 - [ ] Phase 3 · Game engine, no visuals
 - [ ] Phase 4 · The star and the street
 - [ ] Phase 5 · A playable run
@@ -37,15 +37,16 @@ Sizes are relative effort, not dates.
 
 ## Phase 2 · The rules on paper *(small)*
 
-- Write `GAME-RULES.md`: perfect within 1.5°, 36° starting points, 8° minimum, +6° for every 5 perfects in a row, the spin speed curve, reversing every 5 rings, the milestone ladder, the seven nights, the daily seed.
+- Write `GAME-RULES.md`: the perfect window, 36° starting points, 8° minimum, +6° for every 5 perfects in a row, the spin speed curve, reversing every 5 rings, the milestone ladder, the seven nights, the daily seed.
 - A balance simulation (`npm run sim`) that checks the target reach: casual ~15 rings, good ~60, great 100+.
 
 **Done when:** the simulation's results match the target table, and every number is written down.
 
 ## Phase 3 · Game engine, no visuals *(medium, the most important)*
 
-- One engine with every rule, driven by ticks (60 a second) so a server can replay runs later: daily seed (each ring's speed and direction), spin, lock, trim, widen, streak, run end.
-- Tests for each rule and its edges: exactly 1.5° off, exactly 8° wide, the widen cap at 36°.
+- One engine built on `src/game/rules.ts`, driven by ticks (60 a second) so a server can replay runs later: daily seed (each ring's speed and direction), spin-in, lock, trim, widen, streak, run end, pause.
+- Taps are timed to the millisecond and the lock error comes from the exact tap time, not the tick (one tick is nearly the whole perfect window at speed).
+- Tests for each rule and its edges: exactly 2.5° off, exactly 8° wide, the widen cap at 36°, a tap during spin-in.
 - The simulation runs on the real engine, so the two can never disagree.
 
 **Done when:** all tests pass, and the simulation reproduces the table in `GAME-RULES.md`.
