@@ -10,6 +10,38 @@ const SHORT_RUN = [0, 0, 3, 0, -4, 0, 6, 0, 0, -7, 5, 0];
 const THIN = [0, 3, 0, -6, 0, 7, 0, 0, -5, 4];
 const LONG_RUN = [0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, -4, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, -3, 0, 0, 0, 0];
 const TONIGHT = Array.from({ length: 12 }, () => 0);
+/** A long, skilled run: an occasional small miss, mostly perfect locks. */
+const expertRun = (rings: number) => Array.from({ length: rings }, (_, i) => (i % 9 === 4 ? 3 : i % 13 === 7 ? -2 : 0));
+const FESTIVAL = expertRun(70);
+const HUNDRED = expertRun(100);
+
+/** Light rays of a star that has risen into the sky. */
+const Glints: React.FC<{ size: number }> = ({ size }) => (
+  <svg width={size} height={size} viewBox="0 0 200 200" style={{ position: 'absolute', inset: 0 }}>
+    <defs>
+      <radialGradient id="glint-core">
+        <stop offset="0" stopColor="#fffaf0" stopOpacity="0.9" />
+        <stop offset="0.25" stopColor="#ffe7a8" stopOpacity="0.45" />
+        <stop offset="1" stopColor="#ffd27a" stopOpacity="0" />
+      </radialGradient>
+      <linearGradient id="glint-v" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#fffaf0" stopOpacity="0" />
+        <stop offset="0.5" stopColor="#fffaf0" stopOpacity="0.95" />
+        <stop offset="1" stopColor="#fffaf0" stopOpacity="0" />
+      </linearGradient>
+      <linearGradient id="glint-h" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stopColor="#fffaf0" stopOpacity="0" />
+        <stop offset="0.5" stopColor="#fffaf0" stopOpacity="0.95" />
+        <stop offset="1" stopColor="#fffaf0" stopOpacity="0" />
+      </linearGradient>
+    </defs>
+    <circle cx="100" cy="100" r="100" fill="url(#glint-core)" />
+    <rect x="98.5" y="0" width="3" height="200" fill="url(#glint-v)" />
+    <rect x="0" y="98.5" width="200" height="3" fill="url(#glint-h)" />
+    <rect x="99" y="30" width="2" height="140" fill="url(#glint-v)" transform="rotate(45 100 100)" />
+    <rect x="99" y="30" width="2" height="140" fill="url(#glint-v)" transform="rotate(-45 100 100)" />
+  </svg>
+);
 
 const StarStage: React.FC<{ top?: number; size?: number; children: React.ReactNode }> = ({ top = 84, size = 330, children }) => (
   <div style={{ position: 'absolute', left: (390 - size) / 2, top, width: size }}>{children}</div>
@@ -185,7 +217,7 @@ export const P08Danger: React.FC = () => (
 export const P09Milestone: React.FC = () => (
   <RunScreen stage={3} rings={30} streak={4}>
     <StarStage top={136}>
-      <Parol size={330} locks={LONG_RUN} halo={2} />
+      <Parol size={330} locks={LONG_RUN} />
     </StarStage>
     <div style={{ position: 'absolute', left: 30, right: 30, top: 88, display: 'flex', justifyContent: 'center' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', borderRadius: 18, background: 'rgba(20,15,48,0.9)', border: '1px solid rgba(255,210,122,0.5)' }}>
@@ -193,7 +225,7 @@ export const P09Milestone: React.FC = () => (
         <span style={{ fontSize: 13 }}>The neighbours light their parols</span>
       </div>
     </div>
-    <Callout title="Keep going" note="At 40 the street holds its lantern festival" />
+    <Callout title="Keep going" note="At 40 the carolers come down the street" />
     <Meter width={30} spin="1.9× · clockwise" />
     <TapHint />
   </RunScreen>
@@ -298,29 +330,54 @@ export const P12Board: React.FC = () => (
   </Screen>
 );
 
-/** The 1080×1350 share card, drawn at any width. */
-export const ShareCard: React.FC<{ width: number }> = ({ width }) => {
+/** The 1080×1350 share card, drawn at any width. A 100-ring run gets the gold card with the risen star. */
+export const ShareCard: React.FC<{ width: number; gold?: boolean }> = ({ width, gold = false }) => {
   const s = width / 432;
   return (
-    <div style={{ width, height: 540 * s, position: 'relative', overflow: 'hidden', borderRadius: 14 * s, background: 'radial-gradient(90% 60% at 50% 35%, #2e2158 0%, #120f2c 60%, #0a0918 100%)', color: C.ink, fontFamily: SANS }}>
+    <div
+      style={{
+        width,
+        height: 540 * s,
+        position: 'relative',
+        overflow: 'hidden',
+        borderRadius: 14 * s,
+        boxSizing: 'border-box',
+        border: gold ? `${4 * s}px solid ${C.gold}` : undefined,
+        background: gold
+          ? 'linear-gradient(180deg, #241a4e 0%, #3a2458 45%, #b8607a 78%, #f2a66a 100%)'
+          : 'radial-gradient(90% 60% at 50% 35%, #2e2158 0%, #120f2c 60%, #0a0918 100%)',
+        color: C.ink,
+        fontFamily: SANS,
+      }}
+    >
       <div style={{ position: 'absolute', inset: 0 }}>
         <svg width="100%" height="100%" viewBox="0 0 432 540" style={{ position: 'absolute', inset: 0 }}>
-          <path d="M0 40C140 76 292 76 432 40" stroke="#4a4166" strokeWidth="1.5" fill="none" />
-          <path d="M216 67V92" stroke="#4a4166" strokeWidth="1.5" />
+          {!gold && <path d="M0 40C140 76 292 76 432 40" stroke="#4a4166" strokeWidth="1.5" fill="none" />}
+          {!gold && <path d="M216 67V92" stroke="#4a4166" strokeWidth="1.5" />}
           <path d="M0 478L28 462L56 478V540H0ZM56 470L100 446L144 470V540H56ZM144 476L196 452L248 476V540H144ZM248 470L300 446L352 470V540H248ZM352 478L392 456L432 478V540H352Z" fill="#090713" />
         </svg>
       </div>
-      <div style={{ position: 'absolute', left: 116 * s, top: 82 * s }}>
-        <Parol size={200 * s} locks={SHORT_RUN} halo={1} />
-      </div>
+      {gold ? (
+        <div style={{ position: 'absolute', left: 96 * s, top: 54 * s, width: 240 * s, height: 240 * s }}>
+          <Glints size={240 * s} />
+          <div style={{ position: 'absolute', left: 50 * s, top: 46 * s }}>
+            <Parol size={140 * s} locks={HUNDRED} compact />
+          </div>
+        </div>
+      ) : (
+        <div style={{ position: 'absolute', left: 116 * s, top: 82 * s }}>
+          <Parol size={200 * s} locks={SHORT_RUN} />
+        </div>
+      )}
       <div style={{ position: 'absolute', left: 24 * s, right: 24 * s, top: 14 * s, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontFamily: SERIF, fontSize: 20 * s }}>Parol</span>
-        <span style={{ fontSize: 12 * s, color: C.muted }}>22 Nov 2026</span>
+        <span style={{ fontSize: 12 * s, color: gold ? C.ink : C.muted }}>22 Nov 2026</span>
       </div>
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 372 * s, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 * s }}>
-        <span style={{ fontFamily: SERIF, fontSize: 28 * s }}>12 rings lit</span>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: (gold ? 330 : 372) * s, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 * s }}>
+        {gold && <span style={{ fontSize: 12 * s, letterSpacing: '0.16em', textTransform: 'uppercase', color: C.gold, fontWeight: 700 }}>The star rose</span>}
+        <span style={{ fontFamily: SERIF, fontSize: (gold ? 34 : 28) * s }}>{gold ? '100 rings' : '12 rings lit'}</span>
         <span style={{ fontSize: 14 * s }}>
-          <span style={{ color: C.gold, fontWeight: 700 }}>7 perfect</span> · #14 today
+          <span style={{ color: C.gold, fontWeight: 700 }}>{gold ? '82 perfect' : '7 perfect'}</span> · {gold ? '#2 today' : '#14 today'}
         </span>
       </div>
       <span style={{ position: 'absolute', left: 0, right: 0, bottom: 14 * s, textAlign: 'center', fontSize: 12 * s, color: C.muted }}>[GAME URL]</span>
@@ -383,5 +440,62 @@ export const P14Settings: React.FC = () => (
         <span style={{ fontSize: 12, color: C.faint, textAlign: 'center' }}>Parol · a new star every night at 8:00 AM PH time</span>
       </Card>
     </Overlay>
+  </Screen>
+);
+
+const MilestoneToast: React.FC<{ rings: number; text: string; top?: number }> = ({ rings, text, top = 88 }) => (
+  <div style={{ position: 'absolute', left: 24, right: 24, top, display: 'flex', justifyContent: 'center' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', borderRadius: 18, background: 'rgba(20,15,48,0.9)', border: '1px solid rgba(255,210,122,0.5)' }}>
+      <span style={{ fontFamily: SERIF, fontSize: 18, color: C.gold, whiteSpace: 'nowrap' }}>{rings} rings</span>
+      <span style={{ fontSize: 13 }}>{text}</span>
+    </div>
+  </div>
+);
+
+export const P16Festival: React.FC = () => (
+  <RunScreen stage={7} rings={70} streak={2}>
+    <MilestoneToast rings={70} text="The lantern festival begins" />
+    <StarStage top={136}>
+      <Parol size={330} locks={FESTIVAL} spin={10} />
+    </StarStage>
+    <Callout title="Rotor mode" note="Rings dance like a giant lantern · fireworks at 80" color={C.gold} />
+    <Meter width={33} spin="2.0× · counter-clockwise" />
+    <TapHint />
+  </RunScreen>
+);
+
+export const P17StarRises: React.FC = () => (
+  <Screen stage={9}>
+    <Hud rings={100} streak={1} />
+    <svg width="390" height="844" viewBox="0 0 390 844" style={{ position: 'absolute', inset: 0 }}>
+      <defs>
+        <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fff1c2" stopOpacity="0.55" />
+          <stop offset="1" stopColor="#fff1c2" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d="M187 236L203 236L250 700L140 700Z" fill="url(#beam)" opacity="0.5" />
+      <path d="M0 520C120 552 270 552 390 520" stroke="#4a4166" strokeWidth="1.5" fill="none" />
+      <path d="M195 544V560" stroke="#4a4166" strokeWidth="1.5" />
+    </svg>
+    <div style={{ position: 'absolute', left: 75, top: 96, width: 240, height: 240 }}>
+      <Glints size={240} />
+      <div style={{ position: 'absolute', left: 50, top: 46 }}>
+        <Parol size={140} locks={HUNDRED} compact />
+      </div>
+    </div>
+    <div style={{ position: 'absolute', left: 24, right: 24, top: 360, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center' }}>
+      <Label color={C.gold}>100 rings</Label>
+      <span style={{ fontFamily: SERIF, fontSize: 34, lineHeight: 1.1 }}>Your parol became a star</span>
+      <span style={{ fontSize: 14, lineHeight: 1.45, color: C.ink }}>The Star of Bethlehem shines over the barangay.</span>
+    </div>
+    <div style={{ position: 'absolute', left: 24, right: 24, top: 510, display: 'flex', justifyContent: 'center', gap: 8 }}>
+      <span style={{ fontSize: 12, fontWeight: 600, padding: '5px 10px', borderRadius: 12, background: 'rgba(20,15,48,0.85)', color: C.gold, border: '1px solid rgba(255,210,122,0.5)' }}>Gold star on today’s streak</span>
+      <span style={{ fontSize: 12, fontWeight: 600, padding: '5px 10px', borderRadius: 12, background: 'rgba(20,15,48,0.85)', color: C.gold, border: '1px solid rgba(255,210,122,0.5)' }}>Gold share card</span>
+    </div>
+    <div style={{ position: 'absolute', left: 20, right: 20, bottom: 26, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <span style={{ fontSize: 13, color: C.ink, textAlign: 'center', padding: '6px 12px', borderRadius: 14, background: 'rgba(10,9,24,0.7)', alignSelf: 'center' }}>The run goes on · every 10 rings adds a star to your sky</span>
+      <PrimaryButton>Keep going</PrimaryButton>
+    </div>
   </Screen>
 );

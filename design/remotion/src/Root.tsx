@@ -5,10 +5,11 @@ import { DEMO_SECONDS, ParolDemo } from './ParolDemo';
 import { EndCard, FinaleScene, GameplayScene, TitleScene } from './scenes';
 import { D01Ready, D02Spinning, D03Results, D04Board } from './mockups/desktop';
 import {
-  P01Loading, P02Ready, P03HowToPlay, P04Spinning, P05Perfect, P06PerfectFive, P07Trim, P08Danger, P09Milestone, P10Paused, P11Results, P12Board, P13Share, P14Settings, ShareCard,
+  P01Loading, P02Ready, P03HowToPlay, P04Spinning, P05Perfect, P06PerfectFive, P07Trim, P08Danger, P09Milestone, P10Paused, P11Results, P12Board, P13Share, P14Settings, P16Festival, P17StarRises, ShareCard,
 } from './mockups/phone';
 
 const ShareCardFull: React.FC = () => <ShareCard width={1080} />;
+const GoldShareCardFull: React.FC = () => <ShareCard width={1080} gold />;
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -34,6 +35,9 @@ export const RemotionRoot: React.FC = () => {
         <Still id="P13-Share" component={P13Share} width={390} height={844} />
         <Still id="P14-Settings" component={P14Settings} width={390} height={844} />
         <Still id="P15-Share-card" component={ShareCardFull} width={1080} height={1350} />
+        <Still id="P16-Milestone-70" component={P16Festival} width={390} height={844} />
+        <Still id="P17-Star-rises-100" component={P17StarRises} width={390} height={844} />
+        <Still id="P18-Gold-share-card" component={GoldShareCardFull} width={1080} height={1350} />
       </Folder>
       <Folder name="Desktop">
         <Still id="D01-Ready" component={D01Ready} width={1440} height={900} />

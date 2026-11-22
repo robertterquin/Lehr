@@ -18,8 +18,31 @@ export const C = {
   night: 'radial-gradient(120% 70% at 50% 28%, #2a1e55 0%, #140f30 55%, #0a0918 100%)',
 };
 
-/** The journey: the street comes alive as the star grows. 0 quiet · 1 halo · 2 street lights · 3 neighbours' parols · 4 festival. */
-export type Stage = 0 | 1 | 2 | 3 | 4;
+/**
+ * The journey, one stage per 10 rings: 1 first halo · 2 street lights · 3 neighbours' parols · 4 carolers ·
+ * 5 the whole barangay · 6 rotor mode · 7 lantern festival · 8 fireworks · 9 Simbang Gabi dawn · 10 the star rises.
+ */
+export type Stage = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+export const stageFor = (rings: number) => Math.min(10, Math.floor(rings / 10)) as Stage;
+
+const Caroler: React.FC<{ x: number; tall: number; star?: boolean }> = ({ x, tall, star = false }) => {
+  const top = 836 - tall;
+  return (
+    <g>
+      <circle cx={x} cy={top + 4} r="4.2" fill="#05040c" />
+      <path d={`M${x - 5} ${top + 9}h10l3 ${tall - 9}h-16z`} fill="#05040c" />
+      {star ? (
+        <g>
+          <path d={`M${x + 6} ${top + 14}l10 -22`} stroke="#05040c" strokeWidth="1.4" />
+          <circle cx={x + 16} cy={top - 10} r="9" fill="#ffd27a" opacity="0.25" />
+          <path d={`M${x + 16} ${top - 16}l2 4.5h5l-4 3l1.6 5l-4.6 -3l-4.6 3l1.6 -5l-4 -3h5z`} fill="#ffd27a" />
+        </g>
+      ) : (
+        <circle cx={x + 9} cy={top + 16} r="4.5" fill="none" stroke="#c8995a" strokeWidth="1.2" />
+      )}
+    </g>
+  );
+};
 
 const SmallParol: React.FC<{ x: number; y: number; r: number; color: string; lit: boolean }> = ({ x, y, r, color, lit }) => {
   const pts = Array.from({ length: 10 }, (_, k) => {
@@ -45,14 +68,35 @@ export const Street: React.FC<{ stage?: Stage; width?: number | string; height?:
   const bulbColors = ['#f2b632', '#d8342c', '#2e9a5a', '#2f6fd0', '#f4ecd8', '#c43a8a'];
   return (
     <svg width={width} height={height} viewBox="0 0 390 844" preserveAspectRatio="xMidYMax slice" style={{ position: 'absolute', inset: 0 }}>
+      <defs>
+        <linearGradient id="dawn" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0.35" stopColor="#e8845a" stopOpacity="0" />
+          <stop offset="0.7" stopColor="#c8607a" stopOpacity="0.35" />
+          <stop offset="0.86" stopColor="#f2a66a" stopOpacity="0.6" />
+        </linearGradient>
+      </defs>
+      {/* Simbang Gabi dawn warms the sky from the horizon up */}
+      {stage >= 9 && <rect width="390" height="844" fill="url(#dawn)" />}
       {[[40, 110], [350, 80], [300, 190], [70, 250], [360, 320], [18, 380], [214, 150], [250, 130], [120, 170], [330, 420]].map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r={i % 3 === 0 ? 1.4 : 1} fill="#fff" opacity={0.35 + (i % 4) * 0.12} />
+        <circle key={i} cx={x} cy={y} r={i % 3 === 0 ? 1.4 : 1} fill="#fff" opacity={(0.35 + (i % 4) * 0.12) * (stage >= 9 ? 0.45 : 1)} />
       ))}
-      {moon && <path d="M30 430a14 14 0 1 0 10 23a11 11 0 1 1 -10 -23z" fill="#f4ecd8" opacity="0.8" />}
+      {/* The moon sets once Simbang Gabi's dawn comes up */}
+      {moon && stage < 9 && <path d="M30 430a14 14 0 1 0 10 23a11 11 0 1 1 -10 -23z" fill="#f4ecd8" opacity="0.8" />}
 
-      {stage >= 4 && (
+      {/* The whole barangay: far hills dotted with lit houses */}
+      {stage >= 5 && (
         <g>
-          {[[70, 560, '#f2b632'], [300, 520, '#d8342c'], [200, 470, '#2f6fd0']].map(([x, y, color], i) => (
+          <path d="M0 702Q50 668 110 680T230 668T390 676V710H0Z" fill="#110d27" />
+          {[[16, 690], [38, 684], [66, 680], [92, 683], [128, 679], [150, 676], [176, 672], [204, 670], [236, 669], [262, 672], [290, 676], [316, 677], [344, 676], [372, 677]].map(([x, y], i) => (
+            <circle key={i} cx={x} cy={y + 6} r="1.2" fill={['#ffc96b', '#ffd27a', '#ff9d8a'][i % 3]} opacity="0.9" />
+          ))}
+        </g>
+      )}
+
+      {/* Fireworks over the town */}
+      {stage >= 8 && (
+        <g>
+          {[[56, 300, '#f2b632'], [336, 240, '#d8342c'], [80, 150, '#2f6fd0']].map(([x, y, color], i) => (
             <g key={i}>
               {Array.from({ length: 12 }, (_, k) => {
                 const a = (k * 30 * Math.PI) / 180;
@@ -60,7 +104,13 @@ export const Street: React.FC<{ stage?: Stage; width?: number | string; height?:
               })}
             </g>
           ))}
-          {[[60, 660, 26, '#d8342c'], [330, 650, 30, '#2e9a5a'], [196, 640, 22, '#f2b632']].map(([x, y, r, color], i) => (
+        </g>
+      )}
+
+      {/* Lantern festival: giant lanterns rise in the plaza */}
+      {stage >= 7 && (
+        <g>
+          {[[66, 700, 15, '#d8342c'], [322, 698, 17, '#2e9a5a'], [196, 694, 13, '#f2b632']].map(([x, y, r, color], i) => (
             <g key={i}>
               <circle cx={Number(x)} cy={Number(y)} r={Number(r) * 1.9} fill={color as string} opacity="0.18" />
               <circle cx={Number(x)} cy={Number(y)} r={Number(r)} fill="none" stroke={color as string} strokeWidth="3" opacity="0.9" />
@@ -95,6 +145,16 @@ export const Street: React.FC<{ stage?: Stage; width?: number | string; height?:
       {[[92, 746, '#d8342c'], [174, 732, '#2e9a5a'], [252, 746, '#f2b632'], [330, 752, '#2f6fd0']].map(([x, y, color], i) => (
         <SmallParol key={i} x={Number(x)} y={Number(y)} r={8} color={color as string} lit={stage >= 3} />
       ))}
+
+      {/* Carolers with a star on a stick and tambourines */}
+      {stage >= 4 && (
+        <g>
+          <Caroler x={22} tall={26} star />
+          <Caroler x={52} tall={20} />
+          <Caroler x={334} tall={22} />
+          <Caroler x={356} tall={19} star />
+        </g>
+      )}
     </svg>
   );
 };

@@ -24,7 +24,8 @@ type Props = {
   trimLast?: boolean
   glowLast?: boolean
   light?: number
-  halo?: 0 | 1 | 2
+  /** Halos earned; defaults to the milestone count (10, 50 and 80 rings). */
+  halo?: number
   /** Unlit preview: paper not yet glowing. */
   dim?: boolean
   danger?: boolean
@@ -37,9 +38,14 @@ type Props = {
  * A parol: concentric five-pointed rings of backlit paper on a bamboo frame, a tambor (drum) at the
  * centre, two fringed tails (buntot) with tassels, and optional halos with bulbs like Pampanga lanterns.
  */
-export const Parol: React.FC<Props> = ({ size, locks, spin = null, trimLast = false, glowLast = false, light = 1, halo = 0, dim = false, danger = false, sway = 0, compact = false }) => {
+export const Parol: React.FC<Props> = ({ size, locks, spin = null, trimLast = false, glowLast = false, light = 1, halo: haloProp, dim = false, danger = false, sway = 0, compact = false }) => {
   const id = useId().replace(/:/g, '');
   const rings = playLocks(locks);
+  const count = locks.length;
+  // Milestones on the star itself: halos at 10/50/80, longer tails at 25/50/75, rotor mode from 60.
+  const halo = haloProp ?? (count >= 80 ? 3 : count >= 50 ? 2 : count >= 10 ? 1 : 0);
+  const tailScale = 1 + 0.25 * Math.min(3, Math.floor(count / 25));
+  const rotor = count >= 60 && !dim;
   const last = rings[rings.length - 1];
   const outerIndex = Math.max(0, rings.length - 1 + (spin !== null ? 1 : 0));
   const outer = radii(outerIndex).ro;
@@ -55,7 +61,13 @@ export const Parol: React.FC<Props> = ({ size, locks, spin = null, trimLast = fa
     const dir = side === 0 ? 1 : -1;
     const strand = (dx: number, len: number, wobble: number) =>
       `M${x + dx} ${y}C${x + dx + dir * (10 + sway)} ${y + len * 0.35} ${x + dx - dir * (wobble - sway)} ${y + len * 0.65} ${x + dx + dir * (4 + sway * 1.4)} ${y + len}`;
-    return { x, y, dir, strands: [strand(-3, 112, 10), strand(0, 120, 14), strand(3, 106, 9)], end: [x + dir * (4 + sway * 1.4), y + 120] as [number, number] };
+    return {
+      x,
+      y,
+      dir,
+      strands: [strand(-3, 112 * tailScale, 10), strand(0, 120 * tailScale, 14), strand(3, 106 * tailScale, 9)],
+      end: [x + dir * (4 + sway * 1.4), y + 120 * tailScale] as [number, number],
+    };
   });
 
   const ringFill = (index: number) => `url(#${id}-paper-${index % PALETTE.length})`;
@@ -149,17 +161,18 @@ export const Parol: React.FC<Props> = ({ size, locks, spin = null, trimLast = fa
         </g>
       ))}
 
-      {/* Bulbs on the points of perfect rings */}
+      {/* Bulbs on the points of perfect rings; in rotor mode every ring's bulbs chase around the star */}
       {!dim &&
         rings
-          .filter((ring) => ring.perfect)
+          .filter((ring) => rotor || ring.perfect)
           .map((ring) =>
             [0, 1, 2, 3, 4].map((k) => {
               const [bx, by] = tip(radii(ring.index).ro - 3, ring.rotation + k * 72 - 90);
+              const chase = rotor ? ((ring.index + k) % 3 === 0 ? 1 : 0.35) : 1;
               return (
                 <g key={`${ring.index}-${k}`}>
-                  <circle cx={bx} cy={by} r="4" fill="#ffe7a8" opacity={0.6 * glow} filter={`url(#${id}-bulb)`} />
-                  <circle cx={bx} cy={by} r="1.6" fill="#fffaf0" opacity={glow} />
+                  <circle cx={bx} cy={by} r="4" fill={rotor && (ring.index + k) % 3 === 0 ? '#fff1c2' : '#ffe7a8'} opacity={0.6 * glow * chase} filter={`url(#${id}-bulb)`} />
+                  <circle cx={bx} cy={by} r="1.6" fill="#fffaf0" opacity={glow * chase} />
                 </g>
               );
             }),
