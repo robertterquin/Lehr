@@ -64,13 +64,14 @@ export const startRun = (rules: Rules = RULES): Run => ({ rings: 0, perfects: 0,
 export const lock = (run: Run, error: number, rules: Rules = RULES): Run => {
   if (run.ended) return run
   const off = Math.abs(error)
-  // The epsilon keeps a lock computed as 1.5000000001° (float rounding) perfect.
+  // The epsilon keeps a lock computed as 2.5000000001° (float rounding) perfect.
   if (off <= rules.perfectWithin + 1e-9) {
     const streak = run.streak + 1
     const width = streak % rules.widenEvery === 0 ? Math.min(rules.startWidth, run.width + rules.widenBy) : run.width
     return { ...run, rings: run.rings + 1, perfects: run.perfects + 1, streak, width }
   }
   const width = run.width - off
-  if (width < rules.minWidth) return { ...run, width, streak: 0, ended: true }
+  // The same epsilon keeps points left at 7.9999999° (a lock timed in ms) holding, like exactly 8°.
+  if (width < rules.minWidth - 1e-9) return { ...run, width, streak: 0, ended: true }
   return { ...run, rings: run.rings + 1, width, streak: 0, rotation: run.rotation + error / 2 }
 }

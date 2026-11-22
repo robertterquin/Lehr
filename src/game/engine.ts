@@ -23,6 +23,8 @@ export type Engine = {
   paused: boolean
   /** The error of each lock that counted, in order: what the star is drawn from. */
   locks: number[]
+  /** The error of the lock that ended the run, once it has ended. */
+  endError?: number
   /** Every input received, in order: what the server replays. */
   inputs: Input[]
 }
@@ -72,7 +74,7 @@ export const tap = (engine: Engine, atMs: number, rules: Rules = RULES): Engine 
   if (engine.run.ended || engine.paused || atMs - engine.ring.startMs < rules.spinInMs) return logged
   const error = ringError(engine, atMs)
   const run = lock(engine.run, error, rules)
-  if (run.ended) return { ...logged, run }
+  if (run.ended) return { ...logged, run, endError: error }
   return { ...logged, run, locks: [...engine.locks, error], ring: ringAt(engine.seed, run.rings, atMs, rules) }
 }
 

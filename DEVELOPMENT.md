@@ -13,7 +13,7 @@ Sizes are relative effort, not dates.
 - [x] Phase 2 · The rules on paper — rules in `src/game/rules.ts` and GAME-RULES.md; simulated medians 15 / 23 / 46 / 124 rings
 - [x] Phase 3 · Game engine, no visuals — `src/game/engine.ts`; runs replay exactly from seed + inputs; the simulation plays on it
 - [ ] Phase 4 · The star and the street — star, street and seven nights in `src/draw/`; production build at 100+ rings on a Mac: steady 120 fps, a lock redraws in 1.9 ms (`?bench`); real-phone check waits for the Vercel deploy
-- [ ] Phase 5 · A playable run
+- [x] Phase 5 · A playable run — tap, click, Space; Esc and tab switch pause; phone and desktop layouts; full runs checked in the browser at both sizes
 - [ ] Phase 6 · Feel
 - [ ] Phase 7 · The other screens
 - [ ] Phase 8 · Playtest and tune
