@@ -1,7 +1,7 @@
 import React from 'react';
 import { Parol } from '../ParolStar';
 import { Board, C, Card, GhostButton, Icon, IconButton, Label, Overlay, PrimaryButton, SANS, SERIF, Screen, StatTile, StreakStars, WidthMeter, Wordmark } from './kit';
-import { SHORT_RUN, TONIGHT, Wire } from './phone';
+import { SHORT_RUN, TONIGHT } from './phone';
 
 const Chip: React.FC<{ children: React.ReactNode; tone?: 'gold' | 'coral' | 'plain' }> = ({ children, tone = 'gold' }) => {
   const color = tone === 'gold' ? C.gold : tone === 'coral' ? C.coral : C.ink;
@@ -42,9 +42,8 @@ export const S01FirstTime: React.FC = () => (
 /** No connection: the run still counts on this phone and uploads later. */
 export const S02Offline: React.FC = () => (
   <Screen stage={1}>
-    <Wire />
-    <div style={{ position: 'absolute', left: 90, top: 74 }}>
-      <Parol size={210} locks={SHORT_RUN} />
+    <div style={{ position: 'absolute', left: 105, top: 115 }}>
+      <Parol size={180} locks={SHORT_RUN} />
     </div>
     <div style={{ position: 'absolute', left: 20, right: 20, top: 16, display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 14, background: 'rgba(40,22,30,0.95)', border: '1px solid rgba(255,157,138,0.55)' }}>
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke={C.coral} strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
@@ -150,9 +149,9 @@ export const S06ReducedMotion: React.FC = () => (
     <div style={{ position: 'absolute', left: 30, top: 84 }}>
       <Parol size={330} locks={[0, 0, 0, 4, 0, 0, -5]} spin={10} light={0.6} />
     </div>
-    <div style={{ position: 'absolute', left: 20, right: 20, top: 538, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center' }}>
-      <span style={{ fontFamily: SERIF, fontSize: 30 }}>10° to go</span>
-      <span style={{ fontSize: 13, color: C.muted }}>Reduced motion: the ring turns in small steps and tells you how far it is</span>
+    <div style={{ position: 'absolute', left: 20, right: 20, top: 516, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center' }}>
+      <span style={{ fontFamily: SERIF, fontSize: 30, lineHeight: 1.1 }}>10° to go</span>
+      <span style={{ fontSize: 13, lineHeight: 1.4, color: C.muted }}>Reduced motion: the ring turns in small steps and tells you how far it is</span>
     </div>
     <div style={{ position: 'absolute', left: 40, right: 40, top: 608 }}>
       <WidthMeter width={27} />

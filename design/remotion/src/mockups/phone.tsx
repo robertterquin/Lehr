@@ -75,7 +75,7 @@ export const RunScreen: React.FC<{ stage?: Stage; rings: number; streak: number;
 
 export const P01Loading: React.FC = () => (
   <Screen>
-    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, paddingBottom: 120 }}>
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24, paddingBottom: 120 }}>
       <Parol size={180} locks={[0, 0, 0, 0]} light={0.5} />
       <Wordmark size={54} />
       <span style={{ fontSize: 14, color: C.muted }}>Lighting tonight’s star…</span>
@@ -102,11 +102,11 @@ export const P02Ready: React.FC = () => (
     <StarStage top={96} size={270}>
       <Parol size={270} locks={TONIGHT} dim />
     </StarStage>
-    <div style={{ position: 'absolute', left: 24, right: 24, top: 476, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center' }}>
-      <span style={{ fontFamily: SERIF, fontSize: 30 }}>Tonight’s star</span>
+    <div style={{ position: 'absolute', left: 24, right: 24, top: 476, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center' }}>
+      <span style={{ fontFamily: SERIF, fontSize: 30, lineHeight: 1.15 }}>Tonight’s star</span>
       <span style={{ fontSize: 14, lineHeight: 1.45, color: C.muted }}>Lock each spinning ring onto the one inside it. Everyone builds the same star today.</span>
     </div>
-    <div style={{ position: 'absolute', left: 20, right: 20, top: 572, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+    <div style={{ position: 'absolute', left: 20, right: 20, top: 584, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
       <WeekStars lit={[false, false, true, true, true, true, false]} today={6} />
       <span style={{ fontSize: 13 }}>4-day streak · light today to make it 5</span>
     </div>
@@ -265,7 +265,7 @@ export const P11Results: React.FC = () => (
       <span style={{ fontFamily: SERIF, fontSize: 30, lineHeight: 1.1 }}>The points got too thin</span>
       <span style={{ fontSize: 13, color: C.muted }}>Ring 13 locked 7° off, leaving 4° points (8° needed)</span>
     </div>
-    <div style={{ position: 'absolute', left: 20, right: 20, top: 480, display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
+    <div style={{ position: 'absolute', left: 20, right: 20, top: 474, display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
       <StatTile value="12" label="rings" />
       <StatTile value="7" label="perfect" color={C.gold} />
       <StatTile value="#14" label="today" />
@@ -317,7 +317,7 @@ export const P12Board: React.FC = () => (
         ]}
       />
     </div>
-    <div style={{ position: 'absolute', left: 20, right: 20, bottom: 26 }}>
+    <div style={{ position: 'absolute', left: 20, right: 20, bottom: 26, display: 'flex' }}>
       <Card>
         <Label>Your name on the board</Label>
         <label style={{ display: 'flex', alignItems: 'center', gap: 10, height: 48, padding: '0 14px', borderRadius: 12, background: '#15112f', border: `1px solid ${C.line}`, fontSize: 15 }}>

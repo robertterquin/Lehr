@@ -1,10 +1,11 @@
 // Renders every Parol mockup to a static Design-canvas artboard (.dc.html), so the canvas matches the
 // repo's renders exactly. Run: node canvas/build.mjs  → canvas/out/project/*.dc.html + canvas.json
 import React from 'react';
+// @ts-expect-error @types/react-dom is not installed; esbuild bundles it fine
 import { renderToStaticMarkup } from 'react-dom/server';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { Parol } from '../src/ParolStar';
-import { C, SANS, SERIF, Label } from '../src/mockups/kit';
+import { C, SANS, Label } from '../src/mockups/kit';
 import * as phone from '../src/mockups/phone';
 import * as more from '../src/mockups/more';
 import * as states from '../src/mockups/states';
