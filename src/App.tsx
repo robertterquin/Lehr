@@ -1,11 +1,13 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { getManilaDate, seedForDate, weekdayIndex } from './game/daily.ts'
 import { createEngine, pause, resume, ringOffset, tap, type Engine } from './game/engine.ts'
-import { endNote } from './game/feedback.ts'
+import { endNote, milestoneText } from './game/feedback.ts'
+import { RULES } from './game/rules.ts'
 import { NIGHTS, night as nightById, type NightId, type Night } from './draw/nights.tsx'
 import { Star } from './draw/star.tsx'
 import type { Stage } from './draw/street.tsx'
-import { Callout, IconButton, Meter, PauseIcon, Streak } from './ui/parts.tsx'
+import { SOUNDS, buzz, isMuted, play, setMusic, setMuted, stopMusic, unlockAudio } from './sound/audio.ts'
+import { Callout, IconButton, Meter, PauseIcon, SoundIcon, Streak } from './ui/parts.tsx'
 
 const params = new URLSearchParams(location.search)
 const today = getManilaDate()
@@ -18,6 +20,8 @@ const BENCH: number[] | null = params.has('bench') ? ((window as unknown as { lo
 type Phase = 'ready' | 'playing' | 'paused' | 'ended'
 
 const WIDE = '(min-width: 960px) and (min-height: 600px)'
+const calm = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const DANGER_BELOW = 15
 
 /** Window size, kept current: picks the layout and the star's size. */
 function useViewport() {
@@ -31,30 +35,49 @@ function useViewport() {
   return viewport
 }
 
-// The scene is a big static drawing: it redraws only when the milestone stage changes, never on a lock.
-// Wide screens line up four copies of the phone scene, with one moon.
-const Scenery = memo(function Scenery({ stage, tiles }: { stage: Stage; tiles: number }) {
+const SceneTiles = memo(function SceneTiles({ stage, tiles }: { stage: Stage; tiles: number }) {
+  return Array.from({ length: tiles }, (_, i) => (
+    <div key={i} className="scenery-tile">
+      <tonight.Scene stage={stage} moon={i === tiles - 1} />
+    </div>
+  ))
+})
+
+/**
+ * The night scene behind the run. Wide screens line up four copies of the phone scene, with one moon.
+ * At a milestone the new scene flickers on over the old one, left to right, then the old one goes.
+ */
+function Scenery({ stage, tiles }: { stage: Stage; tiles: number }) {
+  const [shown, setShown] = useState<Stage[]>([stage])
+  if (shown[shown.length - 1] !== stage) setShown([shown[shown.length - 1], stage])
+  useEffect(() => {
+    if (shown.length < 2) return
+    const done = window.setTimeout(() => setShown([stage]), 1000)
+    return () => window.clearTimeout(done)
+  }, [shown, stage])
   return (
     <div className="scenery" aria-hidden="true">
-      {Array.from({ length: tiles }, (_, i) => (
-        <div key={i} className="scenery-tile">
-          <tonight.Scene stage={stage} moon={i === tiles - 1} />
+      {shown.map((s, i) => (
+        <div key={s} className={`scenery-layer${i > 0 ? ' scene-in' : ''}`}>
+          <SceneTiles stage={s} tiles={tiles} />
         </div>
       ))}
     </div>
   )
-})
+}
 
 export default function App() {
   const { width, height, wide } = useViewport()
   const [phase, setPhase] = useState<Phase>('ready')
   const [engine, setEngine] = useState<Engine>(() => createEngine(seed))
+  const [muted, setMutedState] = useState(isMuted)
   const engineRef = useRef(engine)
   const phaseRef = useRef(phase)
   phaseRef.current = phase
   /** performance.now() at the start of the run: run time is milliseconds since then. */
   const baseRef = useRef(0)
   const spinRef = useRef<SVGSVGElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
 
   const commit = (next: Engine) => {
     engineRef.current = next
@@ -65,34 +88,85 @@ export default function App() {
     const inputs = engineRef.current.inputs
     return Math.max(inputs.length ? inputs[inputs.length - 1].atMs : 0, stamp - baseRef.current)
   }
+  /** Moves the star for a moment, on the GPU; skipped when the system asks for less motion. */
+  const nudge = (frames: Keyframe[], duration: number) => {
+    if (!calm()) stageRef.current?.animate(frames, { duration, easing: 'ease-out' })
+  }
+  /** The whoosh (and, when the points are thin, the heartbeat) as a ring spins in, `delay` seconds from now. */
+  const ringIn = (next: Engine, delay = 0) => {
+    play(SOUNDS.ringIn, delay)
+    if (next.run.width < DANGER_BELOW) play(SOUNDS.danger, delay + 0.05)
+  }
 
   const start = useCallback((stamp: number) => {
+    unlockAudio()
     baseRef.current = stamp
-    commit(createEngine(seed))
+    const next = createEngine(seed)
+    commit(next)
     setPhase('playing')
+    ringIn(next)
   }, [])
 
   const press = useCallback((stamp: number) => {
     if (phaseRef.current === 'ready') return start(stamp)
     if (phaseRef.current !== 'playing') return
     const started = performance.now()
-    const next = tap(engineRef.current, runTime(stamp))
+    const before = engineRef.current
+    const next = tap(before, runTime(stamp))
+    if (next === before || next.run === before.run) return commit(next)
     commit(next)
-    if (next.run.ended) setPhase('ended')
     if (BENCH) requestAnimationFrame(() => BENCH.push(performance.now() - started))
+
+    if (next.run.ended) {
+      play(SOUNDS.trim)
+      play(SOUNDS.end, 0.35)
+      buzz(220)
+      stopMusic()
+      setPhase('ended')
+      return
+    }
+    const { rings, streak, perfects } = next.run
+    if (perfects > before.run.perfects) {
+      play(SOUNDS.perfect[(streak - 1) % SOUNDS.perfect.length])
+      if (streak % RULES.widenEvery === 0) {
+        play(SOUNDS.widen, 0.08)
+        buzz([12, 40, 12])
+        nudge([{ scale: 1 }, { scale: 1.05, offset: 0.35 }, { scale: 1 }], 350)
+      } else buzz(8)
+    } else {
+      play(SOUNDS.trim)
+      buzz(16)
+      nudge([{ translate: '0 0' }, { translate: '-2px 0' }, { translate: '2px 0' }, { translate: '-1px 0' }, { translate: '0 0' }], 250)
+    }
+    const milestone = rings % RULES.milestoneEvery === 0
+    if (milestone) play(rings === 100 ? SOUNDS.starRises : SOUNDS.milestone, 0.2)
+    setMusic(rings)
+    ringIn(next, milestone ? RULES.milestoneBreakMs / 1000 : 0)
   }, [start])
 
   const pauseNow = useCallback((stamp: number) => {
     if (phaseRef.current !== 'playing') return
     commit(pause(engineRef.current, runTime(stamp)))
+    stopMusic()
     setPhase('paused')
   }, [])
 
   const resumeNow = useCallback((stamp: number) => {
     if (phaseRef.current !== 'paused') return
-    commit(resume(engineRef.current, runTime(stamp)))
+    unlockAudio()
+    const next = resume(engineRef.current, runTime(stamp))
+    commit(next)
+    setMusic(next.run.rings)
+    ringIn(next)
     setPhase('playing')
   }, [])
+
+  const toggleSound = () => {
+    unlockAudio()
+    setMuted(!muted)
+    setMutedState(!muted)
+    if (muted && phaseRef.current === 'playing') setMusic(engineRef.current.run.rings)
+  }
 
   // Keyboard: Space or Enter locks (key repeat ignored), Esc pauses and resumes.
   useEffect(() => {
@@ -136,11 +210,21 @@ export default function App() {
   const stage = Math.min(10, Math.floor(run.rings / 10)) as Stage
   const playing = phase === 'playing'
   const starSize = Math.round(wide ? Math.min(520, height - 260) : Math.max(220, Math.min(330, width - 60, height - 440)))
-  const danger = phase !== 'ready' && !run.ended && run.width < 15
+  const danger = phase !== 'ready' && !run.ended && run.width < DANGER_BELOW
+  const milestone = phase !== 'ready' && !run.ended ? milestoneText(run.rings) : null
 
   const star = (
-    <div className="stage">
-      <Star size={starSize} locks={engine.locks} spinning={phase === 'playing' || phase === 'paused'} spinRef={spinRef} palette={tonight.palette} dim={phase === 'ready'} danger={danger} />
+    <div className={`stage${phase === 'ended' ? ' stage-ended' : ''}`} ref={stageRef}>
+      <Star
+        size={starSize}
+        locks={engine.locks}
+        spinning={phase === 'playing' || phase === 'paused'}
+        spinRef={spinRef}
+        palette={tonight.palette}
+        dim={phase === 'ready'}
+        danger={danger}
+        failed={phase === 'ended' ? engine.endError : undefined}
+      />
     </div>
   )
   const rings = (
@@ -148,18 +232,31 @@ export default function App() {
       <span className="rings-label">Rings</span> <span className="rings-number">{run.rings}</span>
     </p>
   )
-  const pauseButton = (
-    <IconButton label="Pause" onPress={() => pauseNow(performance.now())}>
-      <PauseIcon />
-    </IconButton>
+  const buttons = (
+    <div className="buttons">
+      <IconButton label="Sound" pressed={!muted} onPress={toggleSound}>
+        <SoundIcon off={muted} />
+      </IconButton>
+      {phase !== 'ready' && (
+        <IconButton label="Pause" onPress={() => pauseNow(performance.now())}>
+          <PauseIcon />
+        </IconButton>
+      )}
+    </div>
   )
   const hint = playing && run.rings === 0 && <p className="hint">{wide ? 'Press Space or click' : 'Tap'} when the points meet the gold dashes</p>
+  const toast = milestone && (
+    <p key={run.rings} className="toast" role="status">
+      <span className="toast-rings">{run.rings} rings</span> {milestone}
+    </p>
+  )
 
   return (
     <main className={`game ${wide ? 'wide' : 'narrow'}${danger ? ' in-danger' : ''}`} onPointerDown={(event) => event.button === 0 && press(event.timeStamp)}>
       <Scenery stage={stage} tiles={wide ? 4 : 1} />
       {phase === 'ready' ? (
         <div className="ready">
+          <header className="ready-bar">{buttons}</header>
           <p className="date">
             {tonight.araw} · {tonight.name}
           </p>
@@ -172,7 +269,7 @@ export default function App() {
         <div className="desk">
           <header className="desk-bar">
             <span className="wordmark-small">Parol</span>
-            {pauseButton}
+            {buttons}
           </header>
           <aside className="desk-side">
             {rings}
@@ -184,14 +281,16 @@ export default function App() {
             <Callout engine={engine} />
             {hint}
           </aside>
+          {toast}
         </div>
       ) : (
         <div className="phone">
           <header className="hud">
             {rings}
             <Streak streak={run.streak} />
-            {pauseButton}
+            {buttons}
           </header>
+          {toast}
           {star}
           <Callout engine={engine} />
           <Meter engine={engine} />
@@ -211,7 +310,7 @@ export default function App() {
         </div>
       )}
       {phase === 'ended' && (
-        <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="ended-title">
+        <div className="overlay overlay-ended" role="dialog" aria-modal="true" aria-labelledby="ended-title">
           <div className="card">
             <span className="card-label">Run ended</span>
             <h2 id="ended-title" className="card-title">The points got too thin</h2>

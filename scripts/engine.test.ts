@@ -45,6 +45,14 @@ test('each lock starts the next ring at that moment, with its own speed; the spi
   assert.equal(play([0, 0, 0, 0]).ring.direction, 1)
 })
 
+test('after every 10th ring the next waits 1.5 s, and taps in that wait are ignored', () => {
+  const ten = play([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+  const lockedAt = ten.inputs[ten.inputs.length - 1].atMs
+  assert.equal(ten.ring.startMs, lockedAt + RULES.milestoneBreakMs)
+  assert.equal(tap(ten, lockedAt + 1000).run.rings, 10)
+  assert.equal(play([0, 0, 0, 0, 0, 0, 0, 0, 0]).ring.startMs, play([0, 0, 0, 0, 0, 0, 0, 0, 0]).inputs[8].atMs)
+})
+
 test('five perfects widen, an off-angle lock turns the star, and the run ends below 8°', () => {
   assert.ok(Math.abs(play([9, 0, 0, 0, 0, 0]).run.width - 33) < 1e-9)
   assert.ok(Math.abs(play([8]).run.rotation - 4) < 1e-9)

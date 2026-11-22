@@ -59,10 +59,10 @@ export function Callout({ engine }: { engine: Engine }) {
   )
 }
 
-export function IconButton({ label, onPress, children }: { label: string; onPress: () => void; children: React.ReactNode }) {
+export function IconButton({ label, onPress, pressed, children }: { label: string; onPress: () => void; pressed?: boolean; children: React.ReactNode }) {
   return (
     // Pointer-down on a button must not also lock a ring.
-    <button type="button" className="icon-button" aria-label={label} onPointerDown={(event) => event.stopPropagation()} onClick={onPress}>
+    <button type="button" className="icon-button" aria-label={label} aria-pressed={pressed} onPointerDown={(event) => event.stopPropagation()} onClick={onPress}>
       {children}
     </button>
   )
@@ -71,5 +71,12 @@ export function IconButton({ label, onPress, children }: { label: string; onPres
 export const PauseIcon = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
     <path d="M6 3v12M12 3v12" />
+  </svg>
+)
+
+export const SoundIcon = ({ off }: { off: boolean }) => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M3 8v4h3l4 3V5L6 8Z" />
+    {off ? <path d="M13.5 8l4 4M17.5 8l-4 4" /> : <path d="M13.5 7.5a3.5 3.5 0 0 1 0 5M15.5 5a7 7 0 0 1 0 10" />}
   </svg>
 )

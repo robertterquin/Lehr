@@ -1,5 +1,6 @@
 import { memo, useId, type Ref } from 'react'
-import { CENTER, PALETTE, drawnRings, polar, radii, starPath } from './geometry.ts'
+import { RULES } from '../game/rules.ts'
+import { CENTER, PALETTE, drawnRings, polar, radii, sliverPath, starPath } from './geometry.ts'
 
 const BAMBOO = '#5b3a1c'
 const BAMBOO_SHEEN = '#c8995a'
@@ -47,6 +48,8 @@ type Props = {
   dim?: boolean
   /** The points are nearly too thin: the glow turns red. */
   danger?: boolean
+  /** The error of the lock that ended the run: its overhang falls away. */
+  failed?: number
 }
 
 /**
@@ -55,7 +58,7 @@ type Props = {
  * The locked star only redraws when a ring locks; the spinning ring is a separate layer the browser turns
  * on the GPU, so spinning costs no redraw.
  */
-export const Star = memo(function Star({ size, locks, spinning = false, spinRef, palette = PALETTE, dim = false, danger = false }: Props) {
+export const Star = memo(function Star({ size, locks, spinning = false, spinRef, palette = PALETTE, dim = false, danger = false, failed }: Props) {
   const id = useId().replace(/:/g, '')
   const rings = drawnRings(locks)
   const count = locks.length
@@ -93,6 +96,40 @@ export const Star = memo(function Star({ size, locks, spinning = false, spinRef,
 
   const lit = dim ? [] : rings.filter((ring) => rotor || ring.perfect)
 
+  // The newest lock's effect, on a small layer of its own: animating it never redraws the star.
+  // A perfect lock flashes gold; an off-angle lock (or the one that ended the run) drops its overhang.
+  const layer = { width: size, height, viewBox: '0 0 300 420', 'aria-hidden': true as const }
+  const newest = rings[count - 1]
+  const before = rings[count - 2]
+  const drop = (index: number, w: number, turn: number, error: number) => (
+    <svg key={`drop-${count}-${failed ?? ''}`} className="lock-drop" {...layer}>
+      <g transform={camera}>
+        <path d={sliverPath(index, w, turn, error)} fill={palette[index % palette.length]} stroke={BAMBOO} strokeWidth="1.2" vectorEffect="non-scaling-stroke" />
+      </g>
+    </svg>
+  )
+  const effect = dim
+    ? null
+    : failed !== undefined
+      ? drop(count, width, rotation, failed)
+      : newest?.perfect
+        ? (
+            <svg key={`glow-${count}`} className="lock-glow" {...layer}>
+              <defs>
+                <filter id={`${id}-glow`} x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="4" />
+                </filter>
+              </defs>
+              <g transform={camera}>
+                <path d={starPath(newest.index, newest.width, newest.rotation)} fill="none" stroke="#ffe7a8" strokeWidth="6" filter={`url(#${id}-glow)`} vectorEffect="non-scaling-stroke" />
+                <path d={starPath(newest.index, newest.width, newest.rotation)} fill="none" stroke="#fff6dc" strokeWidth="1.6" vectorEffect="non-scaling-stroke" />
+              </g>
+            </svg>
+          )
+        : newest && drop(newest.index, before?.width ?? RULES.startWidth, before?.rotation ?? 0, locks[count - 1])
+  // After a milestone the next ring waits before it spins in.
+  const spinDelay = count > 0 && count % RULES.milestoneEvery === 0 ? RULES.milestoneBreakMs : 0
+
   const paper = (
     <defs>
       {palette.map((color, i) => (
@@ -112,11 +149,13 @@ export const Star = memo(function Star({ size, locks, spinning = false, spinRef,
         // The spinning ring, behind the locked rings so only its rim shows outside them: bamboo spokes, translucent paper and light streaks behind each tip. It turns about the
         // star's centre (150, 150 of the 300×420 box), and the camera's scale about that centre doesn't change that.
         <svg
+          key={count}
           ref={spinRef}
+          className="spin-in"
           width={size}
           height={height}
           viewBox="0 0 300 420"
-          style={{ position: 'absolute', inset: 0, overflow: 'visible', transformOrigin: '50% 35.7143%', willChange: 'transform' }}
+          style={{ position: 'absolute', inset: 0, overflow: 'visible', transformOrigin: '50% 35.7143%', willChange: 'transform', animationDelay: `${spinDelay}ms` }}
           aria-hidden="true"
         >
           {paper}
@@ -213,6 +252,7 @@ export const Star = memo(function Star({ size, locks, spinning = false, spinRef,
           })}
         </g>
       </svg>
+      {effect}
     </div>
   )
 })

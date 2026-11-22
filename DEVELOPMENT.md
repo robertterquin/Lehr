@@ -14,7 +14,7 @@ Sizes are relative effort, not dates.
 - [x] Phase 3 · Game engine, no visuals — `src/game/engine.ts`; runs replay exactly from seed + inputs; the simulation plays on it
 - [ ] Phase 4 · The star and the street — star, street and seven nights in `src/draw/`; production build at 100+ rings on a Mac: steady 120 fps, a lock redraws in 1.9 ms (`?bench`); real-phone check waits for the Vercel deploy
 - [x] Phase 5 · A playable run — tap, click, Space; Esc and tab switch pause; phone and desktop layouts; full runs checked in the browser at both sizes
-- [ ] Phase 6 · Feel
+- [ ] Phase 6 · Feel — sounds, music layers, vibration, lock / trim / widen / milestone / end motion and reduced motion built (120 fps in the production build); waits for you to play it with sound on. Not yet: rotor-mode bulb chase, the star rising at 100 (Phase 7 screen)
 - [ ] Phase 7 · The other screens
 - [ ] Phase 8 · Playtest and tune
 - [ ] Phase 9 · The daily online loop

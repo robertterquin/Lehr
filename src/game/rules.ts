@@ -25,6 +25,10 @@ export const RULES = {
   reverseEvery: 5,
   /** A new ring fades in for this long; taps in that time are ignored. */
   spinInMs: 150,
+  /** Every this many rings is a milestone… */
+  milestoneEvery: 10,
+  /** …and the next ring waits this long, so the moment lands. */
+  milestoneBreakMs: 1500,
 }
 export type Rules = typeof RULES
 

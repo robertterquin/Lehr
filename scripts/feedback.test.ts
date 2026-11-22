@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createEngine, nextAlignmentMs, tap, type Engine } from '../src/game/engine.ts'
-import { endNote, lockFeedback, spinLabel } from '../src/game/feedback.ts'
+import { endNote, lockFeedback, milestoneText, spinLabel } from '../src/game/feedback.ts'
 
 const play = (errors: number[], engine: Engine = createEngine(99)) =>
   errors.reduce((e, degrees) => tap(e, nextAlignmentMs(e) + (degrees / e.ring.speed) * 1000), engine)
@@ -17,4 +17,11 @@ test('the meter names speed and direction; the end says which ring and why', () 
   assert.equal(spinLabel(0), '1.0× · clockwise')
   assert.equal(spinLabel(7), '1.5× · counter-clockwise')
   assert.equal(endNote(play([14, 14, 5])), 'Ring 3 locked 5° off, leaving 3° points (8° needed)')
+})
+
+test('every 10 rings is a milestone with its own line, and past 100 each adds a star', () => {
+  assert.equal(milestoneText(9), null)
+  assert.equal(milestoneText(20), 'The street lights come on')
+  assert.equal(milestoneText(100), 'Your parol became a star')
+  assert.equal(milestoneText(130), 'A new star joins your sky')
 })

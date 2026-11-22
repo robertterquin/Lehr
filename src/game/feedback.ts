@@ -24,3 +24,20 @@ export const endNote = (engine: Engine) => {
   const off = Math.abs(engine.endError ?? 0)
   return `Ring ${engine.run.rings + 1} locked ${Math.round(off)}° off, leaving ${Math.max(0, Math.round(engine.run.width))}° points (${RULES.minWidth}° needed)`
 }
+
+const MILESTONES: Record<number, string> = {
+  10: 'Your parol earned a halo',
+  20: 'The street lights come on',
+  30: 'The neighbours light their parols',
+  40: 'The carolers come down the street',
+  50: 'A second halo · the barangay lights up',
+  60: 'Rotor mode: your rings start to dance',
+  70: 'The lantern festival begins',
+  80: 'A third halo · fireworks over the town',
+  90: 'Simbang Gabi dawn',
+  100: 'Your parol became a star',
+}
+
+/** What a milestone brings, when `rings` is one; past 100 every 10 rings adds a star to the sky. */
+export const milestoneText = (rings: number) =>
+  rings <= 0 || rings % RULES.milestoneEvery !== 0 ? null : (MILESTONES[rings] ?? 'A new star joins your sky')

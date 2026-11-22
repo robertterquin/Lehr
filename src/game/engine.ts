@@ -75,7 +75,9 @@ export const tap = (engine: Engine, atMs: number, rules: Rules = RULES): Engine 
   const error = ringError(engine, atMs)
   const run = lock(engine.run, error, rules)
   if (run.ended) return { ...logged, run, endError: error }
-  return { ...logged, run, locks: [...engine.locks, error], ring: ringAt(engine.seed, run.rings, atMs, rules) }
+  // After a milestone the next ring waits; taps before it starts spinning in are ignored like spin-in taps.
+  const startMs = atMs + (run.rings % rules.milestoneEvery === 0 ? rules.milestoneBreakMs : 0)
+  return { ...logged, run, locks: [...engine.locks, error], ring: ringAt(engine.seed, run.rings, startMs, rules) }
 }
 
 /** Pausing hides the star; a run that is over can't be paused. */

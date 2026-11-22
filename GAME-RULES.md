@@ -11,7 +11,7 @@ The numbers live in [src/game/rules.ts](src/game/rules.ts) and are checked by `n
 
 ## A run
 
-1. A new ring spins in around the star, starting **36° from alignment** (halfway between two), so it first lines up after turning 36°. Taps in its first **0.15 s** (while it fades in) are ignored. Each ring starts the moment the one before it locks.
+1. A new ring spins in around the star, starting **36° from alignment** (halfway between two), so it first lines up after turning 36°. Taps in its first **0.15 s** (while it fades in) are ignored. Each ring starts the moment the one before it locks, except after every 10th ring: then the next waits **1.5 s**, so the milestone lands (taps in that wait are ignored).
 2. The player taps (or clicks, or presses Space) to lock it. One tap locks one ring.
 3. The lock's **error** is how far the ring sits from the nearest alignment, from −36° to 36°.
    - **Perfect** (error within **2.5°** either way): nothing is trimmed and the streak grows.

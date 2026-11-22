@@ -38,3 +38,16 @@ export const drawnRings = (locks: number[], rules: Rules = RULES): DrawnRing[] =
     return { index, width: run.width, rotation: run.rotation, perfect: Math.abs(error) <= rules.perfectWithin + 1e-9 }
   })
 }
+
+/** The overhang trimmed off ring `ring` (points `width` wide at `rotation`) when it locks `error` degrees off. */
+export const sliverPath = (ring: number, width: number, rotation: number, error: number) => {
+  const { ri, ro } = radii(ring)
+  let d = ''
+  for (let k = 0; k < 5; k++) {
+    const t = rotation + k * 72 - 90
+    const a1 = error > 0 ? t + width / 2 : t - width / 2 + error
+    const a2 = error > 0 ? t + width / 2 + error : t - width / 2
+    d += `M${[polar(ri - 2, a1), polar(ro - 8, a1), polar(ro - 12, a2), polar(ri - 2, a2)].map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join('L')}Z`
+  }
+  return d
+}
