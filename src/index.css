@@ -38,39 +38,50 @@ body {
   margin: 0;
 }
 
-.night {
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 24px 20px;
-  text-align: center;
-  background: radial-gradient(120% 70% at 50% 28%, var(--night-glow) 0%, var(--night) 55%, var(--night-deep) 100%);
+.play {
+  position: relative;
+  height: 100svh;
+  overflow: hidden;
 }
 
-.date {
+.play-count {
+  position: absolute;
+  top: 16px;
+  left: 20px;
   margin: 0;
-  font-size: 12px;
-  line-height: 1.25;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.play-label {
+  font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
 }
 
-.wordmark {
-  margin: 0;
+.play-number {
   font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 56px;
+  font-size: 40px;
   line-height: 1;
 }
 
-.tagline {
-  max-width: 300px;
+.play-star {
+  position: absolute;
+  top: 84px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.play-note {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  top: 548px;
   margin: 0;
-  font-size: 15px;
-  line-height: 1.45;
-  color: var(--muted);
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1.15;
 }

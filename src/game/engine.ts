@@ -21,6 +21,8 @@ export type Engine = {
   run: Run
   ring: Ring
   paused: boolean
+  /** The error of each lock that counted, in order: what the star is drawn from. */
+  locks: number[]
   /** Every input received, in order: what the server replays. */
   inputs: Input[]
 }
@@ -37,6 +39,7 @@ export const createEngine = (seed: number, rules: Rules = RULES): Engine => ({
   run: startRun(rules),
   ring: ringAt(seed, 0, 0, rules),
   paused: false,
+  locks: [],
   inputs: [],
 })
 
@@ -67,8 +70,10 @@ const record = (engine: Engine, input: Input): Engine => ({ ...engine, inputs: [
 export const tap = (engine: Engine, atMs: number, rules: Rules = RULES): Engine => {
   const logged = record(engine, { type: 'tap', atMs })
   if (engine.run.ended || engine.paused || atMs - engine.ring.startMs < rules.spinInMs) return logged
-  const run = lock(engine.run, ringError(engine, atMs), rules)
-  return { ...logged, run, ring: run.ended ? engine.ring : ringAt(engine.seed, run.rings, atMs, rules) }
+  const error = ringError(engine, atMs)
+  const run = lock(engine.run, error, rules)
+  if (run.ended) return { ...logged, run }
+  return { ...logged, run, locks: [...engine.locks, error], ring: ringAt(engine.seed, run.rings, atMs, rules) }
 }
 
 /** Pausing hides the star; a run that is over can't be paused. */

@@ -1,0 +1,205 @@
+import { memo, useId, type Ref } from 'react'
+import { CENTER, PALETTE, drawnRings, polar, radii, starPath } from './geometry.ts'
+
+const BAMBOO = '#5b3a1c'
+const BAMBOO_SHEEN = '#c8995a'
+
+const channel = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16)
+const mix = (from: string, to: string, t: number) =>
+  `rgb(${[0, 1, 2].map((i) => Math.round(channel(from, i) + (channel(to, i) - channel(from, i)) * t)).join(' ')})`
+
+type Props = {
+  size: number
+  /** Lock errors in degrees, one per locked ring: the engine's `locks`. */
+  locks: number[]
+  /** The ring after these is spinning in: drawn on its own layer, turned by `spinRef`. */
+  spinning?: boolean
+  /** Receives the spinning layer; set its `style.transform` to `rotate(<ringOffset>deg)` every frame. */
+  spinRef?: Ref<SVGSVGElement>
+  /** Paper colours, ring by ring: each night has its own. */
+  palette?: string[]
+  /** Unlit: paper not yet glowing (the Ready screen). */
+  dim?: boolean
+  /** The points are nearly too thin: the glow turns red. */
+  danger?: boolean
+}
+
+/**
+ * A parol: concentric five-pointed rings of backlit paper on a bamboo frame, a tambor (drum) at the centre,
+ * two fringed tails (buntot) with tassels, and halos with bulbs like Pampanga lanterns.
+ * The locked star only redraws when a ring locks; the spinning ring is a separate layer the browser turns
+ * on the GPU, so spinning costs no redraw.
+ */
+export const Star = memo(function Star({ size, locks, spinning = false, spinRef, palette = PALETTE, dim = false, danger = false }: Props) {
+  const id = useId().replace(/:/g, '')
+  const rings = drawnRings(locks)
+  const count = locks.length
+  const last = rings[rings.length - 1]
+  const width = last?.width ?? 36
+  const rotation = last?.rotation ?? 0
+  // Milestones on the star itself: halos at 10/50/80, longer tails at 25/50/75, rotor colours from 60.
+  const halo = count >= 80 ? 3 : count >= 50 ? 2 : count >= 10 ? 1 : 0
+  const tailScale = 1 + 0.25 * Math.min(3, Math.floor(count / 25))
+  const rotor = count >= 60 && !dim
+  const outer = radii(Math.max(0, count - 1 + (spinning ? 1 : 0))).ro
+  const haloR = outer + 16
+  const glow = dim ? 0.12 : 1
+  // The camera pulls back as the star grows, so any number of rings fits the frame.
+  const fit = Math.min(1, 138 / (halo > 0 ? haloR + (halo - 1) * 12 : outer))
+  const camera = `translate(${CENTER} ${CENTER}) scale(${fit.toFixed(4)}) translate(${-CENTER} ${-CENTER})`
+  // Frame lines thin out as the camera pulls back, so a big star keeps its colours instead of turning to bamboo.
+  const frame = Math.max(0.25, Math.min(1.4, fit * 1.8))
+  // On a big star the rings are thin bands: bulbs soften so the paper colours still read.
+  const crowd = Math.min(1, fit * 1.6)
+  const ringFill = (index: number) => `url(#${id}-paper-${index % palette.length})`
+  const height = (size * 420) / 300
+
+  const tails = [54, 126].map((deg, side) => {
+    const [x, y] = polar(radii(Math.max(0, count - 1)).ro - 4, deg + rotation)
+    const dir = side === 0 ? 1 : -1
+    const strand = (dx: number, len: number, wobble: number) =>
+      `M${x + dx} ${y}C${x + dx + dir * 10} ${y + len * 0.35} ${x + dx - dir * wobble} ${y + len * 0.65} ${x + dx + dir * 4} ${y + len}`
+    return {
+      strands: [strand(-3, 112 * tailScale, 10), strand(0, 120 * tailScale, 14), strand(3, 106 * tailScale, 9)],
+      end: [x + dir * 4, y + 120 * tailScale] as [number, number],
+    }
+  })
+
+  const bulbs = dim
+    ? []
+    : rings
+        .filter((ring) => rotor || ring.perfect)
+        .flatMap((ring) =>
+          [0, 1, 2, 3, 4].map((k) => {
+            const [x, y] = polar(radii(ring.index).ro - 3, ring.rotation + k * 72 - 90)
+            const bright = rotor ? ((ring.index + k) % 3 === 0 ? 1 : 0.35) : 1
+            return { key: `${ring.index}-${k}`, x, y, bright, warm: rotor && (ring.index + k) % 3 === 0 }
+          }),
+        )
+
+  const paper = (
+    <defs>
+      {palette.map((color, i) => (
+        // The gradient spans the whole star, so outer rings of a big star keep their colour.
+        <radialGradient key={i} id={`${id}-paper-${i}`} gradientUnits="userSpaceOnUse" cx={CENTER} cy={CENTER} r={Math.max(150, outer + 10)}>
+          <stop offset="0" stopColor={mix(color, '#fffaf0', dim ? 0.1 : 0.6)} />
+          <stop offset="0.45" stopColor={color} />
+          <stop offset="1" stopColor={mix(color, '#120a04', 0.28)} />
+        </radialGradient>
+      ))}
+    </defs>
+  )
+
+  return (
+    <div style={{ position: 'relative', width: size, height }}>
+      <svg width={size} height={height} viewBox="0 0 300 420" style={{ position: 'absolute', inset: 0, overflow: 'visible' }} aria-hidden="true">
+        {paper}
+        <defs>
+          <radialGradient id={`${id}-halo`}>
+            <stop offset="0" stopColor={danger ? '#ff6a4a' : '#ffbe5a'} stopOpacity={0.55 * glow} />
+            <stop offset="1" stopColor="#ffbe5a" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id={`${id}-tambor`}>
+            <stop offset="0" stopColor="#fffaf0" />
+            <stop offset="0.6" stopColor={dim ? '#8a7650' : '#ffe39a'} />
+            <stop offset="1" stopColor={dim ? '#5a4a30' : '#f2b632'} />
+          </radialGradient>
+          <filter id={`${id}-bulb`} x="-10%" y="-10%" width="120%" height="120%">
+            <feGaussianBlur stdDeviation="2.2" />
+          </filter>
+        </defs>
+        <g transform={camera}>
+          <circle cx={CENTER} cy={CENTER} r={outer + 60} fill={`url(#${id}-halo)`} />
+
+          {Array.from({ length: halo }, (_, h) => {
+            const r = haloR + h * 12
+            return (
+              <g key={h}>
+                <circle cx={CENTER} cy={CENTER} r={r} fill="none" stroke="#f2b632" strokeWidth="6" opacity={dim ? 0.15 : 0.35} />
+                <circle cx={CENTER} cy={CENTER} r={r} fill="none" stroke={BAMBOO} strokeWidth="1.8" />
+                {!dim &&
+                  Array.from({ length: 15 }, (_, k) => {
+                    const [x, y] = polar(r, k * 24 + h * 12)
+                    return <circle key={k} cx={x} cy={y} r="2.2" fill="#fff6d6" />
+                  })}
+              </g>
+            )
+          })}
+
+          {count > 0 &&
+            tails.map((tail, side) => (
+              <g key={side} opacity={dim ? 0.4 : 1}>
+                {tail.strands.map((d, s) => (
+                  <path key={s} d={d} fill="none" stroke={['#f2b632', '#d8342c', '#f4ecd8'][s]} strokeWidth="2.6" strokeLinecap="round" />
+                ))}
+                <path d={`M${tail.end[0]} ${tail.end[1] - 4}l-5 6l5 14l5 -14z`} fill="#d8342c" stroke={BAMBOO} strokeWidth="0.8" />
+                {[-4, -2, 0, 2, 4].map((dx) => (
+                  <path key={dx} d={`M${tail.end[0] + dx * 0.6} ${tail.end[1] + 14}l${dx * 0.5} 9`} stroke="#f2b632" strokeWidth="1" />
+                ))}
+              </g>
+            ))}
+
+          {/* Gold dashes where the spinning ring's points belong */}
+          {spinning && <path d={starPath(count, width, rotation)} fill="none" stroke="#ffd27a" strokeWidth="1.5" strokeDasharray="5 4" vectorEffect="non-scaling-stroke" />}
+
+          {/* Locked rings, outside in, so each inner ring leaves a coloured rim */}
+          {[...rings].reverse().map((ring) => (
+            <g key={ring.index}>
+              <path d={starPath(ring.index, ring.width, ring.rotation)} fill={ringFill(ring.index)} fillOpacity={dim ? 0.3 : 1} stroke={dim ? 'rgba(244,236,216,0.35)' : BAMBOO} strokeWidth={frame} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+              {!dim && fit > 0.5 && <path d={starPath(ring.index, ring.width, ring.rotation)} fill="none" stroke={BAMBOO_SHEEN} strokeWidth={frame * 0.35} opacity="0.5" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
+            </g>
+          ))}
+
+          {/* Bulbs on perfect rings' points: one blur for all the glows, not one per bulb */}
+          <g filter={`url(#${id}-bulb)`}>
+            {bulbs.map((b) => (
+              <circle key={b.key} cx={b.x} cy={b.y} r="4" fill={b.warm ? '#fff1c2' : '#ffe7a8'} opacity={0.6 * glow * b.bright * crowd} />
+            ))}
+          </g>
+          {bulbs.map((b) => (
+            <circle key={b.key} cx={b.x} cy={b.y} r="1.6" fill="#fffaf0" opacity={glow * b.bright * (0.4 + 0.6 * crowd)} />
+          ))}
+
+          <circle cx={CENTER} cy={CENTER} r="17" fill={`url(#${id}-tambor)`} stroke={BAMBOO} strokeWidth="2" />
+          <circle cx={CENTER} cy={CENTER} r="10" fill="none" stroke={BAMBOO} strokeWidth="0.9" opacity="0.8" />
+          {Array.from({ length: 8 }, (_, k) => {
+            const [sx, sy] = polar(10, k * 45)
+            const [ex, ey] = polar(17, k * 45)
+            return <path key={k} d={`M${sx} ${sy}L${ex} ${ey}`} stroke={BAMBOO} strokeWidth="0.8" opacity="0.8" />
+          })}
+        </g>
+      </svg>
+
+      {spinning && (
+        // The spinning ring: bamboo spokes, translucent paper and light streaks behind each tip. It turns about the
+        // star's centre (150, 150 of the 300×420 box), and the camera's scale about that centre doesn't change that.
+        <svg
+          ref={spinRef}
+          width={size}
+          height={height}
+          viewBox="0 0 300 420"
+          style={{ position: 'absolute', inset: 0, overflow: 'visible', transformOrigin: '50% 35.7143%', willChange: 'transform' }}
+          aria-hidden="true"
+        >
+          {paper}
+          <g transform={camera}>
+            <path d={starPath(count, width, rotation)} fill={ringFill(count)} fillOpacity="0.5" stroke={BAMBOO} strokeWidth="1.6" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+            {[0, 1, 2, 3, 4].map((k) => {
+              const ro = radii(count).ro
+              const t = rotation + k * 72 - 90
+              const [tx, ty] = polar(ro - 2, t)
+              const [sx, sy] = polar(ro - 2, t - 16)
+              return (
+                <g key={k}>
+                  <path d={`M${CENTER} ${CENTER}L${tx} ${ty}`} stroke={BAMBOO_SHEEN} strokeWidth="1" opacity="0.75" vectorEffect="non-scaling-stroke" />
+                  <path d={`M${sx} ${sy}A${ro - 2} ${ro - 2} 0 0 1 ${tx} ${ty}`} fill="none" stroke="#fff1c2" strokeWidth="1.6" strokeLinecap="round" opacity="0.55" vectorEffect="non-scaling-stroke" />
+                  <circle cx={tx} cy={ty} r={2.2 / fit} fill="#fffaf0" opacity="0.9" />
+                </g>
+              )
+            })}
+          </g>
+        </svg>
+      )}
+    </div>
+  )
+})

@@ -12,7 +12,7 @@ Sizes are relative effort, not dates.
 - [ ] Phase 1 · Clear Lehr out — Lehr code gone, empty Parol screen builds and runs; Vercel deploy still to do
 - [x] Phase 2 · The rules on paper — rules in `src/game/rules.ts` and GAME-RULES.md; simulated medians 15 / 23 / 46 / 124 rings
 - [x] Phase 3 · Game engine, no visuals — `src/game/engine.ts`; runs replay exactly from seed + inputs; the simulation plays on it
-- [ ] Phase 4 · The star and the street
+- [ ] Phase 4 · The star and the street — star, street and seven nights in `src/draw/`, spinning ring on its own GPU layer; smoothness check on a real phone still to do
 - [ ] Phase 5 · A playable run
 - [ ] Phase 6 · Feel
 - [ ] Phase 7 · The other screens

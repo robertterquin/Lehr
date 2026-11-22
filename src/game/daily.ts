@@ -25,3 +25,6 @@ export const randomForSeed = (seed: number) => {
     return ((value ^ (value >>> 14)) >>> 0) / 4294967296
   }
 }
+
+/** 0 for Monday through 6 for Sunday: which of the seven nights a Manila date gets. */
+export const weekdayIndex = (manilaDate: string) => (new Date(`${manilaDate}T00:00:00Z`).getUTCDay() + 6) % 7

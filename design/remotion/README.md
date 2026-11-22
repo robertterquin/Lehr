@@ -1,5 +1,7 @@
 # Parol design source
 
+The game draws the star, street and nights from its own copy in `src/draw/` (ported in Phase 4); change both when the look changes.
+
 Remotion project that renders the Parol demo video (`../parol-demo.mp4`), the run prototype with sound (`../parol-run-prototype.mp4`) and every page mockup (`../mockups/`).
 
 - `src/parol.ts`: star geometry and the lock rules (perfect keeps the width, off-angle trims it, 5 perfects widen it).

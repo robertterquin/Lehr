@@ -52,6 +52,7 @@ test('five perfects widen, an off-angle lock turns the star, and the run ends be
   assert.equal(over.run.ended, true)
   assert.equal(over.run.rings, 2)
   assert.equal(tap(over, at(over, 0)).run, over.run)
+  assert.equal(over.locks.length, 2)
 })
 
 test('the drawn ring follows the star’s turn', () => {
