@@ -156,7 +156,7 @@ const schedule = () => {
     if (layers >= 3 && beat % 4 === 0) partial(musicBus, t, beat % 8 === 0 ? 73.42 : 110, 0.18, 0.5, 0.01)
     if (layers >= 4 && beat % 2 === 1) burst(musicBus, t, 0.06, beat % 4 === 3 ? 0.08 : 0.04, 6500, 0.025)
     if (layers >= 5 && (step * 7) % 5 === 0) bell(musicBus, t, PENTATONIC[(step * 3) % 5] * 2, 0.03, 0.7)
-    if (layers >= 6 && beat % 8 === 4) bell(musicBus, t, ARPEGGIO[(step / 8 + 2) % 8] * 1.5, 0.05, 1.6)
+    if (layers >= 6 && beat % 8 === 4) bell(musicBus, t, ARPEGGIO[(Math.floor(step / 8) + 2) % 8] * 1.5, 0.05, 1.6)
     nextStep += STEP
     step += 1
   }
