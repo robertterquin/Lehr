@@ -10,8 +10,15 @@
   --ink: #f7f0e3;
   --muted: #c9bfe0;
   --faint: #a99fc4;
-  --gold: #ffd27a;
-  --coral: #ff9d8a;
+  --gold: #ffcf7a;
+  --coral: #ff8a7a;
+  /* Lantern glow: a warm night, gold for the one action, serif numbers, words floating over the street. */
+  --cream: #e8d9c8;
+  --dusk: #a8988a;
+  --button: linear-gradient(180deg, #ffe2a6, #f6a743);
+  --button-glow: 0 10px 40px rgba(255, 160, 70, 0.45);
+  --on-button: #2a1606;
+  --shade: 0 2px 18px rgba(20, 8, 5, 0.85);
   font-family: var(--font-ui);
   color: var(--ink);
   background: var(--night);
@@ -42,7 +49,9 @@ body {
   position: relative;
   height: 100svh;
   overflow: hidden;
-  background: radial-gradient(120% 70% at 50% 28%, var(--night-glow) 0%, var(--night) 55%, var(--night-deep) 100%);
+  /* clip, not just hidden: focusing a button must never scroll the screen sideways. */
+  overflow: clip;
+  background: linear-gradient(180deg, #0a0f26 0%, #121a3d 42%, #2b1a3a 72%, #5a2f22 100%);
   /* The whole screen is the tap target: no double-tap zoom, no text selection while playing. */
   touch-action: manipulation;
   user-select: none;
@@ -50,12 +59,24 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* The warm glow of the street's lamps rises from below, behind the scene. */
+.game::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 40%;
+  pointer-events: none;
+  background: radial-gradient(80% 90% at 50% 100%, rgba(255, 150, 70, 0.45), transparent);
+}
+
 .game.in-danger::after {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
-  box-shadow: inset 0 0 90px rgba(255, 80, 60, 0.4);
+  box-shadow: inset 0 0 120px rgba(255, 90, 80, 0.4);
   animation: danger 1s ease-in-out infinite alternate;
 }
 
@@ -71,15 +92,18 @@ body {
   pointer-events: none;
 }
 
+/* A warm tint over the bottom of the street. */
+.scenery::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 70%, rgba(40, 15, 10, 0.35));
+}
+
 .scenery-layer {
   position: absolute;
   inset: 0;
   display: flex;
-}
-
-.scenery-tile {
-  position: relative;
-  flex: 1;
 }
 
 /* A milestone's new scene flickers on, left to right, over the old one (0.8 s). */
@@ -101,66 +125,17 @@ body {
   to { clip-path: inset(0 0 0 0); }
 }
 
-.phone {
-  position: relative;
-  height: 100%;
-  max-width: 430px;
-  margin: 0 auto;
-  padding: 16px 20px 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.hud {
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-}
-
-.hud .buttons {
-  justify-self: end;
-}
-
 .buttons {
   display: flex;
   gap: 8px;
-}
-
-.rings {
-  margin: 0;
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.rings-label,
-.card-label {
-  font-size: 11px;
-  line-height: 1.4;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.rings-number {
-  font-family: var(--font-display);
-  font-size: 40px;
-  line-height: 1;
-}
-
-.streak-stars {
-  display: flex;
-  gap: 6px;
 }
 
 .icon-button {
   width: 44px;
   height: 44px;
   border-radius: 22px;
-  border: 1px solid #3a3160;
-  background: rgba(18, 15, 44, 0.8);
+  border: 1px solid transparent;
+  background: none;
   color: var(--ink);
   display: flex;
   align-items: center;
@@ -168,9 +143,24 @@ body {
   cursor: pointer;
 }
 
+.icon-button.ring {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
 .stage {
   position: relative;
+  isolation: isolate;
   margin-top: 8px;
+}
+
+/* The star's own light on the night around it. */
+.stage::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -30% -35%;
+  background: radial-gradient(closest-side, rgba(255, 170, 80, 0.45), transparent);
+  pointer-events: none;
 }
 
 /* A new ring fades and grows in (0.15 s); after a milestone it waits for the break first. */
@@ -222,36 +212,29 @@ body {
   to { scale: 0.78; filter: brightness(0.65); }
 }
 
-/* On desktop the star is big: it shrinks further, towards the top, so the score below has room. */
-.desk .stage-ended {
-  transform-origin: 50% 0;
-  animation-name: stage-ended-wide;
-}
-
-@keyframes stage-ended-wide {
-  to { scale: 0.62; filter: brightness(0.65); }
-}
 
 /* The run-over, as in Afterlight: no card. The street dims, and the score floats near the bottom over a
-   soft dark glow, with one button and a link. It fades and rises in after the star has settled (1 s). */
+   soft dark glow, with one button. It fades and rises in after the star has settled (1 s). */
 .is-dim .scenery {
-  filter: saturate(0.8) brightness(0.68);
+  filter: saturate(0.8) brightness(0.62);
   transition: filter 0.8s ease-out;
 }
 
 .over {
   position: absolute;
   z-index: 2;
-  left: 50%;
+  left: 0;
+  right: 0;
   bottom: clamp(28px, 5vh, 48px);
   width: min(420px, calc(100% - 40px));
-  translate: -50% 0;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
   text-align: center;
-  text-shadow: 0 2px 16px rgba(5, 5, 20, 0.75);
+  text-wrap: balance;
+  text-shadow: var(--shade);
   animation: fade-in 0.36s ease-out 1.1s both, rise 0.4s cubic-bezier(0.22, 1, 0.36, 1) 1.1s both;
 }
 
@@ -260,14 +243,15 @@ body {
   position: absolute;
   z-index: -1;
   inset: -48px -90px -36px;
-  background: radial-gradient(closest-side, rgba(10, 9, 24, 0.7), rgba(10, 9, 24, 0));
+  background: radial-gradient(closest-side, rgba(16, 8, 18, 0.6), rgba(16, 8, 18, 0));
   pointer-events: none;
 }
 
-.over-eyebrow {
+.over-eyebrow,
+.eyebrow {
   margin: 0;
-  font: 700 12px/1.2 var(--font-ui);
-  letter-spacing: 0.16em;
+  font: 700 11px/1.3 var(--font-ui);
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--gold);
 }
@@ -281,35 +265,73 @@ body {
   column-gap: 10px;
 }
 
+/* Numbers are hairline-thin and large: the run-over is almost nothing but the count. */
 .over-score strong {
-  font: 400 clamp(72px, 9vw, 104px)/1 var(--font-display);
-  letter-spacing: -0.03em;
+  font: 400 clamp(110px, 14vw, 150px)/0.9 var(--font-display);
+  margin-bottom: 6px;
 }
 
 .over-score span {
+  flex-basis: 100%;
   font-size: 15px;
   line-height: 1.4;
-  color: var(--muted);
+  color: var(--cream);
 }
 
 .over-score b {
-  font-weight: 600;
+  font-weight: 400;
   color: var(--gold);
 }
 
 .over-reason {
-  margin: -2px 0 0;
-  font-size: 13px;
-  line-height: 1.4;
-  color: var(--faint);
+  margin: 0;
+  max-width: 260px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--cream);
 }
 
 .over .over-button {
-  width: auto;
-  min-width: 200px;
-  padding: 0 22px;
-  margin-top: 6px;
-  border-radius: 16px;
+  margin-top: 14px;
+}
+
+/* Desktop, paused or ended: the star steps left and the words stand to its right. */
+.wide.is-paused .run .stage,
+.wide.is-ended .run .stage {
+  translate: -16vw 0;
+  transition: translate 0.8s ease-in-out 0.2s;
+}
+
+.wide.is-paused > .over,
+.wide.is-ended > .over {
+  left: 55%;
+  right: auto;
+  top: 24vh;
+  bottom: auto;
+  width: min(460px, 40%);
+  margin: 0;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.wide.is-paused > .over::before,
+.wide.is-ended > .over::before {
+  display: none;
+}
+
+.wide .over-score {
+  justify-content: flex-start;
+}
+
+.wide .over-score strong {
+  font-size: 160px;
+  margin-bottom: 12px;
+}
+
+/* On desktop the count and pause sit in the screen's corners, as on the landing page. */
+.wide .run {
+  max-width: none;
+  padding: 18px 24px 24px;
 }
 
 @keyframes fade-in {
@@ -321,35 +343,39 @@ body {
 }
 
 /* A milestone: the toast drops in (0.3 s), holds, and goes (2.7 s in all). */
+/* A milestone: the ring count and its line float up below the star, hold, and go (2.7 s in all). */
 .toast {
   position: absolute;
   z-index: 1;
-  top: 76px;
   left: 50%;
+  bottom: clamp(40px, 10vh, 110px);
+  width: min(340px, calc(100% - 40px));
   margin: 0;
-  max-width: calc(100% - 40px);
-  width: max-content;
-  padding: 9px 16px;
-  border-radius: 18px;
-  background: rgba(20, 15, 48, 0.92);
-  border: 1px solid rgba(255, 210, 122, 0.5);
-  font-size: 13px;
-  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
   text-align: center;
+  text-wrap: balance;
+  text-shadow: var(--shade);
   translate: -50% 0;
   animation: toast 2.7s ease-out 0.2s both;
 }
 
 .toast-rings {
-  margin-right: 6px;
-  font-family: var(--font-display);
-  font-size: 18px;
+  font: 700 11px/1.3 var(--font-ui);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
   color: var(--gold);
 }
 
+.toast-line {
+  font: 400 28px/1.15 var(--font-display);
+}
+
 @keyframes toast {
-  0% { opacity: 0; translate: -50% -16px; }
-  11% { opacity: 1; translate: -50% 2px; }
+  0% { opacity: 0; translate: -50% 16px; }
+  11% { opacity: 1; translate: -50% -2px; }
   14% { translate: -50% 0; }
   89% { opacity: 1; }
   100% { opacity: 0; }
@@ -360,11 +386,11 @@ body {
 .calm .scene-in { animation: fade-in 0.15s both; }
 .calm .lock-drop { animation: lock-glow 0.3s both; }
 .calm .stage-ended { animation: none; filter: brightness(0.65); }
+.calm.wide .run .stage { transition: none; }
 .calm .over,
 .calm .rise-star,
 .calm .rise-star .glints { animation: fade-in 0.15s both; }
 .calm .toast { animation: fade-in 0.15s both, toast-out 0.15s 2.6s forwards; }
-.calm .meter-fill { transition: none; }
 
 @keyframes toast-out {
   to { opacity: 0; }
@@ -372,7 +398,7 @@ body {
 
 .callout {
   min-height: 56px;
-  margin-top: -40px;
+  margin: 8px 0 auto;
   text-align: center;
 }
 
@@ -392,84 +418,35 @@ body {
   100% { opacity: 0; }
 }
 
+/* Each lock's word, in the serif, glowing in its own colour. */
 .callout-title {
-  font-family: var(--font-display);
-  font-size: 30px;
-  line-height: 1.1;
+  font: italic 400 34px/1.3 var(--font-display);
 }
 
-.callout-title.gold { color: var(--gold); }
-.callout-title.coral { color: var(--coral); }
-
-.meter {
-  width: 100%;
-  padding: 0 20px;
-  margin-top: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-size: 12px;
-  line-height: 1.4;
-  color: var(--muted);
-}
-
-.meter-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.meter-row strong {
-  color: var(--ink);
-}
-
-.meter.danger .meter-row strong {
-  color: var(--coral);
-}
-
-.meter-track {
-  position: relative;
-  height: 8px;
-  border-radius: 4px;
-  background: #241d44;
-}
-
-.meter-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  border-radius: 4px;
-  background: linear-gradient(90deg, #d8342c, #f2b632);
-  transition: width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.meter.danger .meter-fill {
-  background: linear-gradient(90deg, #a8241e, #ff6a4a);
-  box-shadow: 0 0 12px rgba(255, 106, 74, 0.7);
-}
-
-.meter-min {
-  position: absolute;
-  top: -3px;
-  width: 2px;
-  height: 14px;
-  background: #ff8a7a;
-}
+.callout-title.gold { color: var(--gold); text-shadow: 0 0 24px rgba(255, 190, 90, 0.7); }
+.callout-title.coral { color: var(--coral); text-shadow: 0 0 24px rgba(255, 120, 100, 0.6); }
 
 .hint {
   position: absolute;
-  bottom: 24px;
   left: 20px;
   right: 20px;
-  margin: 0 auto;
-  width: fit-content;
-  padding: 7px 14px;
-  border-radius: 16px;
-  background: rgba(10, 9, 24, 0.75);
-  font-size: 13px;
+  bottom: clamp(40px, 10vh, 110px);
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
   line-height: 1.4;
   text-align: center;
+  color: var(--cream);
+  text-shadow: var(--shade);
 }
 
+.hint-word {
+  font: italic 400 22px var(--font-display);
+  color: var(--gold);
+}
 
 /* The landing page is a poster: tonight's place as the headline, the lit star beside or below it. */
 .poster {
@@ -486,8 +463,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding-top: 20px;
+  gap: 10px;
+  padding-top: 8px;
   text-align: center;
 }
 
@@ -498,18 +475,10 @@ body {
   gap: 8px;
 }
 
-.eyebrow {
-  font: 700 12px/1.3 var(--font-ui);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--gold);
-}
-
 .poster-title {
   margin: 0;
-  font: 400 54px/0.95 var(--font-display);
-  letter-spacing: -0.02em;
-  text-shadow: 0 2px 18px rgba(5, 5, 20, 0.6);
+  font: 400 60px/0.95 var(--font-display);
+  text-shadow: var(--shade);
 }
 
 .poster-blurb {
@@ -517,22 +486,9 @@ body {
   margin: 0;
   font-size: 14px;
   line-height: 1.5;
-  color: var(--muted);
-}
-
-.poster-rule {
-  width: 56px;
-  height: 2px;
-  margin: 8px 0;
-  background: var(--gold);
-  opacity: 0.7;
-}
-
-.poster-how {
-  max-width: 360px;
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.5;
+  color: var(--cream);
+  text-wrap: balance;
+  text-shadow: var(--shade);
 }
 
 .poster-action {
@@ -544,26 +500,11 @@ body {
   gap: 10px;
 }
 
-.poster-action .primary {
-  width: min(100%, 320px);
-  border-radius: 16px;
-  padding: 0 26px;
-}
 
-.poster-best {
-  font-size: 14px;
-  color: var(--muted);
-  text-shadow: 0 2px 12px rgba(5, 5, 20, 0.8);
-}
-
-.poster-best strong {
-  margin-left: 4px;
-  font: 400 20px var(--font-display);
-  color: var(--ink);
-}
-
+/* On a phone the star hangs first and tonight's words sit below it. */
 .poster .stage {
-  margin-top: 12px;
+  order: -1;
+  margin: 24px 0 auto;
 }
 
 .wide .poster-body {
@@ -584,7 +525,7 @@ body {
 }
 
 .wide .poster-title {
-  font-size: 104px;
+  font-size: 96px;
 }
 
 .wide .poster-blurb {
@@ -599,22 +540,12 @@ body {
   gap: 20px;
 }
 
-.wide .poster-action .primary {
-  width: auto;
-  min-width: 220px;
-}
 
 .wide .poster .stage {
+  order: 0;
   margin: 0;
 }
 
-.wide .poster .stage::before {
-  content: '';
-  position: absolute;
-  inset: -8% -20% 10%;
-  background: radial-gradient(closest-side, rgba(255, 190, 90, 0.22), transparent);
-  pointer-events: none;
-}
 
 .ready-bar {
   width: 100%;
@@ -623,18 +554,13 @@ body {
   align-items: center;
 }
 
-
-
-
-
-
 .link {
   min-height: 44px;
   padding: 0 4px;
   border: none;
   background: none;
   color: var(--gold);
-  font: 600 14px var(--font-ui);
+  font: 700 15px var(--font-ui);
   cursor: pointer;
 }
 
@@ -650,7 +576,7 @@ body {
 }
 
 /* Sheets: How to play and Settings rise from the bottom. */
-.overlay-sheet {
+.overlay.overlay-sheet {
   align-items: flex-end;
   padding: 0;
 }
@@ -661,23 +587,27 @@ body {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 22px 20px 32px;
-  border-radius: 24px 24px 0 0;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-bottom: none;
+  gap: 14px;
+  padding: 22px 24px 36px;
+  border-radius: 28px 28px 0 0;
+  background: linear-gradient(180deg, rgba(42, 24, 40, 0.97), rgba(20, 12, 26, 0.98));
+  border-top: 1px solid rgba(255, 207, 122, 0.35);
+  box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.5);
   animation: sheet-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.wide .overlay-sheet {
+.sheet .primary {
+  width: 100%;
+}
+
+.wide .overlay.overlay-sheet {
   align-items: center;
   padding: 20px;
 }
 
 .wide .sheet {
-  border-radius: 24px;
-  border-bottom: 1px solid var(--line);
+  border-radius: 28px;
+  border: 1px solid rgba(255, 207, 122, 0.35);
 }
 
 @keyframes sheet-in {
@@ -697,7 +627,7 @@ body {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: 26px;
+  font-size: 28px;
   line-height: 1.15;
 }
 
@@ -729,9 +659,8 @@ body {
   width: 66px;
   height: 66px;
   overflow: hidden;
-  border-radius: 14px;
-  background: #15112f;
-  border: 1px solid var(--line);
+  border-radius: 33px;
+  background: rgba(255, 207, 122, 0.08);
 }
 
 .step-text,
@@ -742,10 +671,12 @@ body {
   gap: 2px;
 }
 
-.step-title,
+.step-title {
+  font: 400 18px/1.3 var(--font-display);
+}
+
 .toggle-label {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 16px;
   line-height: 1.35;
 }
 
@@ -754,17 +685,22 @@ body {
   font-size: 13px;
   font-weight: 400;
   line-height: 1.45;
-  color: var(--muted);
+  color: var(--cream);
+}
+
+.toggle-note {
+  font-size: 12px;
+  color: var(--dusk);
 }
 
 .toggle,
 .row {
-  min-height: 48px;
+  min-height: 56px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  font-size: 15px;
+  font-size: 16px;
   cursor: pointer;
 }
 
@@ -775,7 +711,7 @@ body {
   height: 28px;
   margin: 0;
   border-radius: 14px;
-  background: #3a3160;
+  background: rgba(255, 255, 255, 0.14);
   position: relative;
   cursor: pointer;
   transition: background 0.15s;
@@ -789,25 +725,23 @@ body {
   width: 22px;
   height: 22px;
   border-radius: 11px;
-  background: var(--ink);
+  background: var(--cream);
   transition: translate 0.15s;
 }
 
 .toggle input:checked {
-  background: var(--gold);
+  background: var(--button);
 }
 
 .toggle input:checked::after {
   translate: 20px 0;
-  background: #2a1606;
+  background: var(--on-button);
 }
 
 .divider {
   height: 1px;
-  background: var(--line);
+  background: rgba(255, 255, 255, 0.08);
 }
-
-/* Tonight's journey: a full screen of milestones. */
 
 /* Past 100: every 10 rings adds a star to the sky. */
 .sky {
@@ -827,7 +761,7 @@ body {
 /* 100 rings: the parol lifts off its wire (2.5 s) and its rays open. */
 /* Paused hides the star; at 100 the run's star gives way to the one rising above the street. */
 .is-paused .stage {
-  opacity: 0.15;
+  opacity: 0.65;
   transition: opacity 0.2s ease-out;
 }
 
@@ -875,11 +809,11 @@ body {
 }
 
 .rise-title {
-  margin: 2px 0 0;
+  margin: 0;
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: 34px;
-  line-height: 1.1;
+  font-size: 40px;
+  line-height: 1.05;
 }
 
 .overlay {
@@ -894,43 +828,20 @@ body {
   backdrop-filter: blur(3px);
 }
 
-.card {
-  width: min(100%, 360px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 28px 24px 24px;
-  border-radius: 22px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  text-align: center;
-}
 
-.card-title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 30px;
-  line-height: 1.1;
-}
 
-.card-note {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--muted);
-}
 
 .primary {
-  width: 100%;
   height: 56px;
+  min-width: 200px;
   margin-top: 4px;
+  padding: 0 30px;
   border: none;
-  border-radius: 28px;
-  background: linear-gradient(180deg, #ffd27a 0%, #f2a33a 100%);
-  color: #2a1606;
-  font: 700 17px var(--font-ui);
+  border-radius: 999px;
+  background: var(--button);
+  box-shadow: var(--button-glow);
+  color: var(--on-button);
+  font: 700 16px var(--font-ui);
   cursor: pointer;
 }
 
@@ -940,80 +851,126 @@ body {
   outline-offset: 3px;
 }
 
-/* Desktop: the star in the middle, the count and meter on the left, the messages on the right. */
-.desk {
+/* The run: one centred column on every screen. The count and streak top left, pause top right; the width
+   and speed over the star in its gauge; the lock's word below. */
+.run {
   position: relative;
+  z-index: 1;
   height: 100%;
-  max-width: 1280px;
+  max-width: 560px;
   margin: 0 auto;
-  padding: 24px 40px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  grid-template-rows: auto 1fr;
-  column-gap: 48px;
+  padding: 16px 16px 24px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
 }
 
-.desk-bar {
-  grid-column: 1 / -1;
+.run-bar {
+  width: 100%;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  padding-left: 6px;
 }
 
-.wordmark-small {
-  font-family: var(--font-display);
-  font-size: 30px;
-  line-height: 1;
-}
-
-.desk-side {
-  align-self: center;
-  margin-bottom: 120px;
+.run-count {
+  min-height: 82px;
   display: flex;
   flex-direction: column;
-  gap: 32px;
-  max-width: 300px;
-}
-
-.desk-side:last-child {
-  justify-self: start;
-}
-
-.desk-side:first-of-type {
-  justify-self: end;
-}
-
-.desk .rings-number {
-  font-size: 72px;
-}
-
-.desk .rings {
-  flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
+  gap: 10px;
 }
 
-.desk .meter {
-  padding: 0;
+.count {
+  font: 400 64px/1 var(--font-display);
+  text-shadow: var(--shade);
+}
+
+.streak {
+  display: flex;
+  gap: 7px;
+  padding-left: 2px;
+}
+
+.streak span {
+  width: 9px;
+  height: 9px;
+  rotate: 45deg;
+  border: 1px solid #6a5a7a;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.streak span.lit {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+
+.run .stage {
   margin: 0;
-  min-width: 260px;
 }
 
-.desk .callout {
-  margin: 0;
-  text-align: left;
+/* The width gauge: a thin arc around the star that shortens as misses trim the points. */
+.gauge {
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
 }
 
-.desk .callout-body {
-  align-items: flex-start;
+.gauge-track,
+.gauge-fill {
+  fill: none;
+  stroke-linecap: round;
 }
 
-.desk .toast {
-  top: 84px;
+.gauge-track {
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 2;
 }
 
-.desk .hint {
-  position: static;
-  margin: 0;
+.gauge-fill {
+  stroke: var(--gold);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 6px rgba(255, 190, 90, 0.8));
+  transition: stroke-dasharray 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), stroke 0.3s;
+}
+
+.gauge.danger .gauge-fill {
+  stroke: var(--coral);
+  filter: drop-shadow(0 0 6px rgba(255, 120, 100, 0.8));
+}
+
+.gauge-min {
+  fill: #ff8a7a;
+}
+
+.calm .gauge-fill {
+  transition: none;
+}
+
+.width-label {
+  min-height: 15px;
+  margin: auto 0 0;
+  font: 700 11px/1.3 var(--font-ui);
+  letter-spacing: 0.18em;
+  color: var(--cream);
+}
+
+.width-label.danger {
+  color: var(--coral);
+}
+
+.best-line {
+  font-size: 13px;
+  color: var(--cream);
+}
+
+.best-line strong {
+  margin-left: 4px;
+  font: 400 17px var(--font-display);
+  color: var(--ink);
+}
+
+
+.wordmark {
+  font: 400 24px var(--font-display);
 }

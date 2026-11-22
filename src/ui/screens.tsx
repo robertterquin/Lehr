@@ -43,7 +43,7 @@ const STEPS = [
 
 export function HowToPlay({ palette, onClose }: { palette: string[]; onClose: () => void }) {
   return (
-    <Sheet title="How to light a parol" onClose={onClose}>
+    <Sheet title="How to play" onClose={onClose}>
       <ol className="steps">
         {STEPS.map((step) => (
           <li key={step.title} className="step">
@@ -170,15 +170,14 @@ export function StarRises({ locks, palette, onKeepGoing }: { locks: number[]; pa
 export function NewDay({ best, onSee }: { best: number; onSee: () => void }) {
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="newday-title" onPointerDown={(event) => event.stopPropagation()}>
-      <div className="card">
-        <h2 id="newday-title" className="card-title">A new star is ready</h2>
-        <p className="card-note">
-          It’s past midnight in the Philippines, so tonight’s star is new.{best > 0 ? ` Your best yesterday: ${best} rings.` : ''}
-        </p>
-        <button type="button" className="primary" autoFocus onClick={onSee}>
+      <section className="over now">
+        <span className="over-eyebrow">Past midnight in Manila</span>
+        <h2 id="newday-title" className="rise-title">A new star is ready</h2>
+        {best > 0 && <p className="over-reason">Your best yesterday: {best} rings</p>}
+        <button type="button" className="primary over-button" autoFocus onClick={onSee}>
           See tonight’s star
         </button>
-      </div>
+      </section>
     </div>
   )
 }

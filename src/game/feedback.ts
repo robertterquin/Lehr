@@ -1,4 +1,4 @@
-// What the screen says about the run: the message after each lock, milestones and why a run ended.
+// What the screen says about the run: the message after each lock and the milestones.
 import type { Engine } from './engine.ts'
 import { RULES } from './rules.ts'
 
@@ -13,13 +13,6 @@ export const lockFeedback = (engine: Engine): Feedback | null => {
   if (isPerfect(error) && engine.run.streak % RULES.widenEvery === 0) return { title: `Perfect ×${RULES.widenEvery}`, tone: 'gold' }
   if (isPerfect(error)) return { title: 'Perfect', tone: 'gold' }
   return { title: `${Math.round(Math.abs(error))}° off`, tone: 'coral' }
-}
-
-/** Why the run ended, once it has. */
-export const endNote = (engine: Engine) => {
-  const off = Math.abs(engine.endError ?? 0)
-  // Just the miss: the points it left are under the minimum by definition, and rounding them could read as 8°.
-  return `Ring ${engine.run.rings + 1} locked ${Math.round(off)}° off`
 }
 
 const MILESTONES: Record<number, string> = {

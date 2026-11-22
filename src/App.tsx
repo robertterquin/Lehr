@@ -1,15 +1,15 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { getManilaDate, seedForDate, weekdayIndex } from './game/daily.ts'
 import { createEngine, nextAlignmentMs, pause, resume, ringOffset, tap, type Engine } from './game/engine.ts'
-import { endNote, milestoneText } from './game/feedback.ts'
+import { milestoneText } from './game/feedback.ts'
 import { bestOn, deviceStore, logRun, loggedRuns, readSettings, writeSettings, type Settings as SavedSettings } from './game/local.ts'
-import { RULES } from './game/rules.ts'
+import { RULES, speedFactor } from './game/rules.ts'
 import { NIGHTS, night as nightById, type NightId, type Night } from './draw/nights.tsx'
 import { Panorama } from './draw/panorama.tsx'
 import { Star } from './draw/star.tsx'
 import type { Stage } from './draw/street.tsx'
 import { SOUNDS, buzz, isMuted, play, setMusic, setMuted, setVibration, stopMusic, unlockAudio } from './sound/audio.ts'
-import { Callout, IconButton, Meter, PauseIcon, SoundIcon, Streak } from './ui/parts.tsx'
+import { ArcGauge, Callout, IconButton, PauseIcon, SoundIcon, Streak } from './ui/parts.tsx'
 import { Glints, HowToPlay, NewDay, Settings, StarRises } from './ui/screens.tsx'
 
 const params = new URLSearchParams(location.search)
@@ -293,14 +293,13 @@ export default function App() {
   const inRun = phase !== 'ready'
   const stage = (inRun ? Math.min(10, Math.floor(run.rings / 10)) : 0) as Stage
   const playing = phase === 'playing'
+  // The run star leaves room for the gauge around it (24% wider than the star) and the count above.
   const starSize = Math.round(
     phase === 'ready'
       ? wide
         ? Math.min(470, height * 0.58)
-        : Math.max(200, Math.min(270, width - 110, (height - 390) / 1.4))
-      : wide
-        ? Math.min(520, height - 260)
-        : Math.max(220, Math.min(330, width - 60, height - 440)),
+        : Math.max(200, Math.min(300, width - 90, (height - 420) / 1.25))
+      : Math.max(200, Math.min(wide ? 460 : 300, (width - 40) / 1.24, (height - 330) / 1.24)),
   )
   const danger = inRun && !run.ended && run.width < DANGER_BELOW
   const milestone = inRun && !run.ended && phase !== 'risen' ? milestoneText(run.rings) : null
@@ -317,48 +316,46 @@ export default function App() {
         danger={danger}
         failed={phase === 'ended' ? engine.endError : undefined}
       />
+      {phase === 'playing' && <ArcGauge size={starSize} width={run.width} danger={danger} />}
     </div>
-  )
-  const rings = (
-    <p className="rings">
-      <span className="rings-label">Rings</span> <span className="rings-number">{run.rings}</span>
-    </p>
   )
   const soundButton = (
     <IconButton label="Sound" pressed={!muted} onPress={() => toggleSound()}>
       <SoundIcon off={muted} />
     </IconButton>
   )
+  const settingsButton = (
+    <IconButton label="Settings" onPress={() => setPanel('settings')}>
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+        <circle cx="10" cy="10" r="2.6" />
+        <path d="M10 2.5v2.2M10 15.3v2.2M2.5 10h2.2M15.3 10h2.2M4.7 4.7l1.6 1.6M13.7 13.7l1.6 1.6M4.7 15.3l1.6-1.6M13.7 6.3l1.6-1.6" />
+      </svg>
+    </IconButton>
+  )
   const buttons = (
     <div className="buttons">
       {soundButton}
-      {phase === 'playing' ? (
-        <IconButton label="Pause" onPress={() => pauseNow(performance.now())}>
-          <PauseIcon />
-        </IconButton>
-      ) : (
-        <IconButton label="Settings" onPress={() => setPanel('settings')}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-            <circle cx="10" cy="10" r="2.6" />
-            <path d="M10 2.5v2.2M10 15.3v2.2M2.5 10h2.2M15.3 10h2.2M4.7 4.7l1.6 1.6M13.7 13.7l1.6 1.6M4.7 15.3l1.6-1.6M13.7 6.3l1.6-1.6" />
-          </svg>
-        </IconButton>
-      )}
+      {settingsButton}
     </div>
   )
-  const hint = playing && run.rings === 0 && <p className="hint">{wide ? 'Press Space or click' : 'Tap'} when the points meet the gold dashes</p>
+  const hint = playing && run.rings === 0 && (
+    <p className="hint">
+      <span className="hint-word">{wide ? 'Press Space' : 'Tap'}</span> when the points meet the gold dashes
+    </p>
+  )
   const toast = milestone && (
     <p key={run.rings} className="toast" role="status">
-      <span className="toast-rings">{run.rings} rings</span> {milestone}
+      <span className="toast-rings">{run.rings} rings</span>
+      <span className="toast-line">{milestone}</span>
     </p>
   )
   const action = (
     <div className="poster-action">
       <button type="button" className="primary" onClick={() => start(performance.now())}>
-        {firstVisit ? 'Start · it takes a minute' : 'Light the first ring'}
+        {firstVisit ? 'Start · it takes a minute' : 'Light the first ring'} <span aria-hidden="true">→</span>
       </button>
       {best > 0 && (
-        <span className="poster-best">
+        <span className="best-line">
           Best today <strong>{best}</strong>
         </span>
       )}
@@ -367,7 +364,6 @@ export default function App() {
   const newBest = phase === 'ended' && run.rings > bestBefore && run.rings > 0
   /** The message and meter show only while playing; paused, risen and ended show floating text instead. */
   const live = phase === 'playing'
-  const dateLabel = new Date(`${today}T00:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })
 
   return (
     <main className={`game ${wide ? 'wide' : 'narrow'}${danger ? ' in-danger' : ''}${calm ? ' calm' : ''}${phase === 'ended' || phase === 'paused' || phase === 'risen' ? ` is-dim is-${phase}` : ''}`} onPointerDown={(event) => event.button === 0 && press(event.timeStamp)}>
@@ -387,55 +383,44 @@ export default function App() {
         // The poster: tonight's place is the headline, beside the star on desktop and above it on a phone.
         <div className="poster">
           <header className="ready-bar">
-            <span className="wordmark-small">Parol</span>
+            <span className="wordmark">Parol</span>
             {buttons}
           </header>
           <div className="poster-body">
             <div className="poster-words">
-              <span className="eyebrow">Tonight · {dateLabel}</span>
+              <span className="eyebrow">{tonight.araw} · tonight</span>
               <h1 className="poster-title">{tonight.name}</h1>
               <p className="poster-blurb">{tonight.blurb}.</p>
-              {wide && (
-                <>
-                  <span className="poster-rule" aria-hidden="true" />
-                  <p className="poster-how">Lock each spinning ring onto the one inside it. Everyone lights the same star tonight.</p>
-                </>
-              )}
               {wide && action}
             </div>
             {star}
             {!wide && action}
           </div>
         </div>
-      ) : wide ? (
-        <div className="desk">
-          <header className="desk-bar">
-            <span className="wordmark-small">Parol</span>
-            {buttons}
-          </header>
-          <aside className="desk-side">
-            {live && rings}
-            {live && <Streak streak={run.streak} size={22} />}
-            {live && <Meter engine={engine} />}
-          </aside>
-          {star}
-          <aside className="desk-side">
-            {live && <Callout engine={engine} />}
-            {hint}
-          </aside>
-          {toast}
-        </div>
       ) : (
-        <div className="phone">
-          <header className="hud">
-            {rings}
-            <Streak streak={run.streak} />
-            {buttons}
+        // One centred layout on every screen: the count above, the star in its gauge, the message below.
+        <div className="run">
+          <header className="run-bar">
+            <div className="run-count" aria-label={`${run.rings} rings`}>
+              {live && <span className="count">{run.rings}</span>}
+              {live && <Streak streak={run.streak} />}
+            </div>
+            {live ? (
+              <IconButton label="Pause" ring onPress={() => pauseNow(performance.now())}>
+                <PauseIcon />
+              </IconButton>
+            ) : (
+              buttons
+            )}
           </header>
-          {toast}
+          {/* The gauge reaches 12% of the star beyond it, so the label clears it. */}
+          <p className={`width-label${danger ? ' danger' : ''}`} style={{ marginBottom: Math.round(starSize * 0.12) + 10 }} aria-hidden={!live}>
+            {live && `${Math.round(Math.max(0, run.width))}° · ${speedFactor(run.rings).toFixed(1)}×`}
+          </p>
           {star}
-          {live && <Callout engine={engine} />}
-          {live && <Meter engine={engine} />}
+          {/* A milestone's line takes the lock word's place. */}
+          {live && !milestone ? <Callout engine={engine} /> : <div className="callout" />}
+          {live && toast}
           {hint}
         </div>
       )}
@@ -454,24 +439,26 @@ export default function App() {
       )}
       {phase === 'risen' && <StarRises locks={engine.locks} palette={tonight.palette} onKeepGoing={() => resumeNow(performance.now())} />}
       {phase === 'ended' && (
-        // Afterlight's run-over: no card, just the score floating over the dimmed street, one button and a link.
+        // The run-over: no card, just the score floating over the dimmed street and one button.
         <section className="over" role="dialog" aria-labelledby="ended-title" onPointerDown={(event) => event.stopPropagation()}>
           <h2 id="ended-title" className="over-eyebrow">The star rests</h2>
           <p className="over-score">
             <strong>{run.rings}</strong>
             <span>
               {run.rings === 1 ? 'ring' : 'rings'} · {run.perfects} perfect
-              {newBest ? (
+              {newBest && (
                 <>
                   {' · '}
                   <b>new best today</b>
                 </>
-              ) : (
-                best > run.rings && ` · best today ${best}`
               )}
             </span>
           </p>
-          <p className="over-reason">{endNote(engine)}</p>
+          {!newBest && best > run.rings && (
+            <span className="best-line">
+              Best today <strong>{best}</strong>
+            </span>
+          )}
           <button type="button" className="primary over-button" autoFocus onClick={() => start(performance.now())}>
             Light again
           </button>
