@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { getManilaDate, seedForDate, weekdayIndex } from './game/daily.ts'
 import { createEngine, nextAlignmentMs, ringOffset, tap, type Engine } from './game/engine.ts'
 import { NIGHTS, night as nightById, type NightId, type Night } from './draw/nights.tsx'
@@ -12,6 +13,7 @@ const START_RINGS = Math.max(0, Math.min(300, Number(params.get('rings') ?? 34) 
 const today = getManilaDate()
 const tonight: Night = params.get('night') ? nightById(params.get('night') as NightId) : NIGHTS[weekdayIndex(today)]
 const seed = seedForDate(today)
+const BENCH: number[] | null = params.has('bench') ? ((window as unknown as { lockMs: number[] }).lockMs = []) : null
 
 /** Where the self-playing star taps: on the alignment, with a 3° miss every seventh ring. */
 const autoTapMs = (engine: Engine) => nextAlignmentMs(engine) + (engine.run.rings % 7 === 3 ? (3 / engine.ring.speed) * 1000 : 0)
@@ -41,9 +43,11 @@ export default function App() {
       const now = performance.now() - base
       const current = engineRef.current
       if (now >= autoTapMs(current)) {
-        // Update the ref now too, so the next frame can't tap the same ring twice before React re-renders.
+        // Draw the lock within this frame; ?bench records how long that takes, for checking phones.
+        const started = performance.now()
         engineRef.current = tap(current, autoTapMs(current))
-        setEngine(engineRef.current)
+        flushSync(() => setEngine(engineRef.current))
+        if (BENCH) BENCH.push(performance.now() - started)
       } else spinRef.current?.style.setProperty('transform', `rotate(${ringOffset(current.ring, now)}deg)`)
       frame = requestAnimationFrame(loop)
     }
