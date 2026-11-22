@@ -328,7 +328,7 @@ export default function App() {
   const buttons = (
     <div className="buttons">
       {soundButton}
-      {inRun ? (
+      {inRun && phase !== 'ended' ? (
         <IconButton label="Pause" onPress={() => pauseNow(performance.now())}>
           <PauseIcon />
         </IconButton>
@@ -349,10 +349,12 @@ export default function App() {
     </p>
   )
   const newBest = phase === 'ended' && run.rings > bestBefore && run.rings > 0
+  /** While a run is live the message and meter show; once it ends only the score does. */
+  const live = phase !== 'ended'
   const dateLabel = new Date(`${today}T00:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })
 
   return (
-    <main className={`game ${wide ? 'wide' : 'narrow'}${danger ? ' in-danger' : ''}${calm ? ' calm' : ''}`} onPointerDown={(event) => event.button === 0 && press(event.timeStamp)}>
+    <main className={`game ${wide ? 'wide' : 'narrow'}${danger ? ' in-danger' : ''}${calm ? ' calm' : ''}${phase === 'ended' ? ' is-over' : ''}`} onPointerDown={(event) => event.button === 0 && press(event.timeStamp)}>
       <Scenery stage={stage} tiles={wide ? 4 : 1} />
       {skyStars > 0 && (
         <div className="sky" aria-hidden="true">
@@ -400,13 +402,13 @@ export default function App() {
             {buttons}
           </header>
           <aside className="desk-side">
-            {rings}
-            <Streak streak={run.streak} size={22} />
-            <Meter engine={engine} />
+            {live && rings}
+            {live && <Streak streak={run.streak} size={22} />}
+            {live && <Meter engine={engine} />}
           </aside>
           {star}
           <aside className="desk-side">
-            <Callout engine={engine} />
+            {live && <Callout engine={engine} />}
             {hint}
           </aside>
           {toast}
@@ -420,8 +422,8 @@ export default function App() {
           </header>
           {toast}
           {star}
-          <Callout engine={engine} />
-          <Meter engine={engine} />
+          {live && <Callout engine={engine} />}
+          {live && <Meter engine={engine} />}
           {hint}
         </div>
       )}
@@ -439,34 +441,31 @@ export default function App() {
       )}
       {phase === 'risen' && <StarRises locks={engine.locks} palette={tonight.palette} onKeepGoing={() => resumeNow(performance.now())} />}
       {phase === 'ended' && (
-        <div className="overlay overlay-ended" role="dialog" aria-modal="true" aria-labelledby="ended-title" onPointerDown={(event) => event.stopPropagation()}>
-          <div className="card">
-            <span className="card-label">Run ended</span>
-            <h2 id="ended-title" className="card-title">The points got too thin</h2>
-            <p className="card-note">{endNote(engine)}</p>
-            <div className="stats">
-              <div className="stat">
-                <span className="stat-value">{run.rings}</span>
-                <span className="stat-label">rings</span>
-              </div>
-              <div className="stat">
-                <span className="stat-value gold">{run.perfects}</span>
-                <span className="stat-label">perfect</span>
-              </div>
-              <div className="stat">
-                <span className="stat-value">{best}</span>
-                <span className="stat-label">best today</span>
-              </div>
-            </div>
-            {newBest && <p className="chip">New best today</p>}
-            <button type="button" className="primary" autoFocus onClick={() => start(performance.now())}>
-              Light again
-            </button>
-            <button type="button" className="ghost wide-button" onClick={() => setPanel('journey')}>
-              Tonight’s journey
-            </button>
-          </div>
-        </div>
+        // Afterlight's run-over: no card, just the score floating over the dimmed street, one button and a link.
+        <section className="over" role="dialog" aria-labelledby="ended-title" onPointerDown={(event) => event.stopPropagation()}>
+          <h2 id="ended-title" className="over-eyebrow">The star rests</h2>
+          <p className="over-score">
+            <strong>{run.rings}</strong>
+            <span>
+              {run.rings === 1 ? 'ring' : 'rings'} · {run.perfects} perfect
+              {newBest ? (
+                <>
+                  {' · '}
+                  <b>new best today</b>
+                </>
+              ) : (
+                best > run.rings && ` · best today ${best}`
+              )}
+            </span>
+          </p>
+          <p className="over-reason">{endNote(engine)}</p>
+          <button type="button" className="primary over-button" autoFocus onClick={() => start(performance.now())}>
+            Light again
+          </button>
+          <button type="button" className="text-link" onClick={() => setPanel('journey')}>
+            Tonight’s journey
+          </button>
+        </section>
       )}
 
       {panel === 'how' && <HowToPlay palette={tonight.palette} onClose={closePanel} />}

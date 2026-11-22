@@ -16,7 +16,7 @@ test('the message after each lock: perfect, perfect ×5 with the new width, or h
 test('the meter names speed and direction; the end says which ring and why', () => {
   assert.equal(spinLabel(0), '1.0× · clockwise')
   assert.equal(spinLabel(7), '1.5× · counter-clockwise')
-  assert.equal(endNote(play([14, 14, 5])), 'Ring 3 locked 5° off, leaving 3° points (8° needed)')
+  assert.equal(endNote(play([14, 14, 5])), 'Ring 3 locked 5° off')
 })
 
 test('every 10 rings is a milestone with its own line, and past 100 each adds a star', () => {

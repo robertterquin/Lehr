@@ -22,7 +22,8 @@ export const spinLabel = (ring: number) => `${speedFactor(ring).toFixed(1)}× ·
 /** Why the run ended, once it has. */
 export const endNote = (engine: Engine) => {
   const off = Math.abs(engine.endError ?? 0)
-  return `Ring ${engine.run.rings + 1} locked ${Math.round(off)}° off, leaving ${Math.max(0, Math.round(engine.run.width))}° points (${RULES.minWidth}° needed)`
+  // Just the miss: the points it left are under the minimum by definition, and rounding them could read as 8°.
+  return `Ring ${engine.run.rings + 1} locked ${Math.round(off)}° off`
 }
 
 const MILESTONES: Record<number, string> = {
