@@ -4,6 +4,7 @@ import { GAMEPLAY_SECONDS } from './parol';
 import { DEMO_SECONDS, ParolDemo } from './ParolDemo';
 import { RUN_SECONDS, RunPrototype } from './RunPrototype';
 import { DS02SoundDesign, MS01MotionStoryboard } from './mockups/motion';
+import { NIGHT_SCREENS, W01Week } from './mockups/week';
 import { EndCard, FinaleScene, GameplayScene, TitleScene } from './scenes';
 import { D01Ready, D02Spinning, D03Results, D04Board } from './mockups/desktop';
 import {
@@ -66,6 +67,12 @@ export const RemotionRoot: React.FC = () => {
         <Still id="DS01-Design-system" component={DS01DesignSystem} width={1800} height={2260} />
         <Still id="MS01-Motion-storyboard" component={MS01MotionStoryboard} width={1900} height={2080} />
         <Still id="DS02-Sound-design" component={DS02SoundDesign} width={1900} height={1440} />
+      </Folder>
+      <Folder name="Nights">
+        <Still id="W01-Seven-nights" component={W01Week} width={1900} height={1000} />
+        {NIGHT_SCREENS.map(({ night, Screen }, i) => (
+          <Still key={night.id} id={`N0${i + 1}-${night.name.replace(/ /g, '-')}`} component={Screen} width={390} height={844} />
+        ))}
       </Folder>
       <Folder name="Desktop">
         <Still id="D01-Ready" component={D01Ready} width={1440} height={900} />

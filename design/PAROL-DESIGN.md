@@ -53,6 +53,22 @@ Drawn from Filipino references so every element can be named at a glance:
 - A concrete **utility pole** with crossarm, insulators, transformer and sagging wires; a **sodium street lamp** casting light on the road; **Christmas bulbs** strung across the street; two **coconut palms**; the **parish church** with its bell tower at the end of the street; real **mini parols** (star, hoop, tambor, tails) in every window.
 - Milestones change the scene: lights at 20, parols at 30, carolers (a parol on a stick, a bottle-cap tambourine) at 40, far hills at 50, Pampanga-style giant lanterns at 70, fireworks at 80, dawn at 90, when the moon sets and the church lights up.
 
+## Seven nights
+
+The look changes with the weekday (Manila time), so everyone on a day's board plays the same place. Only the paper colours and the scene change; the rules, the seed and the streak's scale do not. Overview: [mockups/W01-Seven-nights.png](mockups/W01-Seven-nights.png).
+
+| Day | Night | Scene | Paper |
+|---|---|---|---|
+| Lunes · Monday | Barangay | Bahay kubo, sari-sari store, bahay na bato, the parish church | Pearl, red, gold, green, blue, magenta |
+| Martes · Tuesday | San Fernando, Pampanga | Giant lanterns on steel frames, a sorbetes cart, the crowd, the cathedral dome | Lantern red, amber, emerald, sapphire, ivory, violet |
+| Miyerkules · Wednesday | Rooftop, Manila | Water tank, laundry line, monobloc chairs, the skyline and a lit LRT train | Pearl, coral, teal, yellow, sky blue, pink |
+| Huwebes · Thursday | Palayan, Albay | Rice paddies under Mayon, a kubo, a sleeping carabao, fireflies | Pearl, straw, leaf green, rust, rice, bamboo |
+| Biyernes · Friday | Intramuros, Manila | The walls, a garita, the gate, a kalesa, gas lamps, the cathedral | Ivory, crimson, antique gold, teal, navy, rose |
+| Sabado · Saturday | Dagat | Stilt houses, bangkas with lamps, nets, a lighthouse, the moon on the sea | Pearl, aqua, coral, sand, deep blue, seafoam |
+| Linggo · Sunday | Simbahan | A baroque church after Simbang Gabi, bibingka and puto bumbong stalls | Pearl, ube purple, bibingka gold, banana leaf, red, lavender |
+
+Every scene keeps the milestone ladder: lights at 20, parols at 30, carolers at 40, far lights at 50, giant lanterns at 70, fireworks at 80, dawn at 90.
+
 ## Motion and sound
 
 Watch and listen: [parol-run-prototype.mp4](parol-run-prototype.mp4) (a 23-ring run with every sound in place). Timings, curves and cues: [mockups/MS01-Motion-storyboard.png](mockups/MS01-Motion-storyboard.png); sounds: [mockups/DS02-Sound-design.png](mockups/DS02-Sound-design.png).
@@ -86,6 +102,7 @@ The whole app on one page: [mockups/A01-App-map.png](mockups/A01-App-map.png).
 | Play | P04 Spinning · P05 Perfect · P06 Perfect ×5 · P07 Off-angle trim · P08 Danger · P10 Paused |
 | Journey | P19 20 · P09 30 · P20 40 · P21 50 · P22 60 · P16 70 · P23 80 · P24 90 · P17 100 (star rises) · P25 past 100 (constellation) |
 | After the run | P11 Run ended · P13 Share · P12 Today's board · P15 share card · P18 gold share card (100+) |
+| Nights | W01 Seven nights · N01 Barangay · N02 San Fernando · N03 Rooftop · N04 Palayan · N05 Intramuros · N06 Dagat · N07 Simbahan |
 | Desktop | D01 Ready · D02 Spinning · D03 Run ended · D04 Board |
 | Edge cases | S01 First visit · S02 Offline · S03 Name not allowed · S04 New day · S05 Empty board · S06 Reduced motion |
 | Brand | B01 Logo · B02 App icon (1024, platform masks the corners) · B03 Link preview (1200×630) |

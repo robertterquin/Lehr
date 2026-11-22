@@ -36,13 +36,15 @@ type Props = {
   fall?: number
   /** Animation: strength of the last ring's perfect-lock glow, 0 to 1. */
   glow?: number
+  /** Paper colours, ring by ring: each night has its own. */
+  palette?: string[]
 };
 
 /**
  * A parol: concentric five-pointed rings of backlit paper on a bamboo frame, a tambor (drum) at the
  * centre, two fringed tails (buntot) with tassels, and optional halos with bulbs like Pampanga lanterns.
  */
-export const Parol: React.FC<Props> = ({ size, locks, spin = null, trimLast = false, glowLast = false, light = 1, halo: haloProp, dim = false, danger = false, sway = 0, compact = false, fall, glow: glowAmount }) => {
+export const Parol: React.FC<Props> = ({ size, locks, spin = null, trimLast = false, glowLast = false, light = 1, halo: haloProp, dim = false, danger = false, sway = 0, compact = false, fall, glow: glowAmount, palette = PALETTE }) => {
   const id = useId().replace(/:/g, '');
   const rings = playLocks(locks);
   const count = locks.length;
@@ -59,7 +61,9 @@ export const Parol: React.FC<Props> = ({ size, locks, spin = null, trimLast = fa
   const fit = Math.min(1, 138 / (halo > 0 ? haloR + (halo - 1) * 12 : outer));
   const camera = `translate(${CENTER} ${CENTER}) scale(${fit.toFixed(4)}) translate(${-CENTER} ${-CENTER})`;
   // Frame lines thin out as the camera pulls back, so a 70-ring star keeps its colours instead of turning to bamboo.
-  const frame = Math.max(0.3, Math.min(1.4, fit * 3));
+  const frame = Math.max(0.25, Math.min(1.4, fit * 1.8));
+  // On a big star the rings are thin bands: bulbs and sheen soften so the paper colours still read.
+  const crowd = Math.min(1, fit * 1.6);
 
   // Tails hang from the tips of the two lower points of the outermost ring.
   const tails = [54, 126].map((deg, side) => {
@@ -76,13 +80,14 @@ export const Parol: React.FC<Props> = ({ size, locks, spin = null, trimLast = fa
     };
   });
 
-  const ringFill = (index: number) => `url(#${id}-paper-${index % PALETTE.length})`;
+  const ringFill = (index: number) => `url(#${id}-paper-${index % palette.length})`;
 
   return (
     <svg width={size} height={compact ? size : (size * 420) / 300} viewBox={compact ? '0 0 300 300' : '0 0 300 420'} style={{ overflow: 'visible' }}>
       <defs>
-        {PALETTE.map((color, i) => (
-          <radialGradient key={i} id={`${id}-paper-${i}`} gradientUnits="userSpaceOnUse" cx={CENTER} cy={CENTER} r="150">
+        {palette.map((color, i) => (
+          // The gradient spans the whole star, so outer rings of a big star keep their colour instead of going dark.
+          <radialGradient key={i} id={`${id}-paper-${i}`} gradientUnits="userSpaceOnUse" cx={CENTER} cy={CENTER} r={Math.max(150, outer + 10)}>
             <stop offset="0" stopColor={mix(color, '#fffaf0', dim ? 0.1 : 0.6)} />
             <stop offset="0.45" stopColor={color} />
             <stop offset="1" stopColor={mix(color, '#120a04', 0.28)} />
@@ -194,7 +199,7 @@ export const Parol: React.FC<Props> = ({ size, locks, spin = null, trimLast = fa
         >
           {/* Non-scaling strokes keep the bamboo frame crisp when the camera pulls back on a big star */}
           <path d={starPath(ring.index, ring.width, ring.rotation)} fill={ringFill(ring.index)} fillOpacity={dim ? 0.3 : 1} stroke={dim ? 'rgba(244,236,216,0.35)' : BAMBOO} strokeWidth={frame} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-          {!dim && <path d={starPath(ring.index, ring.width, ring.rotation)} fill="none" stroke={BAMBOO_SHEEN} strokeWidth={frame * 0.35} opacity="0.5" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
+          {!dim && fit > 0.5 && <path d={starPath(ring.index, ring.width, ring.rotation)} fill="none" stroke={BAMBOO_SHEEN} strokeWidth={frame * 0.35} opacity="0.5" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
         </g>
       ))}
 
@@ -208,8 +213,8 @@ export const Parol: React.FC<Props> = ({ size, locks, spin = null, trimLast = fa
               const chase = rotor ? ((ring.index + k) % 3 === 0 ? 1 : 0.35) : 1;
               return (
                 <g key={`${ring.index}-${k}`}>
-                  <circle cx={bx} cy={by} r="4" fill={rotor && (ring.index + k) % 3 === 0 ? '#fff1c2' : '#ffe7a8'} opacity={0.6 * glow * chase} filter={`url(#${id}-bulb)`} />
-                  <circle cx={bx} cy={by} r="1.6" fill="#fffaf0" opacity={glow * chase} />
+                  <circle cx={bx} cy={by} r="4" fill={rotor && (ring.index + k) % 3 === 0 ? '#fff1c2' : '#ffe7a8'} opacity={0.6 * glow * chase * crowd} filter={`url(#${id}-bulb)`} />
+                  <circle cx={bx} cy={by} r="1.6" fill="#fffaf0" opacity={glow * chase * (0.4 + 0.6 * crowd)} />
                 </g>
               );
             }),

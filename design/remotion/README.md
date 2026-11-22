@@ -4,7 +4,7 @@ Remotion project that renders the Parol demo video (`../parol-demo.mp4`), the ru
 
 - `src/parol.ts`: star geometry and the lock rules (perfect keeps the width, off-angle trims it, 5 perfects widen it).
 - `src/ParolStar.tsx`: the parol drawing used by the mockups: backlit paper rings, bamboo frame, tambor, halos, tails.
-- `src/mockups/`: phone (`phone.tsx`) and desktop (`desktop.tsx`) pages, sharing `kit.tsx`; motion storyboard and sound sheet (`motion.tsx`).
+- `src/mockups/`: phone (`phone.tsx`) and desktop (`desktop.tsx`) pages, sharing `kit.tsx`; motion storyboard and sound sheet (`motion.tsx`); the seven nightly scenes and palettes (`nights.tsx`) and their screens (`week.tsx`).
 - `src/RunPrototype.tsx`: a scripted run under the real rules, with every sound cue.
 - `sound/gen-sounds.ts`: synthesizes `public/sfx/*.wav` and the waveform data; `sound/check-sounds.ts` checks tuning and clipping.
 

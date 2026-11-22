@@ -9,11 +9,11 @@ import React from 'react';
 
 export type Stage = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
-const GROUND = 812;
-const BULBS = ['#f2b632', '#d8342c', '#2e9a5a', '#2f6fd0', '#f4ecd8', '#c43a8a'];
-const WARM = '#ffc96b';
+export const GROUND = 812;
+export const BULBS = ['#f2b632', '#d8342c', '#2e9a5a', '#2f6fd0', '#f4ecd8', '#c43a8a'];
+export const WARM = '#ffc96b';
 
-const starPoints = (cx: number, cy: number, r: number) =>
+export const starPoints = (cx: number, cy: number, r: number) =>
   Array.from({ length: 10 }, (_, k) => {
     const a = ((k * 36 - 90) * Math.PI) / 180;
     const rr = k % 2 === 0 ? r : r * 0.42;
@@ -36,7 +36,7 @@ export const MiniParol: React.FC<{ x: number; y: number; r: number; color: strin
 );
 
 /** A row of Christmas bulbs hanging along a curve. */
-const BulbString: React.FC<{ from: [number, number]; to: [number, number]; sag: number; count: number; on: boolean; offset?: number }> = ({ from, to, sag, count, on, offset = 0 }) => {
+export const BulbString: React.FC<{ from: [number, number]; to: [number, number]; sag: number; count: number; on: boolean; offset?: number }> = ({ from, to, sag, count, on, offset = 0 }) => {
   const at = (t: number): [number, number] => [from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t + sag * 4 * t * (1 - t)];
   const mid = at(0.5);
   return (
@@ -57,7 +57,7 @@ const BulbString: React.FC<{ from: [number, number]; to: [number, number]; sag: 
   );
 };
 
-const Kubo: React.FC<{ x: number; lit: boolean; parolLit: boolean; lights: boolean }> = ({ x, lit, parolLit, lights }) => (
+export const Kubo: React.FC<{ x: number; lit: boolean; parolLit: boolean; lights: boolean }> = ({ x, lit, parolLit, lights }) => (
   <g transform={`translate(${x} 0)`}>
     {/* Concrete footings and bamboo posts: the house stands on stilts */}
     {[10, 44, 86, 118].map((px) => (
@@ -209,7 +209,7 @@ const Bato: React.FC<{ x: number; lit: boolean; parolLit: boolean; lights: boole
   </g>
 );
 
-const Palm: React.FC<{ x: number; lean: number; height: number }> = ({ x, lean, height }) => {
+export const Palm: React.FC<{ x: number; lean: number; height: number }> = ({ x, lean, height }) => {
   const top: [number, number] = [x + lean, GROUND - height];
   const fronds = [-150, -115, -75, -35, -5, 30, 160];
   return (
@@ -239,7 +239,7 @@ const Palm: React.FC<{ x: number; lean: number; height: number }> = ({ x, lean, 
 };
 
 /** Parish church at the end of the street: bell tower, pediment, rose window. */
-const Church: React.FC<{ lit: boolean }> = ({ lit }) => (
+export const Church: React.FC<{ lit: boolean }> = ({ lit }) => (
   <g>
     <rect x="212" y="600" width="16" height="90" fill="#16112c" />
     <path d="M212 600L220 586L228 600Z" fill="#16112c" />
@@ -254,7 +254,7 @@ const Church: React.FC<{ lit: boolean }> = ({ lit }) => (
 );
 
 /** Pampanga-style giant lantern: concentric rings of colour around a star, edged with bulbs. */
-const GiantLantern: React.FC<{ x: number; y: number; r: number; colors: string[] }> = ({ x, y, r, colors }) => (
+export const GiantLantern: React.FC<{ x: number; y: number; r: number; colors: string[] }> = ({ x, y, r, colors }) => (
   <g>
     <circle cx={x} cy={y} r={r * 1.7} fill={colors[0]} opacity="0.18" />
     {colors.map((color, i) => (
@@ -269,7 +269,7 @@ const GiantLantern: React.FC<{ x: number; y: number; r: number; colors: string[]
 );
 
 /** A child caroler: one carries a parol on a stick, another a tansan (bottle-cap) tambourine. */
-const Caroler: React.FC<{ x: number; tall: number; item: 'parol' | 'tambourine' | 'none'; facing?: 1 | -1 }> = ({ x, tall, item, facing = 1 }) => {
+export const Caroler: React.FC<{ x: number; tall: number; item: 'parol' | 'tambourine' | 'none'; facing?: 1 | -1 }> = ({ x, tall, item, facing = 1 }) => {
   // Standing on the sidewalk in front of the houses.
   const head = GROUND - 8 - tall;
   const ink = '#0c0918';
@@ -302,6 +302,36 @@ const Caroler: React.FC<{ x: number; tall: number; item: 'parol' | 'tambourine' 
   );
 };
 
+/** The night sky shared by every scene: stars, the moon, fireworks from 80 rings and Simbang Gabi dawn from 90. */
+export const Sky: React.FC<{ stage: Stage; moon?: boolean; id: string }> = ({ stage, moon = true, id }) => (
+  <g>
+    <defs>
+        <linearGradient id={`${id}-dawn`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0.35" stopColor="#e8845a" stopOpacity="0" />
+          <stop offset="0.7" stopColor="#c8607a" stopOpacity="0.35" />
+          <stop offset="0.86" stopColor="#f2a66a" stopOpacity="0.6" />
+        </linearGradient>
+    </defs>
+      {stage >= 9 && <rect width="390" height="844" fill={`url(#${id}-dawn)`} />}
+    {[[40, 110], [350, 80], [300, 190], [70, 250], [360, 320], [18, 380], [214, 150], [250, 130], [120, 170], [330, 420]].map(([sx, sy], i) => (
+      <circle key={i} cx={sx} cy={sy} r={i % 3 === 0 ? 1.4 : 1} fill="#fff" opacity={(0.35 + (i % 4) * 0.12) * (stage >= 9 ? 0.45 : 1)} />
+    ))}
+    {moon && stage < 9 && <path d="M350 108a14 14 0 1 0 10 23a11 11 0 1 1 -10 -23z" fill="#f4ecd8" opacity="0.8" />}
+
+    {stage >= 8 &&
+      [[56, 300, '#f2b632'], [336, 240, '#d8342c'], [80, 150, '#2f6fd0']].map(([fx, fy, color], i) => (
+        <g key={i}>
+          {Array.from({ length: 14 }, (_, k) => {
+            const a = (k * (360 / 14) * Math.PI) / 180;
+            return <path key={k} d={`M${Number(fx) + 7 * Math.cos(a)} ${Number(fy) + 7 * Math.sin(a)}L${Number(fx) + 26 * Math.cos(a)} ${Number(fy) + 26 * Math.sin(a)}`} stroke={color as string} strokeWidth="1.5" strokeLinecap="round" opacity="0.9" />;
+          })}
+          <circle cx={Number(fx)} cy={Number(fy)} r="2.5" fill="#fffaf0" />
+        </g>
+      ))}
+
+  </g>
+);
+
 type HouseKind = 'kubo' | 'sari' | 'bato';
 const ORDERS: HouseKind[][] = [
   ['kubo', 'sari', 'bato'],
@@ -326,33 +356,13 @@ export const Street: React.FC<{ stage?: Stage; width?: number | string; height?:
   return (
     <svg width={width} height={height} viewBox="0 0 390 844" preserveAspectRatio="xMidYMax slice" style={{ position: 'absolute', inset: 0 }}>
       <defs>
-        <linearGradient id={`${id}-dawn`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0.35" stopColor="#e8845a" stopOpacity="0" />
-          <stop offset="0.7" stopColor="#c8607a" stopOpacity="0.35" />
-          <stop offset="0.86" stopColor="#f2a66a" stopOpacity="0.6" />
-        </linearGradient>
         <radialGradient id={`${id}-lamp`} cx="0.5" cy="0" r="1">
           <stop offset="0" stopColor="#ffb35a" stopOpacity="0.45" />
           <stop offset="1" stopColor="#ffb35a" stopOpacity="0" />
         </radialGradient>
       </defs>
 
-      {stage >= 9 && <rect width="390" height="844" fill={`url(#${id}-dawn)`} />}
-      {[[40, 110], [350, 80], [300, 190], [70, 250], [360, 320], [18, 380], [214, 150], [250, 130], [120, 170], [330, 420]].map(([sx, sy], i) => (
-        <circle key={i} cx={sx} cy={sy} r={i % 3 === 0 ? 1.4 : 1} fill="#fff" opacity={(0.35 + (i % 4) * 0.12) * (stage >= 9 ? 0.45 : 1)} />
-      ))}
-      {moon && stage < 9 && <path d="M350 108a14 14 0 1 0 10 23a11 11 0 1 1 -10 -23z" fill="#f4ecd8" opacity="0.8" />}
-
-      {stage >= 8 &&
-        [[56, 300, '#f2b632'], [336, 240, '#d8342c'], [80, 150, '#2f6fd0']].map(([fx, fy, color], i) => (
-          <g key={i}>
-            {Array.from({ length: 14 }, (_, k) => {
-              const a = (k * (360 / 14) * Math.PI) / 180;
-              return <path key={k} d={`M${Number(fx) + 7 * Math.cos(a)} ${Number(fy) + 7 * Math.sin(a)}L${Number(fx) + 26 * Math.cos(a)} ${Number(fy) + 26 * Math.sin(a)}`} stroke={color as string} strokeWidth="1.5" strokeLinecap="round" opacity="0.9" />;
-            })}
-            <circle cx={Number(fx)} cy={Number(fy)} r="2.5" fill="#fffaf0" />
-          </g>
-        ))}
+      <Sky stage={stage} moon={moon} id={id} />
 
       {/* Everything on the ground sits 30 px low so the street stays under the in-run meter */}
       <g transform="translate(0 30)">
