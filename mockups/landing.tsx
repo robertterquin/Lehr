@@ -5,6 +5,7 @@ import '@fontsource-variable/manrope/wght.css'
 import '@fontsource/young-serif/400.css'
 import '../src/index.css'
 import { NIGHTS } from '../src/draw/nights.tsx'
+import { Panorama } from '../src/draw/panorama.tsx'
 import { Star } from '../src/draw/star.tsx'
 
 const night = NIGHTS[6] // Sunday: Simbahan, as in the screenshot
@@ -23,73 +24,6 @@ function useSize() {
     return () => window.removeEventListener('resize', update)
   }, [])
   return size
-}
-
-/** Seeded random, so the skyline is the same on every render. */
-const rand = (seed: number) => () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff)
-
-/**
- * One street across the whole width: tonight's scene once in the middle at its own scale, and a lower
- * skyline of rooftops, lit windows and a string of bulbs continuing it to both edges (no repeated tiles).
- */
-function Panorama({ w, h }: { w: number; h: number }) {
-  const sceneW = Math.round((390 * h) / 844)
-  const side = Math.max(0, (w - sceneW) / 2)
-  const k = h / 844
-  const ground = h - 2 * k
-  const next = rand(7)
-  const houses: ReactNode[] = []
-  const lights: ReactNode[] = []
-  for (const [from, to] of [[0, side + 4], [w - side - 4, w]]) {
-    for (const row of [0, 1]) {
-      let x = from - next() * 30
-      while (x < to) {
-        const hw = (48 + next() * 70) * k
-        const hh = (row === 0 ? 120 + next() * 120 : 60 + next() * 70) * k
-        const top = ground - hh
-        const pitched = next() < 0.55
-        const fill = row === 0 ? '#151132' : '#0d0a1c'
-        houses.push(
-          <path
-            key={`${from}-${row}-${x}`}
-            d={pitched ? `M${x} ${ground}V${top}L${x + hw / 2} ${top - hw * 0.35}L${x + hw} ${top}V${ground}Z` : `M${x} ${ground}V${top}H${x + hw}V${ground}Z`}
-            fill={fill}
-          />,
-        )
-        for (let wy = top + 10 * k; wy < ground - 16 * k; wy += 18 * k)
-          for (let wx = x + 8 * k; wx < x + hw - 10 * k; wx += 16 * k)
-            if (next() < (row === 0 ? 0.12 : 0.22)) houses.push(<rect key={`${wx}-${wy}`} x={wx} y={wy} width={5 * k} height={7 * k} fill="#ffc96b" opacity={row === 0 ? 0.35 : 0.7} />)
-        x += hw + next() * 14 * k
-      }
-    }
-  }
-  // A bulb string across the street, dipping between poles.
-  const BULBS = ['#f2b632', '#d8342c', '#2e9a5a', '#2f6fd0', '#f4ecd8', '#c43a8a']
-  const y0 = ground - 170 * k
-  for (let i = 0, x = 6; x < w; i += 1, x += 22 * k) {
-    const t = (x % (260 * k)) / (260 * k)
-    const y = y0 + Math.sin(Math.PI * t) * 26 * k
-    if (x > side - 6 && x < w - side + 6) continue
-    lights.push(<circle key={i} cx={x} cy={y} r={2.2 * k} fill={BULBS[i % BULBS.length]} opacity={i % 4 === 0 ? 0.95 : 0.35} />)
-  }
-  const stars = Array.from({ length: Math.round(w / 9) }, (_, i) => <circle key={i} cx={next() * w} cy={next() * h * 0.55} r={next() < 0.2 ? 1.3 : 0.8} fill="#fff" opacity={0.25 + next() * 0.4} />)
-  return (
-    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }} aria-hidden="true">
-      <svg width={w} height={h} style={{ position: 'absolute', inset: 0 }}>
-        {stars}
-        <path d={`M${w - 64} 70a18 18 0 1 0 13 30a14 14 0 1 1 -13 -30z`} fill="#f4ecd8" opacity="0.8" />
-        {houses}
-        {lights}
-        <rect x="0" y={ground} width={w} height={h - ground} fill="#0b0916" />
-      </svg>
-      <div style={{ position: 'absolute', left: side, bottom: 0, width: sceneW, height: h }}>
-        <night.Scene stage={0} moon={false} />
-      </div>
-      {/* Soft edges where the scene meets the skyline */}
-      <div style={{ position: 'absolute', left: side - 40, width: 80, bottom: 0, height: h * 0.35, background: 'linear-gradient(90deg, transparent, rgba(13,10,28,0.55), transparent)' }} />
-      <div style={{ position: 'absolute', left: w - side - 40, width: 80, bottom: 0, height: h * 0.35, background: 'linear-gradient(90deg, transparent, rgba(13,10,28,0.55), transparent)' }} />
-    </div>
-  )
 }
 
 const Icons = () => (
@@ -146,7 +80,7 @@ function A({ w, h, wide }: { w: number; h: number; wide: boolean }) {
   const size = wide ? Math.min(420, h * 0.5) : Math.min(290, w - 90)
   return (
     <>
-      <Panorama w={w} h={h} />
+      <Panorama night={night} stage={0} width={w} height={h} />
       <Bar />
       <HungStar w={w} size={size} top={wide ? 70 : 84} />
       <section style={{ position: 'absolute', left: '50%', bottom: wide ? 44 : 32, translate: '-50% 0', width: 'min(460px, calc(100% - 40px))', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, textAlign: 'center', textShadow: '0 2px 16px rgba(5,5,20,0.75)' }}>
@@ -199,7 +133,7 @@ function B({ w, h, wide }: { w: number; h: number; wide: boolean }) {
   )
   return (
     <>
-      <Panorama w={w} h={h} />
+      <Panorama night={night} stage={0} width={w} height={h} />
       <Bar />
       {wide ? (
         <>
@@ -232,7 +166,7 @@ function C({ w, h, wide }: { w: number; h: number; wide: boolean }) {
   return (
     <>
       <style>{`@keyframes breathe { 0%,100% { opacity: .35; scale: .96 } 50% { opacity: .9; scale: 1.02 } }`}</style>
-      <Panorama w={w} h={h} />
+      <Panorama night={night} stage={0} width={w} height={h} />
       <Bar />
       <button type="button" aria-label="Light the first ring" style={{ position: 'absolute', left: (w - size) / 2, top: ringTop, width: size, height: size, border: 0, padding: 0, background: 'none', cursor: 'pointer' }}>
         <span style={{ position: 'absolute', inset: '-6%', borderRadius: '50%', border: `1.5px solid ${GOLD}`, animation: 'breathe 2.4s ease-in-out infinite', boxShadow: '0 0 40px rgba(255,210,122,0.35)' }} />
@@ -278,7 +212,7 @@ function D({ w, h, wide }: { w: number; h: number; wide: boolean }) {
   }
   return (
     <>
-      <Panorama w={w} h={h} />
+      <Panorama night={night} stage={0} width={w} height={h} />
       <Bar />
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,9,24,0.35)' }} />
       <svg width={w} height={top + wh + 30} style={{ position: 'absolute', left: 0, top: 0 }} aria-hidden="true">

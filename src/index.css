@@ -101,8 +101,7 @@ body {
   to { clip-path: inset(0 0 0 0); }
 }
 
-.phone,
-.ready {
+.phone {
   position: relative;
   height: 100%;
   max-width: 430px;
@@ -471,8 +470,150 @@ body {
   text-align: center;
 }
 
-.ready {
+
+/* The landing page is a poster: tonight's place as the headline, the lit star beside or below it. */
+.poster {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px 28px;
+}
+
+.poster-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-top: 20px;
   text-align: center;
+}
+
+.poster-words {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.eyebrow {
+  font: 700 12px/1.3 var(--font-ui);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.poster-title {
+  margin: 0;
+  font: 400 54px/0.95 var(--font-display);
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 18px rgba(5, 5, 20, 0.6);
+}
+
+.poster-blurb {
+  max-width: 340px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.poster-rule {
+  width: 56px;
+  height: 2px;
+  margin: 8px 0;
+  background: var(--gold);
+  opacity: 0.7;
+}
+
+.poster-how {
+  max-width: 360px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.poster-action {
+  width: 100%;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.poster-action .primary {
+  width: min(100%, 320px);
+  border-radius: 16px;
+  padding: 0 26px;
+}
+
+.poster-best {
+  font-size: 14px;
+  color: var(--muted);
+  text-shadow: 0 2px 12px rgba(5, 5, 20, 0.8);
+}
+
+.poster-best strong {
+  margin-left: 4px;
+  font: 400 20px var(--font-display);
+  color: var(--ink);
+}
+
+.poster .stage {
+  margin-top: 12px;
+}
+
+.wide .poster-body {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 32px 16vh;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 48px;
+  text-align: left;
+}
+
+.wide .poster-words {
+  align-items: flex-start;
+  gap: 16px;
+  max-width: 520px;
+}
+
+.wide .poster-title {
+  font-size: 104px;
+}
+
+.wide .poster-blurb {
+  max-width: 380px;
+  font-size: 17px;
+}
+
+.wide .poster-action {
+  width: auto;
+  margin-top: 20px;
+  flex-direction: row;
+  gap: 20px;
+}
+
+.wide .poster-action .primary {
+  width: auto;
+  min-width: 220px;
+}
+
+.wide .poster .stage {
+  margin: 0;
+}
+
+.wide .poster .stage::before {
+  content: '';
+  position: absolute;
+  inset: -8% -20% 10%;
+  background: radial-gradient(closest-side, rgba(255, 190, 90, 0.22), transparent);
+  pointer-events: none;
 }
 
 .ready-bar {
@@ -482,50 +623,10 @@ body {
   align-items: center;
 }
 
-.date {
-  margin: 16px 0 0;
-  font-size: 12px;
-  line-height: 1.25;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
 
-.ready-title {
-  margin: -32px 0 8px;
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 30px;
-  line-height: 1.15;
-}
 
-.ready-note {
-  max-width: 300px;
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.45;
-  color: var(--muted);
-}
 
-.chip {
-  margin: 12px 0 0;
-  padding: 5px 12px;
-  border-radius: 12px;
-  background: rgba(255, 210, 122, 0.12);
-  border: 1px solid rgba(255, 210, 122, 0.4);
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.4;
-  color: var(--gold);
-}
 
-.ready-actions {
-  width: 100%;
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
 
 .link {
   min-height: 44px;

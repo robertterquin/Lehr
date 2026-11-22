@@ -5,6 +5,7 @@ import { endNote, milestoneText } from './game/feedback.ts'
 import { bestOn, deviceStore, logRun, loggedRuns, readSettings, writeSettings, type Settings as SavedSettings } from './game/local.ts'
 import { RULES } from './game/rules.ts'
 import { NIGHTS, night as nightById, type NightId, type Night } from './draw/nights.tsx'
+import { Panorama } from './draw/panorama.tsx'
 import { Star } from './draw/star.tsx'
 import type { Stage } from './draw/street.tsx'
 import { SOUNDS, buzz, isMuted, play, setMusic, setMuted, setVibration, stopMusic, unlockAudio } from './sound/audio.ts'
@@ -44,19 +45,15 @@ function useViewport() {
   return viewport
 }
 
-const SceneTiles = memo(function SceneTiles({ stage, tiles }: { stage: Stage; tiles: number }) {
-  return Array.from({ length: tiles }, (_, i) => (
-    <div key={i} className="scenery-tile">
-      <tonight.Scene stage={stage} moon={i === tiles - 1} />
-    </div>
-  ))
+type SceneProps = { stage: Stage; wide: boolean; width: number; height: number; moon: boolean }
+
+/** Tonight's scene: on a phone the scene itself, on a wide screen one panoramic street. */
+const SceneLayer = memo(function SceneLayer({ stage, wide, width, height, moon }: SceneProps) {
+  return wide ? <Panorama night={tonight} stage={stage} width={width} height={height} /> : <tonight.Scene stage={stage} moon={moon} />
 })
 
-/**
- * The night scene behind the run. Wide screens line up four copies of the phone scene, with one moon.
- * At a milestone the new scene flickers on over the old one, left to right, then the old one goes.
- */
-function Scenery({ stage, tiles }: { stage: Stage; tiles: number }) {
+/** The night scene behind everything. At a milestone the new scene flickers on over the old one, then the old one goes. */
+function Scenery({ stage, ...rest }: SceneProps) {
   const [shown, setShown] = useState<Stage[]>([stage])
   if (shown[shown.length - 1] !== stage) setShown([shown[shown.length - 1], stage])
   useEffect(() => {
@@ -68,7 +65,7 @@ function Scenery({ stage, tiles }: { stage: Stage; tiles: number }) {
     <div className="scenery" aria-hidden="true">
       {shown.map((s, i) => (
         <div key={s} className={`scenery-layer${i > 0 ? ' scene-in' : ''}`}>
-          <SceneTiles stage={s} tiles={tiles} />
+          <SceneLayer stage={s} {...rest} />
         </div>
       ))}
     </div>
@@ -296,7 +293,15 @@ export default function App() {
   const inRun = phase !== 'ready'
   const stage = (inRun ? Math.min(10, Math.floor(run.rings / 10)) : 0) as Stage
   const playing = phase === 'playing'
-  const starSize = Math.round(wide ? Math.min(520, height - 260) : Math.max(220, Math.min(330, width - 60, height - 440)))
+  const starSize = Math.round(
+    phase === 'ready'
+      ? wide
+        ? Math.min(470, height * 0.58)
+        : Math.max(200, Math.min(270, width - 110, (height - 390) / 1.4))
+      : wide
+        ? Math.min(520, height - 260)
+        : Math.max(220, Math.min(330, width - 60, height - 440)),
+  )
   const danger = inRun && !run.ended && run.width < DANGER_BELOW
   const milestone = inRun && !run.ended && phase !== 'risen' ? milestoneText(run.rings) : null
   const skyStars = inRun ? Math.min(SKY.length, Math.max(0, Math.floor((run.rings - 100) / 10))) : 0
@@ -304,12 +309,11 @@ export default function App() {
   const star = (
     <div className={`stage${phase === 'ended' ? ' stage-ended' : ''}`} ref={stageRef}>
       <Star
-        size={phase === 'ready' ? Math.round(starSize * 0.82) : starSize}
+        size={starSize}
         locks={inRun ? engine.locks : PREVIEW}
         spinning={phase === 'playing' || phase === 'paused' || phase === 'risen'}
         spinRef={spinRef}
         palette={tonight.palette}
-        dim={!inRun}
         danger={danger}
         failed={phase === 'ended' ? engine.endError : undefined}
       />
@@ -348,6 +352,18 @@ export default function App() {
       <span className="toast-rings">{run.rings} rings</span> {milestone}
     </p>
   )
+  const action = (
+    <div className="poster-action">
+      <button type="button" className="primary" onClick={() => start(performance.now())}>
+        {firstVisit ? 'Start · it takes a minute' : 'Light the first ring'}
+      </button>
+      {best > 0 && (
+        <span className="poster-best">
+          Best today <strong>{best}</strong>
+        </span>
+      )}
+    </div>
+  )
   const newBest = phase === 'ended' && run.rings > bestBefore && run.rings > 0
   /** The message and meter show only while playing; paused, risen and ended show floating text instead. */
   const live = phase === 'playing'
@@ -355,7 +371,8 @@ export default function App() {
 
   return (
     <main className={`game ${wide ? 'wide' : 'narrow'}${danger ? ' in-danger' : ''}${calm ? ' calm' : ''}${phase === 'ended' || phase === 'paused' || phase === 'risen' ? ` is-dim is-${phase}` : ''}`} onPointerDown={(event) => event.button === 0 && press(event.timeStamp)}>
-      <Scenery stage={stage} tiles={wide ? 4 : 1} />
+      {/* On a phone the Ready screen's headline sits where the moon would. */}
+      <Scenery stage={stage} wide={wide} width={width} height={height} moon={wide || phase !== 'ready'} />
       {skyStars > 0 && (
         <div className="sky" aria-hidden="true">
           {SKY.slice(0, skyStars).map(([x, y]) => (
@@ -367,22 +384,27 @@ export default function App() {
       )}
 
       {phase === 'ready' ? (
-        <div className="ready">
+        // The poster: tonight's place is the headline, beside the star on desktop and above it on a phone.
+        <div className="poster">
           <header className="ready-bar">
             <span className="wordmark-small">Parol</span>
             {buttons}
           </header>
-          <p className="date">
-            {dateLabel} · {tonight.name}
-          </p>
-          {star}
-          <h1 className="ready-title">{firstVisit ? 'Light your first parol' : 'Tonight’s star'}</h1>
-          <p className="ready-note">Lock each spinning ring onto the one inside it.</p>
-          {best > 0 && <p className="chip">Your best today: {best} rings</p>}
-          <div className="ready-actions">
-            <button type="button" className="primary" onClick={() => start(performance.now())}>
-              {firstVisit ? 'Start · it takes a minute' : 'Light the first ring'}
-            </button>
+          <div className="poster-body">
+            <div className="poster-words">
+              <span className="eyebrow">Tonight · {dateLabel}</span>
+              <h1 className="poster-title">{tonight.name}</h1>
+              <p className="poster-blurb">{tonight.blurb}.</p>
+              {wide && (
+                <>
+                  <span className="poster-rule" aria-hidden="true" />
+                  <p className="poster-how">Lock each spinning ring onto the one inside it. Everyone lights the same star tonight.</p>
+                </>
+              )}
+              {wide && action}
+            </div>
+            {star}
+            {!wide && action}
           </div>
         </div>
       ) : wide ? (
