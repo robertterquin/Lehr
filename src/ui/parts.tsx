@@ -3,6 +3,25 @@ import type { Engine } from '../game/engine.ts'
 import { lockFeedback } from '../game/feedback.ts'
 import { RULES } from '../game/rules.ts'
 import { MiniParol } from '../draw/street.tsx'
+import { useEffect, useState } from 'react'
+
+/** The end score counts up from 0 (0.7 s, easing out) once the words have risen; reduced motion shows it at once. */
+export function CountUp({ to, delayMs, calm }: { to: number; delayMs: number; calm: boolean }) {
+  const [shown, setShown] = useState(calm ? to : 0)
+  useEffect(() => {
+    if (calm) return setShown(to)
+    const start = performance.now() + delayMs
+    let frame = 0
+    const tick = (now: number) => {
+      const t = Math.min(1, Math.max(0, (now - start) / 700))
+      setShown(Math.round(to * (1 - (1 - t) ** 3)))
+      if (t < 1) frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [to, delayMs, calm])
+  return shown
+}
 
 /** Five diamonds, lit for the perfects in a row towards the next widen. */
 export function Streak({ streak }: { streak: number }) {

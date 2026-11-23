@@ -9,7 +9,7 @@ import { Panorama } from './draw/panorama.tsx'
 import { Star } from './draw/star.tsx'
 import type { Stage } from './draw/street.tsx'
 import { SOUNDS, buzz, isMuted, play, setMusic, setMuted, setVibration, stopMusic, unlockAudio } from './sound/audio.ts'
-import { ArcGauge, Callout, Garland, IconButton, PauseIcon, SoundIcon, Streak } from './ui/parts.tsx'
+import { ArcGauge, Callout, CountUp, Garland, IconButton, PauseIcon, SoundIcon, Streak } from './ui/parts.tsx'
 import { Glints, HowToPlay, NewDay, Settings, StarRises } from './ui/screens.tsx'
 
 const params = new URLSearchParams(location.search)
@@ -473,7 +473,10 @@ export default function App() {
         <section className="over" role="dialog" aria-labelledby="ended-title" onPointerDown={(event) => event.stopPropagation()}>
           <h2 id="ended-title" className="over-eyebrow">The star rests</h2>
           <p className="over-score">
-            <strong>{run.rings}</strong>
+            {/* Counts up as the words rise (they fade in 1.1 s after the run ends); a new best is gold and gets a sweep of light. */}
+            <strong className={newBest ? 'best' : undefined}>
+              <CountUp to={run.rings} delayMs={1100} calm={calm} />
+            </strong>
             <span>
               {run.rings === 1 ? 'ring' : 'rings'} · {run.perfects} perfect
               {newBest ? (
