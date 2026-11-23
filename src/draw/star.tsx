@@ -94,11 +94,27 @@ export const Star = memo(function Star({ size, locks, spinning = false, spinRef,
     }
   })
 
+  const layer = { width: size, height, viewBox: '0 0 300 420', 'aria-hidden': true as const }
   const lit = dim ? [] : rings.filter((ring) => rotor || ring.perfect)
+
+  const haloBulbs = (h: number, phase?: number) =>
+    Array.from({ length: 15 }, (_, k) => {
+      if (phase !== undefined && k % 3 !== phase) return null
+      const [x, y] = polar(haloR + h * 12, k * 24 + h * 12)
+      return <circle key={k} cx={x} cy={y} r="2.2" fill="#fff6d6" />
+    })
+  // Rotor mode (60+): the halo bulbs chase round the star. Three layers, one per third of the bulbs, fade in
+  // turn; fading a whole layer runs on the GPU, so the chase never redraws the star.
+  const chase = rotor && halo > 0
+    ? [0, 1, 2].map((phase) => (
+        <svg key={phase} className="rotor-chase" {...layer} style={{ animationDelay: `${phase * 300 - 900}ms` }}>
+          <g transform={camera}>{Array.from({ length: halo }, (_, h) => haloBulbs(h, phase))}</g>
+        </svg>
+      ))
+    : null
 
   // The newest lock's effect, on a small layer of its own: animating it never redraws the star.
   // A perfect lock flashes gold; an off-angle lock (or the one that ended the run) drops its overhang.
-  const layer = { width: size, height, viewBox: '0 0 300 420', 'aria-hidden': true as const }
   const newest = rings[count - 1]
   const before = rings[count - 2]
   const drop = (index: number, w: number, turn: number, error: number) => (
@@ -203,11 +219,7 @@ export const Star = memo(function Star({ size, locks, spinning = false, spinRef,
               <g key={h}>
                 <circle cx={CENTER} cy={CENTER} r={r} fill="none" stroke="#f2b632" strokeWidth="6" opacity={dim ? 0.15 : 0.35} />
                 <circle cx={CENTER} cy={CENTER} r={r} fill="none" stroke={BAMBOO} strokeWidth="1.8" />
-                {!dim &&
-                  Array.from({ length: 15 }, (_, k) => {
-                    const [x, y] = polar(r, k * 24 + h * 12)
-                    return <circle key={k} cx={x} cy={y} r="2.2" fill="#fff6d6" />
-                  })}
+                {!dim && !rotor && haloBulbs(h)}
               </g>
             )
           })}
@@ -252,6 +264,7 @@ export const Star = memo(function Star({ size, locks, spinning = false, spinRef,
           })}
         </g>
       </svg>
+      {chase}
       {effect}
     </div>
   )

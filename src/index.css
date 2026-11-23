@@ -173,6 +173,22 @@ body {
   to { opacity: 1; scale: 1; }
 }
 
+/* Rotor mode: each third of the halo bulbs brightens in turn, so the light runs round the star (0.9 s a lap of three). */
+.rotor-chase {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  will-change: opacity;
+  animation: rotor-chase 0.9s linear infinite;
+}
+
+@keyframes rotor-chase {
+  0%, 30% { opacity: 1; }
+  40%, 90% { opacity: 0.25; }
+  100% { opacity: 1; }
+}
+
 /* A perfect lock flashes gold: 0.06 s in, 0.6 s out. */
 .lock-glow,
 .lock-drop {
@@ -342,7 +358,6 @@ body {
   from { translate: 0 40px; }
 }
 
-/* A milestone: the toast drops in (0.3 s), holds, and goes (2.7 s in all). */
 /* A milestone: the ring count and its line float up below the star, hold, and go (2.7 s in all). */
 .toast {
   position: absolute;
@@ -386,6 +401,7 @@ body {
 .calm .scene-in { animation: fade-in 0.15s both; }
 .calm .lock-drop { animation: lock-glow 0.3s both; }
 .calm .stage-ended { animation: none; filter: brightness(0.65); }
+.calm .rotor-chase { animation: none; }
 .calm.wide .run .stage { transition: none; }
 .calm .over,
 .calm .rise-star,
@@ -767,7 +783,6 @@ body {
   animation: fade-in 1.2s ease-out both;
 }
 
-/* 100 rings: the parol lifts off its wire (2.5 s) and its rays open. */
 /* Paused hides the star; at 100 the run's star gives way to the one rising above the street. */
 .is-paused .stage {
   opacity: 0.65;
@@ -783,11 +798,12 @@ body {
   animation: fade-in 0.3s ease-out both, rise 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* 100 rings: the parol lifts off its wire (2.5 s) and its rays open. */
 .rise-star {
   position: absolute;
   z-index: 2;
   left: 50%;
-  top: 10%;
+  top: clamp(84px, 24vh, 196px); /* below the garland on tall screens; short ones keep room for the words */
   width: 240px;
   height: 240px;
   margin-left: -120px;
@@ -833,8 +849,15 @@ body {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(10, 9, 24, 0.72);
-  backdrop-filter: blur(3px);
+  /* Dark and soft enough that the landing's own words behind don't tangle with these. */
+  background: rgba(10, 9, 24, 0.86);
+  backdrop-filter: blur(10px);
+}
+
+/* The new-day words stand in the middle, over the blurred star, clear of the landing's words at the bottom. */
+.overlay > .over {
+  position: relative;
+  bottom: auto;
 }
 
 

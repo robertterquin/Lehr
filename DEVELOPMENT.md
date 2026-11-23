@@ -14,8 +14,9 @@ Sizes are relative effort, not dates.
 - [x] Phase 3 · Game engine, no visuals — `src/game/engine.ts`; runs replay exactly from seed + inputs; the simulation plays on it
 - [ ] Phase 4 · The star and the street — star, street and seven nights in `src/draw/`; production build at 100+ rings on a Mac: steady 120 fps, a lock redraws in 1.9 ms (`?bench`); real-phone check waits for the Vercel deploy
 - [x] Phase 5 · A playable run — tap, click, Space; Esc and tab switch pause; phone and desktop layouts; full runs checked in the browser at both sizes
-- [x] Phase 6 · Feel — sounds, music layers, vibration, lock / trim / widen / milestone / end motion and reduced motion (120 fps in the production build); played and approved with sound on. Not yet: rotor-mode bulb chase, the star rising at 100 (Phase 7 screen)
+- [x] Phase 6 · Feel — sounds, music layers, vibration, lock / trim / widen / milestone / end motion and reduced motion (120 fps in the production build); played and approved with sound on. From 60 rings the halo bulbs chase round the star (rotor mode), on GPU-only layers
 - [x] Phase 7 · The other screens — Loading, Ready, first-visit How to play, Settings (sound, vibration, reduced motion, playtest log download), the star rising at 100, the sky past 100, Run ended with today's best, the new-day notice and a playtest log on the device; all checked in the browser (`?from=98` in dev starts a run 98 rings in). Offline waits for Phase 9 (v1 needs no network)
+- [x] Redesign after Phase 7 — lantern-glow look, words floating over the street instead of cards, the garland of ten parols counting milestones, the next reward under it, a coach for the first three runs, the lock word in the gauge's gap, the near-miss line on Run ended. Tonight's board (Phase 9) is mocked in `mockups/board.tsx` as a floating list, phone and desktop
 - [ ] Phase 8 · Playtest and tune
 - [ ] Phase 9 · The daily online loop
 - [ ] Phase 10 · Launch polish
