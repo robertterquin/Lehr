@@ -308,7 +308,7 @@ export default function App() {
       ? wide
         ? Math.min(470, height * 0.58)
         : Math.max(190, Math.min(300, width - 90, (height - 520) / 1.25))
-      : Math.max(190, Math.min(wide ? 460 : 300, (width - 40) / 1.24, (height - 430) / 1.24)),
+      : Math.max(190, Math.min(wide ? 460 : 300, (width - 40) / 1.24, (height - 446) / 1.24)),
   )
   const danger = inRun && !run.ended && run.width < DANGER_BELOW
   const milestone = inRun && !run.ended && phase !== 'risen' ? milestoneText(run.rings) : null
@@ -365,7 +365,7 @@ export default function App() {
   )
   const goal = nextGoal(run.rings)
   const nights = phase === 'ready' ? nightsInARow(store, today) : 0
-  const garland = <Garland width={width - 32} lit={Math.floor((inRun ? run.rings : best) / RULES.milestoneEvery)} palette={tonight.palette} />
+  const garland = <Garland width={width - 32} lit={Math.floor((inRun ? run.rings : best) / RULES.milestoneEvery)} palette={tonight.palette} toGo={inRun ? goal.toGo : undefined} />
   const toast = milestone && (
     <p key={run.rings} className="toast" role="status">
       <span className="toast-rings">{run.rings} rings</span>
@@ -434,11 +434,6 @@ export default function App() {
             <div className="run-count" aria-label={`${run.rings} rings`}>
               {live && <span className="count">{run.rings}</span>}
               {live && <Streak streak={run.streak} />}
-              {live && (
-                <p className="goal-line">
-                  <strong>{goal.toGo} to go</strong> · {goal.what}
-                </p>
-              )}
             </div>
             {live ? (
               <IconButton label="Pause" ring onPress={() => pauseNow(performance.now())}>
@@ -490,10 +485,9 @@ export default function App() {
               )}
             </span>
           </p>
-          {/* Why it ended, then how close the next milestone was: the reason to light again. */}
-          <p className="end-reason">The points wore down below {RULES.minWidth}°</p>
+          {/* Why it ended and how close the next milestone was, in one line: the reason to light again. */}
           <p className="near-miss">
-            {goal.toGo} more for {goal.what}
+            Points wore below {RULES.minWidth}° <b>{goal.toGo} more for {goal.what}</b>
           </p>
           <button type="button" className="primary over-button" autoFocus onClick={() => start(performance.now())}>
             Light again

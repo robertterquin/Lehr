@@ -35,14 +35,13 @@ export function ArcGauge({ size, width, danger }: { size: number; width: number;
   const [x0, y0] = at(0)
   const [x1, y1] = at(SWEEP)
   const [mx, my] = at((RULES.minWidth / RULES.startWidth) * SWEEP)
-  // Plain labels just inside the arc: the width at the arc's tip, the limit at its notch.
+  // The width, in plain numbers, just inside the arc's tip; the coral notch marks the limit.
   const shown = Math.max(0, Math.min(width, RULES.startWidth))
   const label = (deg: number) => {
     const a = ((deg - 240) * Math.PI) / 180
     return [c + (r - 16) * Math.cos(a), c + (r - 16) * Math.sin(a)]
   }
   const [tx, ty] = label((shown / RULES.startWidth) * SWEEP)
-  const [lx, ly] = label((RULES.minWidth / RULES.startWidth) * SWEEP)
   const arc = `M${x0} ${y0}A${r} ${r} 0 1 1 ${x1} ${y1}`
   const length = (2 * Math.PI * r * SWEEP) / 360
   const filled = (Math.max(0, Math.min(width, RULES.startWidth)) / RULES.startWidth) * length
@@ -54,9 +53,6 @@ export function ArcGauge({ size, width, danger }: { size: number; width: number;
       <text x={tx} y={ty} className="gauge-width" textAnchor="middle" dominantBaseline="central">
         {Math.round(shown)}°
       </text>
-      <text x={lx} y={ly} className="gauge-limit" textAnchor="middle" dominantBaseline="central">
-        {RULES.minWidth}°
-      </text>
     </svg>
   )
 }
@@ -65,15 +61,15 @@ const PAROLS = 10
 
 /**
  * Tonight's ten milestones as ten parols on a string: one lights for every ten rings, and the next waits,
- * outlined. A parol remounts when it lights, so it glows in.
+ * outlined, with the rings to go under it. A parol remounts when it lights, so it glows in.
  */
-export function Garland({ width, lit, palette }: { width: number; lit: number; palette: string[] }) {
+export function Garland({ width, lit, palette, toGo }: { width: number; lit: number; palette: string[]; toGo?: number }) {
   const w = Math.round(Math.min(width, 640))
   const top = 10
   const sag = 22
   const on = Math.max(0, Math.min(PAROLS, lit))
   return (
-    <svg className="garland" width={w} height={92} role="img" aria-label={`${on} of ${PAROLS} parols lit`}>
+    <svg className="garland" width={w} height={toGo === undefined ? 92 : 108} role="img" aria-label={`${on} of ${PAROLS} parols lit${toGo !== undefined && on < PAROLS ? `, ${toGo} rings to the next` : ''}`}>
       <path d={`M0 ${top}Q${w / 2} ${top + sag * 2} ${w} ${top}`} className="garland-string" />
       {Array.from({ length: PAROLS }, (_, i) => {
         const t = (i + 0.5) / PAROLS
@@ -83,6 +79,11 @@ export function Garland({ width, lit, palette }: { width: number; lit: number; p
           <g key={`${i}-${i < on}`} className={i < on ? 'garland-on' : undefined}>
             <MiniParol x={x} y={y} r={10} color={palette[(i % (palette.length - 1)) + 1]} lit={i < on} string={9} />
             {i === on && <circle cx={x} cy={y} r={16} className="garland-next" />}
+            {i === on && toGo !== undefined && (
+              <text x={x} y={y + 44} className="garland-to-go" textAnchor="middle">
+                {toGo}
+              </text>
+            )}
           </g>
         )
       })}

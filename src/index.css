@@ -951,20 +951,6 @@ body {
   margin-top: auto;
 }
 
-/* The next milestone under the count: "6 to go · the neighbours’ parols". */
-.goal-line {
-  margin: 2px 0 0;
-  max-width: 230px;
-  font-size: 12px;
-  line-height: 1.35;
-  color: var(--cream);
-  text-shadow: var(--shade);
-}
-
-.goal-line strong {
-  color: var(--gold);
-}
-
 /* Tonight's ten parols on a string. Lit ones glow in; the next waits inside a dashed ring. */
 .garland {
   flex: none;
@@ -1003,18 +989,13 @@ body {
 
 .calm .garland-on { animation: fade-in 0.15s both; }
 
-/* The gauge's plain labels: the points' width at the arc's tip, the 8° limit at its notch. */
-.gauge-width,
-.gauge-limit {
-  font: 700 11px var(--font-ui);
-}
-
+/* The points' width in plain numbers, at the arc's tip. */
 .gauge-width {
+  font: 700 11px var(--font-ui);
   fill: var(--gold);
 }
 
-.gauge.danger .gauge-width,
-.gauge-limit {
+.gauge.danger .gauge-width {
   fill: var(--coral);
 }
 
@@ -1041,18 +1022,24 @@ body {
   color: var(--cream);
 }
 
-/* How close the next milestone was, under the reason the run ended. */
+/* Why the run ended and how close the next milestone was. */
 .near-miss {
-  margin: 4px 0 0;
-  max-width: 300px;
-  font: 400 20px/1.25 var(--font-display);
+  margin: 0;
+  max-width: 320px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--dusk);
+}
+
+.near-miss b {
+  display: block;
+  font-weight: 700;
   color: var(--gold);
 }
 
-.end-reason {
-  margin: 0;
-  font-size: 13px;
-  color: var(--dusk);
+.garland-to-go {
+  font: 700 12px var(--font-ui);
+  fill: var(--gold);
 }
 
 .best-line .dot {
