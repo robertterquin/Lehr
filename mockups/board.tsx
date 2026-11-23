@@ -135,23 +135,121 @@ const Rank = ({ rank, name, rings, you = false }: { rank: number; name: string; 
 )
 
 /** The board: tonight's top ten and your own row pinned under them. */
-function Board({ day }: { day: 'Tonight' | 'Yesterday' }) {
+/** The board's contents, the same on a phone sheet and the desktop panel. */
+function BoardBody({ day }: { day: 'Tonight' | 'Yesterday' }) {
   const rows = day === 'Tonight' ? TONIGHT : TONIGHT.map(([name, rings], i) => [['Tala', 'Kidlat', 'Liwayway', 'Paolo', 'Amihan', 'Mayumi', 'Dalisay', 'bituin88', 'Ligaya', 'Jun P.'][i], rings + 9] as const)
+  return (
+    <>
+      <Segments on={day} />
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {rows.map(([name, rings], i) => (
+          <Rank key={name} rank={i + 1} name={name} rings={rings} />
+        ))}
+      </div>
+      <Text style={{ textAlign: 'center', color: dusk, letterSpacing: 4, margin: '2px 0' }}>···</Text>
+      <Rank rank={day === 'Tonight' ? 312 : 205} name="You · Bituing Gabi" rings={day === 'Tonight' ? 52 : 61} you />
+      <Text style={{ marginTop: 14, fontSize: 12, textAlign: 'center', color: dusk }}>{day === 'Tonight' ? '4,120 lit tonight’s star · closes at midnight, Manila' : 'Final · 5,804 lit last night’s star'}</Text>
+    </>
+  )
+}
+
+function Board({ day }: { day: 'Tonight' | 'Yesterday' }) {
   return (
     <>
       <End />
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,6,20,0.55)' }} />
       <Sheet title={day === 'Tonight' ? night.name : 'Intramuros'}>
-        <Segments on={day} />
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {rows.map(([name, rings], i) => (
-            <Rank key={name} rank={i + 1} name={name} rings={rings} />
-          ))}
-        </div>
-        <Text style={{ textAlign: 'center', color: dusk, letterSpacing: 4, margin: '2px 0' }}>···</Text>
-        <Rank rank={day === 'Tonight' ? 312 : 205} name="You · Bituing Gabi" rings={day === 'Tonight' ? 52 : 61} you />
-        <Text style={{ marginTop: 14, fontSize: 12, textAlign: 'center', color: dusk }}>{day === 'Tonight' ? '4,120 lit tonight’s star · closes at midnight, Manila' : 'Final · 5,804 lit last night’s star'}</Text>
+        <BoardBody day={day} />
       </Sheet>
+    </>
+  )
+}
+
+/* ── Desktop (1440×900): the star on the left, the words on the right, as the game lays them out ─────── */
+
+const DW = 1440
+const DH = 900
+
+const DeskGarland = ({ lit, toGo }: { lit: number; toGo?: number }) => (
+  <div style={{ position: 'absolute', top: 64, left: (DW - 640) / 2 }}>
+    <Garland width={640} lit={lit} palette={night.palette} toGo={toGo} />
+  </div>
+)
+
+/** The right-hand column, where the landing and end words stand. */
+const Column = ({ children }: { children: ReactNode }) => (
+  <section style={{ position: 'absolute', left: DW * 0.55, top: 200, width: 460, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10, textShadow: '0 2px 18px rgba(20,8,5,0.85)' }}>{children}</section>
+)
+
+function DeskLanding() {
+  return (
+    <>
+      <Ground w={DW} h={DH} wide />
+      <TopBar left={<Brand />} right={<Icons />} />
+      <DeskGarland lit={5} />
+      <StarAt x={DW * 0.32} size={430} top={190} locks={PREVIEW} glow="rgba(255,170,80,0.5)" />
+      <Column>
+        <Eyebrow>{night.araw} · tonight’s star</Eyebrow>
+        <Text style={{ font: `400 96px/0.95 ${serif}` }}>{night.name}</Text>
+        <Text style={{ fontSize: 17, color: cream }}>Light all ten parols on the street tonight.</Text>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 22, marginTop: 14 }}>
+          <Button style={{ marginTop: 0 }}>
+            Light the first ring <span aria-hidden="true">→</span>
+          </Button>
+          <Text style={{ fontSize: 14, color: cream }}>
+            Best today <Num>52</Num> <span style={{ color: dusk, margin: '0 6px' }}>·</span> <LinkText>#312 tonight</LinkText>
+          </Text>
+        </div>
+      </Column>
+    </>
+  )
+}
+
+function DeskEnd() {
+  return (
+    <>
+      <Ground w={DW} h={DH} wide stage={5} dim={0.35} />
+      <TopBar left={<span />} right={<Icons />} />
+      <DeskGarland lit={5} toGo={8} />
+      <StarAt x={DW * 0.32} size={380} top={210} locks={RUN} glow="rgba(255,170,80,0.3)" failed={9} />
+      <Column>
+        <Eyebrow>The star rests</Eyebrow>
+        <Text style={{ font: `400 160px/0.9 ${serif}`, marginBottom: 8 }}>52</Text>
+        <Text style={{ fontSize: 16, color: cream }}>
+          rings · 41 perfect · <span style={{ color: gold }}>new best today</span>
+        </Text>
+        <Text style={{ fontSize: 15, lineHeight: 1.45, color: dusk }}>
+          Points wore below 8° · <b style={{ color: gold }}>8 more for the lantern festival</b>
+        </Text>
+        <Text style={{ marginTop: 6, fontSize: 16, color: cream }}>
+          <Num size={22} color={gold}>
+            #312
+          </Num>{' '}
+          of 4,120 tonight · up 40 · <LinkText>See the board</LinkText>
+        </Text>
+        <Button style={{ marginTop: 14 }}>Light again</Button>
+      </Column>
+    </>
+  )
+}
+
+/** On desktop the board takes the words' place on the right: no dimming, the star stays in view. */
+function DeskBoard() {
+  return (
+    <>
+      <Ground w={DW} h={DH} wide stage={5} dim={0.35} />
+      <TopBar left={<span />} right={<Icons />} />
+      <DeskGarland lit={5} toGo={8} />
+      <StarAt x={DW * 0.32} size={380} top={210} locks={RUN} glow="rgba(255,170,80,0.3)" failed={9} />
+      <section style={{ position: 'absolute', left: DW * 0.55, top: 150, width: 440, padding: '22px 24px 24px', borderRadius: 28, background: 'linear-gradient(180deg, #2a1828, #140c1a)', border: '1px solid rgba(255,207,122,0.35)', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <Text style={{ font: `400 28px ${serif}` }}>
+            <span style={{ fontSize: 15, fontFamily: 'var(--font-ui)', fontWeight: 700, color: gold, marginRight: 10 }}>←</span>
+            {night.name}
+          </Text>
+        </div>
+        <BoardBody day="Tonight" />
+      </section>
     </>
   )
 }
@@ -175,17 +273,20 @@ function Name() {
   )
 }
 
-const SCREENS: { id: string; label: string; View: () => ReactNode }[] = [
+const SCREENS: { id: string; label: string; View: () => ReactNode; desk?: boolean }[] = [
   { id: 'landing', label: 'Landing · your rank', View: Landing },
   { id: 'landing-new', label: 'Landing · first visit', View: LandingNew },
   { id: 'end', label: 'End · rank line', View: End },
   { id: 'board', label: 'Board · tonight', View: () => <Board day="Tonight" /> },
   { id: 'yesterday', label: 'Board · yesterday', View: () => <Board day="Yesterday" /> },
   { id: 'name', label: 'Name, once', View: Name },
+  { id: 'desk-landing', label: 'Desktop · landing', View: DeskLanding, desk: true },
+  { id: 'desk-end', label: 'Desktop · end', View: DeskEnd, desk: true },
+  { id: 'desk-board', label: 'Desktop · the board in the words’ place', View: DeskBoard, desk: true },
 ]
 
-const Phone = ({ View }: { View: () => ReactNode }) => (
-  <main style={{ position: 'relative', width: W, height: H, overflow: 'hidden', color: 'var(--ink)', fontFamily: 'var(--font-ui)', background: '#0a0918' }}>
+const Phone = ({ View, desk = false }: { View: () => ReactNode; desk?: boolean }) => (
+  <main style={{ position: 'relative', width: desk ? DW : W, height: desk ? DH : H, overflow: 'hidden', color: 'var(--ink)', fontFamily: 'var(--font-ui)', background: '#0a0918' }}>
     <View />
   </main>
 )
@@ -197,19 +298,22 @@ const scale = 0.4
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     {only ? (
-      <Phone View={only.View} />
+      <Phone View={only.View} desk={only.desk} />
     ) : (
-      <div style={{ padding: 18, display: 'flex', gap: 14, fontFamily: 'var(--font-ui)', color: '#cbbfae' }}>
-        {SCREENS.map((s) => (
-          <figure key={s.id} style={{ margin: 0 }}>
-            <div style={{ width: W * scale, height: H * scale, borderRadius: 12, overflow: 'hidden' }}>
-              <div style={{ transform: `scale(${scale})`, transformOrigin: '0 0' }}>
-                <Phone View={s.View} />
+      <div style={{ padding: 18, display: 'flex', flexWrap: 'wrap', gap: 14, width: 1024, fontFamily: 'var(--font-ui)', color: '#cbbfae' }}>
+        {SCREENS.map((s) => {
+          const k = s.desk ? 0.22 : scale
+          return (
+            <figure key={s.id} style={{ margin: 0 }}>
+              <div style={{ width: (s.desk ? DW : W) * k, height: (s.desk ? DH : H) * k, borderRadius: 12, overflow: 'hidden' }}>
+                <div style={{ transform: `scale(${k})`, transformOrigin: '0 0' }}>
+                  <Phone View={s.View} desk={s.desk} />
+                </div>
               </div>
-            </div>
-            <figcaption style={{ fontSize: 12, marginTop: 6 }}>{s.label}</figcaption>
-          </figure>
-        ))}
+              <figcaption style={{ fontSize: 12, marginTop: 6 }}>{s.label}</figcaption>
+            </figure>
+          )
+        })}
       </div>
     )}
   </StrictMode>,
