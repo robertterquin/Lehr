@@ -401,7 +401,8 @@ body {
 .calm .scene-in { animation: fade-in 0.15s both; }
 .calm .lock-drop { animation: lock-glow 0.3s both; }
 .calm .stage-ended { animation: none; filter: brightness(0.65); }
-.calm .rotor-chase { animation: none; }
+.calm .rotor-chase,
+.calm .rise-parol { animation: none; }
 .calm.wide .run .stage { transition: none; }
 .calm .over,
 .calm .rise-star,
@@ -823,6 +824,13 @@ body {
   width: 150px;
   height: 150px;
   overflow: hidden;
+  /* The parol kindles into a star: paper and frame burn gold-white, with a glow, as it lifts (2.5 s). */
+  filter: brightness(2.9) saturate(0.85) drop-shadow(0 0 6px rgba(255, 230, 160, 0.95)) drop-shadow(0 0 20px rgba(255, 196, 100, 0.75));
+  animation: kindle 2.5s ease-in both;
+}
+
+@keyframes kindle {
+  0%, 25% { filter: brightness(1) saturate(1) drop-shadow(0 0 0 rgba(255, 230, 160, 0)) drop-shadow(0 0 0 rgba(255, 196, 100, 0)); }
 }
 
 @keyframes lift {
