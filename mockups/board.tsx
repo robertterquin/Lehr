@@ -259,9 +259,10 @@ const Tabs = ({ on = 'Tonight' }: { on?: 'Tonight' | 'Yesterday' }) => (
   </div>
 )
 
-const Line = ({ rank, name, rings, you = false, faint = false }: { rank: number | string; name: string; rings: number; you?: boolean; faint?: boolean }) => (
-  <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.07)', color: you ? gold : faint ? dusk : 'var(--ink)' }}>
-    <span style={{ width: 44, font: `400 ${you ? 22 : 18}px ${serif}`, color: you || (typeof rank === 'number' && rank <= 3) ? gold : dusk }}>{rank}</span>
+/** dense: desktop rows sit tighter so the list ends above the rooftops. */
+const Line = ({ rank, name, rings, you = false, faint = false, dense = false }: { rank: number | string; name: string; rings: number; you?: boolean; faint?: boolean; dense?: boolean }) => (
+  <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, padding: dense ? '4px 0' : '7px 0', borderBottom: '1px solid rgba(255,255,255,0.07)', color: you ? gold : faint ? dusk : 'var(--ink)' }}>
+    <span style={{ width: 32, textAlign: 'right', font: `400 18px ${serif}`, fontWeight: you ? 600 : 400, color: you || (typeof rank === 'number' && rank <= 3) ? gold : dusk }}>{rank}</span>
     <span style={{ flex: 1, fontSize: 15, fontWeight: you ? 700 : 400 }}>{name}</span>
     <span style={{ font: `400 ${you ? 22 : 18}px ${serif}` }}>{rings}</span>
   </div>
@@ -271,7 +272,7 @@ const Line = ({ rank, name, rings, you = false, faint = false }: { rank: number 
 function DeskFloat() {
   return (
     <DeskBack>
-      <section style={{ position: 'absolute', left: DW * 0.55, top: 176, width: 420, display: 'flex', flexDirection: 'column', gap: 10, textShadow: '0 2px 18px rgba(20,8,5,0.85)' }}>
+      <section style={{ position: 'absolute', left: DW * 0.55, top: 150, width: 420, display: 'flex', flexDirection: 'column', gap: 10, textShadow: '0 2px 18px rgba(20,8,5,0.85)' }}>
         <Back />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 10 }}>
           <div>
@@ -282,9 +283,9 @@ function DeskFloat() {
         </div>
         <div>
           {TONIGHT.map(([name, rings], i) => (
-            <Line key={name} rank={i + 1} name={name} rings={rings} />
+            <Line key={name} rank={i + 1} name={name} rings={rings} dense />
           ))}
-          <Line rank={312} name="You · Bituing Gabi" rings={52} you />
+          <Line rank={312} name="You · Bituing Gabi" rings={52} you dense />
         </div>
         <Text style={{ fontSize: 12, color: dusk }}>4,120 lit tonight’s star · closes at midnight, Manila</Text>
       </section>
