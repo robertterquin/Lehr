@@ -2,6 +2,7 @@
 import type { Engine } from '../game/engine.ts'
 import { lockFeedback } from '../game/feedback.ts'
 import { RULES } from '../game/rules.ts'
+import { MiniParol } from '../draw/street.tsx'
 
 /** Five diamonds, lit for the perfects in a row towards the next widen. */
 export function Streak({ streak }: { streak: number }) {
@@ -34,6 +35,14 @@ export function ArcGauge({ size, width, danger }: { size: number; width: number;
   const [x0, y0] = at(0)
   const [x1, y1] = at(SWEEP)
   const [mx, my] = at((RULES.minWidth / RULES.startWidth) * SWEEP)
+  // Plain labels just inside the arc: the width at the arc's tip, the limit at its notch.
+  const shown = Math.max(0, Math.min(width, RULES.startWidth))
+  const label = (deg: number) => {
+    const a = ((deg - 240) * Math.PI) / 180
+    return [c + (r - 16) * Math.cos(a), c + (r - 16) * Math.sin(a)]
+  }
+  const [tx, ty] = label((shown / RULES.startWidth) * SWEEP)
+  const [lx, ly] = label((RULES.minWidth / RULES.startWidth) * SWEEP)
   const arc = `M${x0} ${y0}A${r} ${r} 0 1 1 ${x1} ${y1}`
   const length = (2 * Math.PI * r * SWEEP) / 360
   const filled = (Math.max(0, Math.min(width, RULES.startWidth)) / RULES.startWidth) * length
@@ -42,6 +51,41 @@ export function ArcGauge({ size, width, danger }: { size: number; width: number;
       <path d={arc} className="gauge-track" />
       <path d={arc} className="gauge-fill" style={{ strokeDasharray: `${filled} ${length}` }} />
       <circle cx={mx} cy={my} r="3" className="gauge-min" />
+      <text x={tx} y={ty} className="gauge-width" textAnchor="middle" dominantBaseline="central">
+        {Math.round(shown)}°
+      </text>
+      <text x={lx} y={ly} className="gauge-limit" textAnchor="middle" dominantBaseline="central">
+        {RULES.minWidth}°
+      </text>
+    </svg>
+  )
+}
+
+const PAROLS = 10
+
+/**
+ * Tonight's ten milestones as ten parols on a string: one lights for every ten rings, and the next waits,
+ * outlined. A parol remounts when it lights, so it glows in.
+ */
+export function Garland({ width, lit, palette }: { width: number; lit: number; palette: string[] }) {
+  const w = Math.round(Math.min(width, 640))
+  const top = 10
+  const sag = 22
+  const on = Math.max(0, Math.min(PAROLS, lit))
+  return (
+    <svg className="garland" width={w} height={92} role="img" aria-label={`${on} of ${PAROLS} parols lit`}>
+      <path d={`M0 ${top}Q${w / 2} ${top + sag * 2} ${w} ${top}`} className="garland-string" />
+      {Array.from({ length: PAROLS }, (_, i) => {
+        const t = (i + 0.5) / PAROLS
+        const x = t * w
+        const y = top + sag * 4 * t * (1 - t) + 20
+        return (
+          <g key={`${i}-${i < on}`} className={i < on ? 'garland-on' : undefined}>
+            <MiniParol x={x} y={y} r={10} color={palette[(i % (palette.length - 1)) + 1]} lit={i < on} string={9} />
+            {i === on && <circle cx={x} cy={y} r={16} className="garland-next" />}
+          </g>
+        )
+      })}
     </svg>
   )
 }

@@ -874,7 +874,7 @@ body {
 }
 
 .run-count {
-  min-height: 82px;
+  min-height: 64px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -947,16 +947,117 @@ body {
   transition: none;
 }
 
-.width-label {
-  min-height: 15px;
-  margin: auto 0 0;
-  font: 700 11px/1.3 var(--font-ui);
-  letter-spacing: 0.18em;
+.gauge-room {
+  margin-top: auto;
+}
+
+/* The next milestone under the count: "6 to go · the neighbours’ parols". */
+.goal-line {
+  margin: 2px 0 0;
+  max-width: 230px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--cream);
+  text-shadow: var(--shade);
+}
+
+.goal-line strong {
+  color: var(--gold);
+}
+
+/* Tonight's ten parols on a string. Lit ones glow in; the next waits inside a dashed ring. */
+.garland {
+  flex: none;
+  overflow: visible;
+  margin-top: 4px;
+}
+
+.poster > .garland {
+  align-self: center;
+}
+
+.garland-string {
+  fill: none;
+  stroke: #5c5470;
+  stroke-width: 1;
+}
+
+.garland-next {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 1.2;
+  stroke-dasharray: 2 3;
+}
+
+.garland-on {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: parol-on 0.9s ease-out both;
+}
+
+@keyframes parol-on {
+  0% { opacity: 0.3; scale: 0.8; }
+  40% { opacity: 1; scale: 1.15; }
+  100% { scale: 1; }
+}
+
+.calm .garland-on { animation: fade-in 0.15s both; }
+
+/* The gauge's plain labels: the points' width at the arc's tip, the 8° limit at its notch. */
+.gauge-width,
+.gauge-limit {
+  font: 700 11px var(--font-ui);
+}
+
+.gauge-width {
+  fill: var(--gold);
+}
+
+.gauge.danger .gauge-width,
+.gauge-limit {
+  fill: var(--coral);
+}
+
+/* The first runs' coach, in the lock word's place. */
+.coach {
+  margin: 8px 0 auto;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+  text-wrap: balance;
+  text-shadow: var(--shade);
+  animation: fade-in 0.3s ease-out both;
+}
+
+.coach-line {
+  font: 400 26px/1.15 var(--font-display);
+}
+
+.coach-note {
+  font-size: 14px;
   color: var(--cream);
 }
 
-.width-label.danger {
-  color: var(--coral);
+/* How close the next milestone was, under the reason the run ended. */
+.near-miss {
+  margin: 4px 0 0;
+  max-width: 300px;
+  font: 400 20px/1.25 var(--font-display);
+  color: var(--gold);
+}
+
+.end-reason {
+  margin: 0;
+  font-size: 13px;
+  color: var(--dusk);
+}
+
+.best-line .dot {
+  margin: 0 8px;
+  color: var(--dusk);
 }
 
 .best-line {

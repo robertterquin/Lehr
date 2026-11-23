@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { DEFAULT_SETTINGS, MAX_LOGGED, bestOn, logRun, loggedRuns, readSettings, writeSettings, type RunLog, type Store } from '../src/game/local.ts'
+import { DEFAULT_SETTINGS, MAX_LOGGED, bestOn, logRun, loggedRuns, nightsInARow, readSettings, writeSettings, type RunLog, type Store } from '../src/game/local.ts'
 
 const memoryStore = (): Store => {
   const data = new Map<string, string>()
@@ -37,4 +37,17 @@ test('the log keeps only the most recent runs, and broken storage reads as empty
   const broken: Store = { getItem: () => '{not json', setItem: () => { throw new Error('full') } }
   assert.deepEqual(loggedRuns(broken), [])
   assert.doesNotThrow(() => logRun(broken, run('2026-11-22', 1)))
+})
+
+test('nights in a row count back from today, or from yesterday before today’s first run', () => {
+  const store = memoryStore()
+  assert.equal(nightsInARow(store, '2026-12-01'), 0)
+  logRun(store, run('2026-11-28', 5))
+  logRun(store, run('2026-11-29', 5))
+  logRun(store, run('2026-11-30', 5))
+  logRun(store, run('2026-11-30', 9))
+  assert.equal(nightsInARow(store, '2026-12-01'), 3)
+  logRun(store, run('2026-12-01', 5))
+  assert.equal(nightsInARow(store, '2026-12-01'), 4)
+  assert.equal(nightsInARow(store, '2026-12-03'), 0)
 })

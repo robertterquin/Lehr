@@ -69,5 +69,20 @@ export const MAX_LOGGED = 200
 export const loggedRuns = (store: Store) => read<RunLog[]>(store, LOG_KEY, [])
 export const logRun = (store: Store, run: RunLog) => write(store, LOG_KEY, [...loggedRuns(store), run].slice(-MAX_LOGGED))
 
+const dayBefore = (date: string) => new Date(Date.parse(`${date}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10)
+
+/** Nights in a row with at least one run, up to today (or yesterday, before today's first run). */
+// shortcut: counted from the playtest log, which keeps the last 200 runs; the Phase 9 streak calendar replaces it.
+export const nightsInARow = (store: Store, today: string) => {
+  const dates = new Set(loggedRuns(store).map((run) => run.date))
+  let day = dates.has(today) ? today : dayBefore(today)
+  let nights = 0
+  while (dates.has(day)) {
+    nights += 1
+    day = dayBefore(day)
+  }
+  return nights
+}
+
 /** The most rings in a logged run on `date` (0 when none). */
 export const bestOn = (store: Store, date: string) => loggedRuns(store).reduce((best, run) => (run.date === date && run.rings > best ? run.rings : best), 0)

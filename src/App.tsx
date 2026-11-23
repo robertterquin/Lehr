@@ -1,15 +1,15 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { getManilaDate, seedForDate, weekdayIndex } from './game/daily.ts'
 import { createEngine, nextAlignmentMs, pause, resume, ringOffset, tap, type Engine } from './game/engine.ts'
-import { milestoneText } from './game/feedback.ts'
-import { bestOn, deviceStore, logRun, loggedRuns, readSettings, writeSettings, type Settings as SavedSettings } from './game/local.ts'
-import { RULES, speedFactor } from './game/rules.ts'
+import { milestoneText, nextGoal } from './game/feedback.ts'
+import { bestOn, deviceStore, logRun, loggedRuns, nightsInARow, readSettings, writeSettings, type Settings as SavedSettings } from './game/local.ts'
+import { RULES } from './game/rules.ts'
 import { NIGHTS, night as nightById, type NightId, type Night } from './draw/nights.tsx'
 import { Panorama } from './draw/panorama.tsx'
 import { Star } from './draw/star.tsx'
 import type { Stage } from './draw/street.tsx'
 import { SOUNDS, buzz, isMuted, play, setMusic, setMuted, setVibration, stopMusic, unlockAudio } from './sound/audio.ts'
-import { ArcGauge, Callout, IconButton, PauseIcon, SoundIcon, Streak } from './ui/parts.tsx'
+import { ArcGauge, Callout, Garland, IconButton, PauseIcon, SoundIcon, Streak } from './ui/parts.tsx'
 import { Glints, HowToPlay, NewDay, Settings, StarRises } from './ui/screens.tsx'
 
 const params = new URLSearchParams(location.search)
@@ -24,6 +24,13 @@ const FROM = import.meta.env.DEV ? Math.max(0, Number(params.get('from')) || 0) 
 const store = deviceStore()
 /** The dim preview star on the Ready screen. */
 const PREVIEW = Array.from({ length: 12 }, () => 0)
+
+/** What the first runs say, ring by ring: what to do, then what can go wrong, then how to recover. */
+const COACH: [string, string][] = [
+  ['Tap when the points line up', 'Then the next ring spins in'],
+  ['A miss trims the points', `Below ${RULES.minWidth}° the run ends`],
+  [`${RULES.widenEvery} perfect in a row`, `widen the points back by ${RULES.widenBy}°`],
+]
 
 type Phase = 'ready' | 'playing' | 'paused' | 'risen' | 'ended'
 type Panel = 'how' | 'settings' | null
@@ -77,14 +84,16 @@ export default function App() {
   const [phase, setPhase] = useState<Phase>('ready')
   const [engine, setEngine] = useState<Engine>(() => createEngine(seed))
   const [settings, setSettings] = useState<SavedSettings>(() => readSettings(store))
-  const [panel, setPanel] = useState<Panel>(() => (readSettings(store).seenHowTo ? null : 'how'))
+  // No rules sheet up front: the first runs teach by doing (see `coach`); How to play stays in Settings.
+  const [panel, setPanel] = useState<Panel>(null)
   const [muted, setMutedState] = useState(isMuted)
   const [best, setBest] = useState(() => bestOn(store, today))
   const [bestBefore, setBestBefore] = useState(0)
   const [newDay, setNewDay] = useState(false)
   const [systemCalm, setSystemCalm] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   const calm = settings.calm ?? systemCalm
-  const firstVisit = loggedRuns(store).length === 0
+  const runsLogged = loggedRuns(store).length
+  const firstVisit = runsLogged === 0
 
   const engineRef = useRef(engine)
   const phaseRef = useRef(phase)
@@ -298,8 +307,8 @@ export default function App() {
     phase === 'ready'
       ? wide
         ? Math.min(470, height * 0.58)
-        : Math.max(200, Math.min(300, width - 90, (height - 420) / 1.25))
-      : Math.max(200, Math.min(wide ? 460 : 300, (width - 40) / 1.24, (height - 330) / 1.24)),
+        : Math.max(190, Math.min(300, width - 90, (height - 520) / 1.25))
+      : Math.max(190, Math.min(wide ? 460 : 300, (width - 40) / 1.24, (height - 430) / 1.24)),
   )
   const danger = inRun && !run.ended && run.width < DANGER_BELOW
   const milestone = inRun && !run.ended && phase !== 'risen' ? milestoneText(run.rings) : null
@@ -338,11 +347,25 @@ export default function App() {
       {settingsButton}
     </div>
   )
-  const hint = playing && run.rings === 0 && (
-    <p className="hint">
-      <span className="hint-word">{wide ? 'Press Space' : 'Tap'}</span> when the points meet the gold dashes
+  /** The first three runs teach by doing, one line per ring, in the lock word's place; later runs start with one hint. */
+  const coachStep = playing && runsLogged < 3 && run.rings < COACH.length ? COACH[run.rings] : null
+  const coach = coachStep && (
+    <p key={run.rings} className="coach" role="status">
+      <span className="toast-rings">
+        {run.rings + 1} of {COACH.length}
+      </span>
+      <span className="coach-line">{run.rings === 0 && wide ? 'Press Space when the points line up' : coachStep[0]}</span>
+      <span className="coach-note">{coachStep[1]}</span>
     </p>
   )
+  const hint = playing && !coachStep && run.rings === 0 && (
+    <p className="hint">
+      <span className="hint-word">{wide ? 'Press Space' : 'Tap'}</span> when the points line up
+    </p>
+  )
+  const goal = nextGoal(run.rings)
+  const nights = phase === 'ready' ? nightsInARow(store, today) : 0
+  const garland = <Garland width={width - 32} lit={Math.floor((inRun ? run.rings : best) / RULES.milestoneEvery)} palette={tonight.palette} />
   const toast = milestone && (
     <p key={run.rings} className="toast" role="status">
       <span className="toast-rings">{run.rings} rings</span>
@@ -357,6 +380,12 @@ export default function App() {
       {best > 0 && (
         <span className="best-line">
           Best today <strong>{best}</strong>
+          {nights > 1 && (
+            <>
+              <span className="dot">·</span>
+              <strong>{nights}</strong> nights in a row
+            </>
+          )}
         </span>
       )}
     </div>
@@ -367,8 +396,8 @@ export default function App() {
 
   return (
     <main className={`game ${wide ? 'wide' : 'narrow'}${danger ? ' in-danger' : ''}${calm ? ' calm' : ''}${phase === 'ended' || phase === 'paused' || phase === 'risen' ? ` is-dim is-${phase}` : ''}`} onPointerDown={(event) => event.button === 0 && press(event.timeStamp)}>
-      {/* On a phone the Ready screen's headline sits where the moon would. */}
-      <Scenery stage={stage} wide={wide} width={width} height={height} moon={wide || phase !== 'ready'} />
+      {/* On a phone the garland hangs where the moon would. */}
+      <Scenery stage={stage} wide={wide} width={width} height={height} moon={wide} />
       {skyStars > 0 && (
         <div className="sky" aria-hidden="true">
           {SKY.slice(0, skyStars).map(([x, y]) => (
@@ -386,11 +415,12 @@ export default function App() {
             <span className="wordmark">Parol</span>
             {buttons}
           </header>
+          {garland}
           <div className="poster-body">
             <div className="poster-words">
-              <span className="eyebrow">{tonight.araw} · tonight</span>
+              <span className="eyebrow">{tonight.araw} · tonight’s star</span>
               <h1 className="poster-title">{tonight.name}</h1>
-              <p className="poster-blurb">{tonight.blurb}.</p>
+              <p className="poster-blurb">Light all ten parols on the street tonight.</p>
               {wide && action}
             </div>
             {star}
@@ -404,6 +434,11 @@ export default function App() {
             <div className="run-count" aria-label={`${run.rings} rings`}>
               {live && <span className="count">{run.rings}</span>}
               {live && <Streak streak={run.streak} />}
+              {live && (
+                <p className="goal-line">
+                  <strong>{goal.toGo} to go</strong> · {goal.what}
+                </p>
+              )}
             </div>
             {live ? (
               <IconButton label="Pause" ring onPress={() => pauseNow(performance.now())}>
@@ -413,13 +448,12 @@ export default function App() {
               buttons
             )}
           </header>
-          {/* The gauge reaches 12% of the star beyond it, so the label clears it. */}
-          <p className={`width-label${danger ? ' danger' : ''}`} style={{ marginBottom: Math.round(starSize * 0.12) + 10 }} aria-hidden={!live}>
-            {live && `${Math.round(Math.max(0, run.width))}° · ${speedFactor(run.rings).toFixed(1)}×`}
-          </p>
+          {garland}
+          {/* The gauge reaches 12% of the star beyond it. */}
+          <div className="gauge-room" style={{ marginBottom: Math.round(starSize * 0.12) + 6 }} />
           {star}
-          {/* A milestone's line takes the lock word's place. */}
-          {live && !milestone ? <Callout engine={engine} /> : <div className="callout" />}
+          {/* The coach's line, or a milestone's, takes the lock word's place. */}
+          {live && coach ? coach : live && !milestone ? <Callout engine={engine} /> : <div className="callout" />}
           {live && toast}
           {hint}
         </div>
@@ -446,19 +480,21 @@ export default function App() {
             <strong>{run.rings}</strong>
             <span>
               {run.rings === 1 ? 'ring' : 'rings'} · {run.perfects} perfect
-              {newBest && (
+              {newBest ? (
                 <>
                   {' · '}
                   <b>new best today</b>
                 </>
+              ) : (
+                best > run.rings && ` · best today ${best}`
               )}
             </span>
           </p>
-          {!newBest && best > run.rings && (
-            <span className="best-line">
-              Best today <strong>{best}</strong>
-            </span>
-          )}
+          {/* Why it ended, then how close the next milestone was: the reason to light again. */}
+          <p className="end-reason">The points wore down below {RULES.minWidth}°</p>
+          <p className="near-miss">
+            {goal.toGo} more for {goal.what}
+          </p>
           <button type="button" className="primary over-button" autoFocus onClick={() => start(performance.now())}>
             Light again
           </button>
