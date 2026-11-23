@@ -402,6 +402,15 @@ body {
   text-align: center;
 }
 
+.callout.in-gap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  min-height: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
 .callout-body {
   display: flex;
   flex-direction: column;
@@ -420,7 +429,7 @@ body {
 
 /* Each lock's word, in the serif, glowing in its own colour. */
 .callout-title {
-  font: italic 400 34px/1.3 var(--font-display);
+  font: italic 400 30px/1.3 var(--font-display);
 }
 
 .callout-title.gold { color: var(--gold); text-shadow: 0 0 24px rgba(255, 190, 90, 0.7); }

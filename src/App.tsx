@@ -314,6 +314,7 @@ export default function App() {
   const milestone = inRun && !run.ended && phase !== 'risen' ? milestoneText(run.rings) : null
   const skyStars = inRun ? Math.min(SKY.length, Math.max(0, Math.floor((run.rings - 100) / 10))) : 0
 
+  const coachStep = playing && runsLogged < 3 && run.rings < COACH.length ? COACH[run.rings] : null
   const star = (
     <div className={`stage${phase === 'ended' ? ' stage-ended' : ''}`} ref={stageRef}>
       <Star
@@ -326,6 +327,8 @@ export default function App() {
         failed={phase === 'ended' ? engine.endError : undefined}
       />
       {phase === 'playing' && <ArcGauge size={starSize} width={run.width} danger={danger} />}
+      {/* The lock word sits in the gauge's open bottom, right under the star; the coach and a milestone take its turn. */}
+      {playing && !coachStep && !milestone && <Callout engine={engine} top={Math.round(starSize * 1.12) - 38} />}
     </div>
   )
   const soundButton = (
@@ -348,7 +351,6 @@ export default function App() {
     </div>
   )
   /** The first three runs teach by doing, one line per ring, in the lock word's place; later runs start with one hint. */
-  const coachStep = playing && runsLogged < 3 && run.rings < COACH.length ? COACH[run.rings] : null
   const coach = coachStep && (
     <p key={run.rings} className="coach" role="status">
       <span className="toast-rings">
@@ -447,8 +449,7 @@ export default function App() {
           {/* The gauge reaches 12% of the star beyond it. */}
           <div className="gauge-room" style={{ marginBottom: Math.round(starSize * 0.12) + 6 }} />
           {star}
-          {/* The coach's line, or a milestone's, takes the lock word's place. */}
-          {live && coach ? coach : live && !milestone ? <Callout engine={engine} /> : <div className="callout" />}
+          {live && coach ? coach : <div className="callout" />}
           {live && toast}
           {hint}
         </div>

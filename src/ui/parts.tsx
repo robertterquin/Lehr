@@ -92,10 +92,10 @@ export function Garland({ width, lit, palette, toGo }: { width: number; lit: num
 }
 
 /** The message after each lock. It replays its fade for every lock, and screen readers hear it. */
-export function Callout({ engine }: { engine: Engine }) {
+export function Callout({ engine, top }: { engine: Engine; top: number }) {
   const feedback = lockFeedback(engine)
   return (
-    <div className="callout" aria-live="polite">
+    <div className="callout in-gap" style={{ top }} aria-live="polite">
       {feedback && (
         <div key={engine.locks.length} className="callout-body">
           <span className={`callout-title ${feedback.tone}`}>{feedback.title}</span>
