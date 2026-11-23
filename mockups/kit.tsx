@@ -133,7 +133,7 @@ export const Count = ({ n, lit, color }: { n: number; lit: number; color?: strin
 /** The bottom sheet: warm dark glass, a gold hairline, floating over the dimmed screen. */
 export function Sheet({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '22px 24px 40px', borderRadius: '28px 28px 0 0', background: 'linear-gradient(180deg, rgba(42,24,40,0.97), rgba(20,12,26,0.98))', borderTop: '1px solid rgba(255,207,122,0.35)', boxShadow: '0 -20px 60px rgba(0,0,0,0.5)' }}>
+    <section style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '22px 24px 40px', borderRadius: '28px 28px 0 0', background: 'linear-gradient(180deg, #2a1828, #140c1a)', borderTop: '1px solid rgba(255,207,122,0.35)', boxShadow: '0 -20px 60px rgba(0,0,0,0.5)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         <Text style={{ font: `400 28px ${serif}` }}>{title}</Text>
         <span style={{ marginRight: -10, color: cream }}>
