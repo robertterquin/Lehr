@@ -4,6 +4,7 @@ import { createEngine, nextAlignmentMs, pause, resume, ringOffset, tap, type Eng
 import { milestoneText, nextGoal } from './game/feedback.ts'
 import { bestOn, dayBefore, deviceStore, logRun, loggedRuns, nightsInARow, playerSecret, readSettings, writeSettings, type Settings as SavedSettings } from './game/local.ts'
 import { BOARD_ON, fetchBoard, submitRun, type Board, type Placed } from './board.ts'
+import { drawCard, shareText, type CardRun } from './share.ts'
 import { RULES } from './game/rules.ts'
 import { NIGHTS, night as nightById, type NightId, type Night } from './draw/nights.tsx'
 import { Panorama } from './draw/panorama.tsx'
@@ -11,7 +12,7 @@ import { Star } from './draw/star.tsx'
 import type { Stage } from './draw/street.tsx'
 import { SOUNDS, buzz, isMuted, play, setMusic, setMuted, setVibration, stopMusic, unlockAudio } from './sound/audio.ts'
 import { ArcGauge, Callout, CountUp, Garland, IconButton, PauseIcon, SoundIcon, Streak } from './ui/parts.tsx'
-import { Glints, HowToPlay, NewDay, Settings, StarRises } from './ui/screens.tsx'
+import { Glints, HowToPlay, NewDay, Settings, ShareSheet, StarRises } from './ui/screens.tsx'
 import { NamePrompt, TonightBoard, count } from './ui/board.tsx'
 
 const params = new URLSearchParams(location.search)
@@ -38,7 +39,7 @@ const COACH: [string, string][] = [
 ]
 
 type Phase = 'ready' | 'playing' | 'paused' | 'risen' | 'ended'
-type Panel = 'how' | 'settings' | 'board' | 'name' | null
+type Panel = 'how' | 'settings' | 'board' | 'name' | 'share' | null
 
 const WIDE = '(min-width: 960px) and (min-height: 600px)'
 const DANGER_BELOW = 15
@@ -98,6 +99,8 @@ export default function App() {
   /** Tonight's board as this device stands on it (the landing's rank line), and where the last run placed it. */
   const [standing, setStanding] = useState<Board | null>(null)
   const [placed, setPlaced] = useState<Placed | null>(null)
+  /** The share card for the run just ended, drawn ahead so Share can open the phone's share menu at once. */
+  const [card, setCard] = useState<{ run: CardRun; canvas: HTMLCanvasElement; file: File } | null>(null)
   /** Where the name prompt goes when it's done: the board, or back to Settings. */
   const [afterName, setAfterName] = useState<Panel>('board')
   const [systemCalm, setSystemCalm] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
@@ -191,6 +194,31 @@ export default function App() {
       }, () => {})
   }
 
+  // Draw the share card once the run has ended, and again when its rank arrives. The rank shows only when
+  // this run is tonight's best, since the board ranks your best.
+  useEffect(() => {
+    const stage = stageRef.current
+    if (phase !== 'ended' || !stage) return
+    const { rings, perfects } = engineRef.current.run
+    const run: CardRun = { rings, perfects, rank: placed && placed.rings === rings ? placed.rank : null, date: today, site: location.host }
+    let live = true
+    drawCard(run, stage)
+      .then((canvas) => new Promise<Blob | null>((done) => canvas.toBlob(done, 'image/png')).then((blob) => {
+        if (live && blob) setCard({ run, canvas, file: new File([blob], `parol-${today}.png`, { type: 'image/png' }) })
+      }))
+      .catch(() => {})
+    return () => {
+      live = false
+    }
+  }, [phase, placed])
+
+  /** The phone's own share menu with the card; elsewhere a sheet to save it or copy the words. */
+  const shareStar = () => {
+    if (!card) return
+    if (navigator.canShare?.({ files: [card.file] })) navigator.share({ files: [card.file], text: shareText(card.run) }).catch(() => {})
+    else setPanel('share')
+  }
+
   /** The board, after asking for a name the first time. */
   const openBoard = () => {
     if (standing?.me?.name || settings.askedName) return setPanel('board')
@@ -212,6 +240,7 @@ export default function App() {
     commit(next)
     setPanel(null)
     setPlaced(null)
+    setCard(null)
     setPhase('playing')
     ringIn(next)
   }, [])
@@ -573,6 +602,9 @@ export default function App() {
           <button type="button" className="primary over-button" autoFocus onClick={() => start(performance.now())}>
             Light again
           </button>
+          <button type="button" className="link" disabled={!card} onClick={shareStar}>
+            Share your star
+          </button>
         </section>
       )}
 
@@ -605,6 +637,7 @@ export default function App() {
           onBack={() => setPanel(null)}
         />
       )}
+      {panel === 'share' && card && <ShareSheet image={card.canvas.toDataURL('image/png')} file={card.file.name} text={shareText(card.run)} rings={card.run.rings} onClose={() => setPanel(null)} />}
       {panel === 'name' && <NamePrompt secret={SECRET} initial={standing?.me?.name ?? null} onDone={nameDone} onSkip={() => nameDone()} />}
       {newDay && (phase === 'ready' || phase === 'ended') && <NewDay best={best} onSee={() => location.reload()} />}
     </main>

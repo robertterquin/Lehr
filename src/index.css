@@ -1373,3 +1373,24 @@ body {
 .calm .board {
   animation: none;
 }
+
+/* The share sheet (where the browser can't share an image): the card, Save image, Copy text. */
+.share-preview {
+  display: block;
+  width: min(100%, 300px);
+  aspect-ratio: 1080 / 1350;
+  margin: 4px auto 8px;
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+a.primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.share-copy {
+  align-self: center;
+}

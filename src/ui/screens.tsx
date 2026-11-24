@@ -1,5 +1,5 @@
 // The screens around a run: How to play, Settings, the star rising at 100 and a new day.
-import { useId, type ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import { RULES } from '../game/rules.ts'
 import { Star } from '../draw/star.tsx'
 
@@ -193,5 +193,22 @@ export function NewDay({ best, onSee }: { best: number; onSee: () => void }) {
         </button>
       </section>
     </div>
+  )
+}
+
+/** Where the browser can't share an image (most desktops): the card, to save, and its words, to copy. */
+export function ShareSheet({ image, file, text, rings, onClose }: { image: string; file: string; text: string; rings: number; onClose: () => void }) {
+  const [copied, setCopied] = useState(false)
+  const copy = () => navigator.clipboard?.writeText(text).then(() => setCopied(true), () => {})
+  return (
+    <Sheet title="Share your star" onClose={onClose}>
+      <img className="share-preview" src={image} alt={`Your share card: ${rings} ${rings === 1 ? 'ring' : 'rings'} lit on tonight’s star`} />
+      <a className="primary" href={image} download={file} autoFocus>
+        Save image
+      </a>
+      <button type="button" className="link share-copy" onClick={copy}>
+        {copied ? 'Copied' : 'Copy text'}
+      </button>
+    </Sheet>
   )
 }
