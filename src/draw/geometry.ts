@@ -30,12 +30,28 @@ export const starPath = (ring: number, width: number, rotation: number) => {
 
 export type DrawnRing = { index: number; width: number; rotation: number; perfect: boolean }
 
-/** Each locked ring's shape, replayed from the lock errors under the rules. */
+/** The narrowest points a ring is drawn with: the run's width still thins the star, but never into spikes. */
+export const DRAWN_MIN_WIDTH = 20
+
+/**
+ * How wide a ring's points are drawn for the run's `width`: eased from the full 36° down to 20° as the width
+ * falls to the 8° minimum. A run ends when its points are too thin, so drawn as they are, every long run would
+ * finish as a spiky asterisk; eased, it stays a parol. The gauge still shows the true width.
+ */
+export const drawnWidth = (width: number, rules: Rules = RULES) =>
+  DRAWN_MIN_WIDTH + (rules.startWidth - DRAWN_MIN_WIDTH) * Math.max(0, Math.min(1, (width - rules.minWidth) / (rules.startWidth - rules.minWidth)))
+
+/**
+ * Each locked ring's shape, replayed from the lock errors under the rules. Every ring is drawn upright
+ * (rotation 0): the run's turn from off-angle locks is a drawing choice, and turned layers piled up into a
+ * ten-pointed web that no longer looked like a parol. The spinning ring is drawn upright too, so a perfect tap
+ * still lines up with the star.
+ */
 export const drawnRings = (locks: number[], rules: Rules = RULES): DrawnRing[] => {
   let run = startRun(rules)
   return locks.map((error, index) => {
     run = lock(run, error, rules)
-    return { index, width: run.width, rotation: run.rotation, perfect: Math.abs(error) <= rules.perfectWithin + 1e-9 }
+    return { index, width: drawnWidth(run.width, rules), rotation: 0, perfect: Math.abs(error) <= rules.perfectWithin + 1e-9 }
   })
 }
 

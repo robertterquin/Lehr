@@ -326,7 +326,7 @@ function Papel({ size, locks }: { size: number; locks: number[] }) {
 /* ── The page ──────────────────────────────────────────────────────────────────────────────────────────────── */
 
 const ROWS: { id: string; title: string; note: string; Draw: (p: { size: number; locks: number[] }) => ReactNode }[] = [
-  { id: 'today', title: 'Today', note: 'Gets worse as it grows: thin spikes, washed-out colour, tails and bulbs shrink away.', Draw: ({ size, locks }) => <Star size={size} locks={locks} palette={PAL} /> },
+  { id: 'today', title: 'Today', note: 'Now upright, points never under 20° (geometry.ts): a clean star at every size, but late in a run colour still fades and tails shrink.', Draw: ({ size, locks }) => <Star size={size} locks={locks} palette={PAL} /> },
   { id: 'ilaw', title: 'A · Ilaw', note: 'Today’s parol made luminous: a lamp inside, fading frame, glowing rim; tails, bulbs and halo keep their size.', Draw: Ilaw },
   { id: 'sampernandu', title: 'B · Parul Sampernandu', note: 'The giant lantern: rows of bulbs on every ring like a rotor, deep vinyl colours, bulb rosette, stacked halos.', Draw: Sampernandu },
   { id: 'papel', title: 'C · Papel', note: 'The handmade parol: papel de Hapon crinkle, cut fringe, bamboo spokes, long fringed paper tails.', Draw: Papel },
