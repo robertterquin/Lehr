@@ -1,4 +1,4 @@
-// The album (mockups/season.tsx): every night's star you built, Simbang Gabi's nine nights in December, one
+// The album: every night's star you built, Simbang Gabi's nine nights in December, one
 // parol up close with its final rank, achievements, and the golden parol on Christmas Eve. Words float over the
 // dimmed street like the board.
 import { useEffect, useRef, useState, type PointerEvent } from 'react'

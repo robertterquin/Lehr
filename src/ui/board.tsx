@@ -1,5 +1,5 @@
 // Tonight's board and the one-time name prompt: words floating over the dimmed street, no card
-// (mockups/board.tsx, option A). On desktop they stand in the right-hand column with the star still in view.
+// (the floating option A from the design mockups). On desktop they stand in the right-hand column with the star still in view.
 import { useEffect, useRef, useState, type FormEvent, type PointerEvent } from 'react'
 import { useDialogFocus } from './focus.ts'
 import { fetchBoard, saveName, type Board } from '../board.ts'

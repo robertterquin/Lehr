@@ -100,7 +100,6 @@ const sound = (gain: number, make: (out: AudioNode, at: number) => void): Voice 
 }
 
 export const SOUNDS = {
-  tap: sound(1.53 * 0.6, (o, t) => { partial(o, t, 1180, 0.5, 0.025, 0.001); burst(o, t, 0.02, 0.4, 3000, 0.004) }),
   // −9 dB: the whoosh sits under the locks.
   ringIn: sound(3.92 * 0.35, (o, t) => burst(o, t, 0.35, 0.5, 700, 0.12)),
   perfect: PENTATONIC.map((freq) => sound(0.75 * 0.8, (o, t) => { partial(o, t, 520, 0.4, 0.05, 0.001); bell(o, t + 0.01, freq, 0.55) })),

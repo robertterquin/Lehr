@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createEngine, nextAlignmentMs, pause, replay, resume, ringAngle, ringError, tap, type Engine } from '../src/game/engine.ts'
+import { createEngine, nextAlignmentMs, pause, replay, resume, ringError, tap, type Engine } from '../src/game/engine.ts'
 import { RULES } from '../src/game/rules.ts'
 
 const SEED = 20261122
@@ -61,11 +61,6 @@ test('five perfects widen, an off-angle lock turns the star, and the run ends be
   assert.equal(over.run.rings, 2)
   assert.equal(tap(over, at(over, 0)).run, over.run)
   assert.equal(over.locks.length, 2)
-})
-
-test('the drawn ring follows the star’s turn', () => {
-  const engine = play([8])
-  assert.ok(Math.abs(ringAngle(engine, nextAlignmentMs(engine)) - engine.run.rotation) < 1e-9)
 })
 
 test('a pause ignores taps and spins the ring in again on resume', () => {

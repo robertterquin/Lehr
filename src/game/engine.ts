@@ -54,9 +54,6 @@ export const ringOffset = (ring: Ring, atMs: number) => ring.direction * (((Math
 /** The lock error a tap at `atMs` would make: −36° to 36°. */
 export const ringError = (engine: Engine, atMs: number) => lockError(ringOffset(engine.ring, atMs))
 
-/** The spinning ring's angle on screen: alignment follows the star's turn from earlier off-angle locks. */
-export const ringAngle = (engine: Engine, atMs: number) => engine.run.rotation + ringOffset(engine.ring, atMs)
-
 /** When the ring would next line up exactly, after spin-in: what a perfect player aims for. */
 export const nextAlignmentMs = (engine: Engine, rules: Rules = RULES) => {
   const { startMs, speed } = engine.ring

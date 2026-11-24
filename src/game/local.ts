@@ -127,8 +127,6 @@ export const streakOf = (nights: Record<string, number>, today: string) => {
 
 const dayAfter = (date: string) => new Date(Date.parse(`${date}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10)
 
-export const nightsInARow = (store: Store, today: string) => streakOf(playedNights(store), today).count
-
 /** The most rings in a logged run on `date` (0 when none). */
 export const bestOn = (store: Store, date: string) => loggedRuns(store).reduce((best, run) => (run.date === date && run.rings > best ? run.rings : best), 0)
 
