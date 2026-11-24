@@ -1,5 +1,6 @@
 // The share card (design P15; the gold card P18 from 100 rings): a 1080×1350 image of the star you built,
 // drawn on a canvas from the end screen's own star layers, so the card shows exactly that star.
+import { t } from './copy.ts'
 
 export const CARD_W = 1080
 export const CARD_H = 1350
@@ -14,11 +15,8 @@ const SKYLINE = 'M0 478L28 462L56 478V540H0ZM56 470L100 446L144 470V540H56ZM144 
 
 export type CardRun = { rings: number; perfects: number; rank: number | null; date: string; site: string }
 
-const plural = (n: number, word: string) => `${n.toLocaleString('en-US')} ${word}${n === 1 ? '' : 's'}`
-
 /** What goes with the image when shared: the score, the rank if it's this run's, and the link. */
-export const shareText = (run: CardRun) =>
-  `I lit ${plural(run.rings, 'ring')} on tonight’s Parol star${run.rank ? ` · #${run.rank.toLocaleString('en-US')} tonight` : ''}. https://${run.site}`
+export const shareText = (run: CardRun) => t().shareText(run.rings, run.rank, `https://${run.site}`)
 
 /** Room around the star's 300×420 box: its glow spills past the box on screen, and an image would cut it off. */
 const PAD = 120
@@ -39,9 +37,15 @@ const loadSvg = (svg: SVGSVGElement) =>
 /** The star's own layers, minus the moving ones: the ring spinning in, the lock flash, the falling sliver. */
 const starLayers = (star: HTMLElement) => [...star.querySelectorAll('svg')].filter((svg) => !svg.matches('.spin-in, .lock-glow, .lock-drop'))
 
-/** Text centred on x, in runs of [text, font, colour], as one line. */
-const line = (ctx: CanvasRenderingContext2D, y: number, parts: [string, string, string][]) => {
-  const widths = parts.map(([text, font]) => ((ctx.font = font), ctx.measureText(text).width))
+/** Text centred on x, in runs of [text, font, colour], as one line; a line too wide for the card (Filipino runs
+ *  longer) steps its type down to fit. */
+const line = (ctx: CanvasRenderingContext2D, y: number, given: [string, string, string][]) => {
+  const measure = (parts: [string, string, string][]) => parts.map(([text, font]) => ((ctx.font = font), ctx.measureText(text).width))
+  const room = CARD_W - 120
+  const full = measure(given).reduce((a, b) => a + b, 0)
+  const fit = Math.min(1, room / full)
+  const parts = given.map(([text, font, colour]): [string, string, string] => [text, font.replace(/(\d+)px/, (_, px) => `${Math.floor(Number(px) * fit)}px`), colour])
+  const widths = measure(parts)
   let x = CARD_W / 2 - widths.reduce((a, b) => a + b, 0) / 2
   ctx.textAlign = 'left'
   parts.forEach(([text, font, colour], i) => {
@@ -123,22 +127,22 @@ export async function drawCard(run: CardRun, star: HTMLElement): Promise<HTMLCan
   ctx.textAlign = 'right'
   ctx.font = `400 30px ${UI}`
   ctx.fillStyle = gold ? INK : MUTED
-  const date = new Date(`${run.date}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+  const date = new Date(`${run.date}T00:00:00Z`).toLocaleDateString(t().dateLocale, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
   ctx.fillText(date, CARD_W - 60, 84)
 
-  const rank: [string, string, string][] = run.rank ? [[` · #${run.rank.toLocaleString('en-US')} tonight`, `400 35px ${UI}`, INK]] : []
+  const rank: [string, string, string][] = run.rank ? [[t().cardRank(run.rank), `400 35px ${UI}`, INK]] : []
   if (gold) {
     ctx.letterSpacing = '5px'
-    line(ctx, 850, [['THE STAR ROSE', `700 30px ${UI}`, GOLD]])
+    line(ctx, 850, [[t().cardRose, `700 30px ${UI}`, GOLD]])
     ctx.letterSpacing = '0px'
-    line(ctx, 950, [[plural(run.rings, 'ring'), `400 85px ${SERIF}`, INK]])
-    line(ctx, 1030, [[`${run.perfects.toLocaleString('en-US')} perfect`, `700 35px ${UI}`, GOLD], ...rank])
+    line(ctx, 950, [[t().rings(run.rings), `400 85px ${SERIF}`, INK]])
+    line(ctx, 1030, [[t().perfects(run.perfects), `700 35px ${UI}`, GOLD], ...rank])
     ctx.strokeStyle = GOLD
     ctx.lineWidth = 10
     ctx.strokeRect(5, 5, CARD_W - 10, CARD_H - 10)
   } else {
-    line(ctx, 1000, [[`${plural(run.rings, 'ring')} lit`, `400 70px ${SERIF}`, INK]])
-    line(ctx, 1075, [[`${run.perfects.toLocaleString('en-US')} perfect`, `700 35px ${UI}`, GOLD], ...rank])
+    line(ctx, 1000, [[t().cardLit(run.rings), `400 70px ${SERIF}`, INK]])
+    line(ctx, 1075, [[t().perfects(run.perfects), `700 35px ${UI}`, GOLD], ...rank])
   }
   line(ctx, 1300, [[run.site, `400 30px ${UI}`, MUTED]])
   return canvas

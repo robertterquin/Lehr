@@ -1,7 +1,7 @@
 // The screens around a run: How to play, Settings, the star rising at 100 and a new day.
 import { useId, useState, type ReactNode } from 'react'
-import { RULES } from '../game/rules.ts'
 import { Star } from '../draw/star.tsx'
+import { t, type Lang } from '../copy.ts'
 
 /** A bottom sheet over the screen; Esc and the close button close it. */
 export function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
@@ -11,7 +11,7 @@ export function Sheet({ title, onClose, children }: { title: string; onClose: ()
       <div className="sheet">
         <div className="sheet-head">
           <h2 id={id} className="sheet-title">{title}</h2>
-          <button type="button" className="icon-button" aria-label="Close" onClick={onClose}>
+          <button type="button" className="icon-button" aria-label={t().close} onClick={onClose}>
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
               <path d="M5 5l10 10M15 5L5 15" />
             </svg>
@@ -34,29 +34,25 @@ function MiniStar({ locks, palette }: { locks: number[]; palette: string[] }) {
   )
 }
 
-const STEPS = [
-  { title: 'A ring spins in', text: 'Each new ring of the star turns around the centre.', locks: [0, 0] },
-  { title: 'Tap to lock it', text: `Lock when its points meet the gold dashes. Within ${RULES.perfectWithin}° is perfect.`, locks: [0, 0, 0] },
-  { title: 'Off-angle gets trimmed', text: `The overhang falls away and the points get thinner. Below ${RULES.minWidth}° the run ends.`, locks: [0, 0, 9] },
-  { title: `${RULES.widenEvery} perfect in a row`, text: `${RULES.widenEvery} perfect locks widen the points back by ${RULES.widenBy}°.`, locks: [9, 0, 0, 0, 0, 0] },
-]
+/** The star each step of How to play shows; the words are in src/copy.ts (`steps`). */
+const STEP_LOCKS = [[0, 0], [0, 0, 0], [0, 0, 9], [9, 0, 0, 0, 0, 0]]
 
 export function HowToPlay({ palette, onClose }: { palette: string[]; onClose: () => void }) {
   return (
-    <Sheet title="How to play" onClose={onClose}>
+    <Sheet title={t().howToPlay} onClose={onClose}>
       <ol className="steps">
-        {STEPS.map((step) => (
-          <li key={step.title} className="step">
-            <MiniStar locks={step.locks} palette={palette} />
+        {t().steps.map(([title, text], i) => (
+          <li key={i} className="step">
+            <MiniStar locks={STEP_LOCKS[i]} palette={palette} />
             <div className="step-text">
-              <span className="step-title">{step.title}</span>
-              <span className="step-note">{step.text}</span>
+              <span className="step-title">{title}</span>
+              <span className="step-note">{text}</span>
             </div>
           </li>
         ))}
       </ol>
       <button type="button" className="primary" autoFocus onClick={onClose}>
-        Got it
+        {t().gotIt}
       </button>
     </Sheet>
   )
@@ -78,10 +74,12 @@ export type SettingsProps = {
   sound: boolean
   vibration: boolean
   calm: boolean
+  lang: Lang
   runs: number
   onSound: (on: boolean) => void
   onVibration: (on: boolean) => void
   onCalm: (on: boolean) => void
+  onLang: (lang: Lang) => void
   onHowTo: () => void
   /** The name on tonight's board: undefined hides the row (board off), null is not set yet. */
   boardName?: string | null
@@ -90,37 +88,48 @@ export type SettingsProps = {
   onClose: () => void
 }
 
-export function Settings({ sound, vibration, calm, runs, onSound, onVibration, onCalm, onHowTo, boardName, onBoardName, onDownloadLog, onClose }: SettingsProps) {
+export function Settings({ sound, vibration, calm, lang, runs, onSound, onVibration, onCalm, onLang, onHowTo, boardName, onBoardName, onDownloadLog, onClose }: SettingsProps) {
   return (
-    <Sheet title="Settings" onClose={onClose}>
-      <Toggle label="Sound" on={sound} onChange={onSound} />
-      <Toggle label="Vibration" note="Android only" on={vibration} onChange={onVibration} />
-      <Toggle label="Reduced motion" on={calm} onChange={onCalm} />
+    <Sheet title={t().settingsTitle} onClose={onClose}>
+      {/* Named in both languages, so the switch can be found whichever one is showing. */}
+      <div className="row">
+        <span id="lang-label">Wika · Language</span>
+        <div className="lang-switch" role="group" aria-labelledby="lang-label">
+          {(['fil', 'en'] as const).map((option) => (
+            <button key={option} type="button" lang={option} aria-pressed={lang === option} onClick={() => onLang(option)}>
+              {option === 'fil' ? 'Filipino' : 'English'}
+            </button>
+          ))}
+        </div>
+      </div>
+      <Toggle label={t().sound} on={sound} onChange={onSound} />
+      <Toggle label={t().vibration} note={t().androidOnly} on={vibration} onChange={onVibration} />
+      <Toggle label={t().reducedMotion} on={calm} onChange={onCalm} />
       <div className="divider" />
       <div className="row">
-        <span>How to play</span>
+        <span>{t().howToPlay}</span>
         <button type="button" className="link" onClick={onHowTo}>
-          Show again
+          {t().showAgain}
         </button>
       </div>
       {boardName !== undefined && (
         <div className="row">
           <span className="row-text">
-            Name on the board
-            <span className="toggle-note">{boardName ?? 'Not set'}</span>
+            {t().boardName}
+            <span className="toggle-note">{boardName ?? t().notSet}</span>
           </span>
           <button type="button" className="link" onClick={onBoardName}>
-            {boardName ? 'Change' : 'Add'}
+            {boardName ? t().change : t().add}
           </button>
         </div>
       )}
       <div className="row">
         <span className="row-text">
-          Playtest log
-          <span className="toggle-note">{runs === 1 ? '1 run' : `${runs} runs`} kept on this device</span>
+          {t().playtestLog}
+          <span className="toggle-note">{t().runsKept(runs)}</span>
         </span>
         <button type="button" className="link" disabled={runs === 0} onClick={onDownloadLog}>
-          Download
+          {t().download}
         </button>
       </div>
     </Sheet>
@@ -169,11 +178,11 @@ export function StarRises({ locks, palette, onKeepGoing }: { locks: number[]; pa
         </div>
       </div>
       <section className="over now" role="dialog" aria-labelledby="rise-title" onPointerDown={(event) => event.stopPropagation()}>
-        <h2 id="rise-title" className="over-eyebrow">100 rings</h2>
-        <p className="rise-title">Your parol became a star</p>
-        <p className="over-reason">The Star of Bethlehem shines over the barangay.</p>
+        <h2 id="rise-title" className="over-eyebrow">{t().risenEyebrow}</h2>
+        <p className="rise-title">{t().risenTitle}</p>
+        <p className="over-reason">{t().risenReason}</p>
         <button type="button" className="primary over-button" autoFocus onClick={onKeepGoing}>
-          Keep going
+          {t().keepGoing}
         </button>
       </section>
     </>
@@ -185,11 +194,11 @@ export function NewDay({ best, onSee }: { best: number; onSee: () => void }) {
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="newday-title" onPointerDown={(event) => event.stopPropagation()}>
       <section className="over now">
-        <span className="over-eyebrow">Past midnight in Manila</span>
-        <h2 id="newday-title" className="rise-title">A new star is ready</h2>
-        {best > 0 && <p className="over-reason">Your best yesterday: {best} rings</p>}
+        <span className="over-eyebrow">{t().newDayEyebrow}</span>
+        <h2 id="newday-title" className="rise-title">{t().newDayTitle}</h2>
+        {best > 0 && <p className="over-reason">{t().bestYesterday(best)}</p>}
         <button type="button" className="primary over-button" autoFocus onClick={onSee}>
-          See tonight’s star
+          {t().seeTonight}
         </button>
       </section>
     </div>
@@ -201,13 +210,13 @@ export function ShareSheet({ image, file, text, rings, onClose }: { image: strin
   const [copied, setCopied] = useState(false)
   const copy = () => navigator.clipboard?.writeText(text).then(() => setCopied(true), () => {})
   return (
-    <Sheet title="Share your star" onClose={onClose}>
-      <img className="share-preview" src={image} alt={`Your share card: ${rings} ${rings === 1 ? 'ring' : 'rings'} lit on tonight’s star`} />
+    <Sheet title={t().shareTitle} onClose={onClose}>
+      <img className="share-preview" src={image} alt={t().shareAlt(rings)} />
       <a className="primary" href={image} download={file} autoFocus>
-        Save image
+        {t().saveImage}
       </a>
       <button type="button" className="link share-copy" onClick={copy}>
-        {copied ? 'Copied' : 'Copy text'}
+        {copied ? t().copied : t().copyText}
       </button>
     </Sheet>
   )

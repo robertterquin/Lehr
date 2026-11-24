@@ -3,6 +3,7 @@ import type { Engine } from '../game/engine.ts'
 import { lockFeedback } from '../game/feedback.ts'
 import { RULES } from '../game/rules.ts'
 import { MiniParol } from '../draw/street.tsx'
+import { t } from '../copy.ts'
 import { useEffect, useState } from 'react'
 
 /** The end score counts up from 0 (0.7 s, easing out) once the words have risen; reduced motion shows it at once. */
@@ -26,7 +27,7 @@ export function CountUp({ to, delayMs, calm }: { to: number; delayMs: number; ca
 /** Five diamonds, lit for the perfects in a row towards the next widen. */
 export function Streak({ streak }: { streak: number }) {
   const lit = streak > 0 && streak % RULES.widenEvery === 0 ? RULES.widenEvery : streak % RULES.widenEvery
-  const label = streak === 0 ? 'No streak' : lit === RULES.widenEvery ? `${RULES.widenEvery} perfect · points widen` : `${streak} perfect in a row`
+  const label = streak === 0 ? t().streakLabelNone : lit === RULES.widenEvery ? t().streakLabelWiden : t().streakLabel(streak)
   // The diamonds say it on screen; the label says it to screen readers.
   return (
     <div className="streak" role="img" aria-label={label}>
@@ -65,7 +66,7 @@ export function ArcGauge({ size, width, danger }: { size: number; width: number;
   const length = (2 * Math.PI * r * SWEEP) / 360
   const filled = (Math.max(0, Math.min(width, RULES.startWidth)) / RULES.startWidth) * length
   return (
-    <svg className={`gauge${danger ? ' danger' : ''}`} width={box} height={box} style={{ left: (size - box) / 2, top: (size - box) / 2 }} role="img" aria-label={`Point width ${Math.round(width)}°`}>
+    <svg className={`gauge${danger ? ' danger' : ''}`} width={box} height={box} style={{ left: (size - box) / 2, top: (size - box) / 2 }} role="img" aria-label={t().gaugeLabel(Math.round(width))}>
       <path d={arc} className="gauge-track" />
       <path d={arc} className="gauge-fill" style={{ strokeDasharray: `${filled} ${length}` }} />
       <circle cx={mx} cy={my} r="3" className="gauge-min" />
@@ -88,7 +89,7 @@ export function Garland({ width, lit, palette, toGo }: { width: number; lit: num
   const sag = 22
   const on = Math.max(0, Math.min(PAROLS, lit))
   return (
-    <svg className="garland" width={w} height={toGo === undefined ? 92 : 108} role="img" aria-label={`${on} of ${PAROLS} parols lit${toGo !== undefined && on < PAROLS ? `, ${toGo} rings to the next` : ''}`}>
+    <svg className="garland" width={w} height={toGo === undefined ? 92 : 108} role="img" aria-label={t().garlandLabel(on, toGo !== undefined && on < PAROLS ? toGo : undefined)}>
       <path d={`M0 ${top}Q${w / 2} ${top + sag * 2} ${w} ${top}`} className="garland-string" />
       {Array.from({ length: PAROLS }, (_, i) => {
         const t = (i + 0.5) / PAROLS
@@ -146,21 +147,14 @@ export const SoundIcon = ({ off }: { off: boolean }) => (
   </svg>
 )
 
-const LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-const plural = (n: number) => `${n} ${n === 1 ? 'night' : 'nights'}`
-
 /** This week, Monday to Sunday: a star for each night played, white-gold for a 100-ring night, tonight dashed
  *  until it's played. Under it the streak, and what tonight's run does to it. */
 export function WeekStars({ days, nights, today, streak }: { days: string[]; nights: Record<string, number>; today: string; streak: number }) {
   const playedTonight = today in nights
-  const note =
-    streak === 0 ? 'Light tonight to start a streak'
-    : !playedTonight ? `${plural(streak)} in a row · light tonight to make it ${streak + 1}`
-    : streak === 1 ? 'Your streak starts tonight'
-    : `${plural(streak)} in a row`
+  const note = streak === 0 ? t().streakNone : !playedTonight ? t().streakKeep(streak) : streak === 1 ? t().streakStarts : t().streakNights(streak)
   const lit = days.filter((day) => day in nights).length
   return (
-    <div className="week" role="img" aria-label={`${note}. This week: ${lit} of 7 nights lit.`}>
+    <div className="week" role="img" aria-label={t().weekLabel(note, lit)}>
       <div className="week-row" aria-hidden="true">
         {days.map((day, i) => {
           const best = nights[day]
@@ -170,7 +164,7 @@ export function WeekStars({ days, nights, today, streak }: { days: string[]; nig
               <svg className="week-star" viewBox="0 0 16 16">
                 <path d="M8 1.2l1.9 4.2 4.6.5-3.4 3.1 1 4.5L8 11.2 3.9 13.5l1-4.5L1.5 5.9l4.6-.5z" />
               </svg>
-              {LETTERS[i]}
+              {t().weekLetters[i]}
             </span>
           )
         })}

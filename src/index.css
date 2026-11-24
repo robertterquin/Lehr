@@ -1482,6 +1482,43 @@ a.primary {
 }
 
 .week-note {
+  max-width: 300px;
   font-size: 12px;
   color: var(--cream);
+  text-align: center;
+  text-wrap: balance;
+}
+
+.wide .week-note {
+  text-align: left;
+}
+
+/* Wika · Language: two words, the chosen one gold. */
+.lang-switch {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.lang-switch button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--cream);
+  font: 700 14px var(--font-ui);
+  cursor: pointer;
+}
+
+.lang-switch button[aria-pressed='true'] {
+  background: var(--gold);
+  color: var(--on-button);
+}
+
+.lang-switch button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }

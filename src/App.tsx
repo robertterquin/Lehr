@@ -5,6 +5,7 @@ import { milestoneText, nextGoal } from './game/feedback.ts'
 import { bestOn, dayBefore, deviceStore, logRun, loggedRuns, nightsInARow, playedNights, playerSecret, readSettings, writeSettings, type Settings as SavedSettings } from './game/local.ts'
 import { BOARD_ON, fetchBoard, submitRun, type Board, type Placed } from './board.ts'
 import { drawCard, shareText, type CardRun } from './share.ts'
+import { setLang, t, type Lang } from './copy.ts'
 import { RULES } from './game/rules.ts'
 import { NIGHTS, night as nightById, type NightId, type Night } from './draw/nights.tsx'
 import { Panorama } from './draw/panorama.tsx'
@@ -25,18 +26,16 @@ const BENCH: number[] | null = params.has('bench') ? ((window as unknown as { lo
 // Development only: ?from=98 starts a run 98 perfect rings in, to check the late screens. Never logged.
 const FROM = import.meta.env.DEV ? Math.max(0, Number(params.get('from')) || 0) : 0
 const store = deviceStore()
+// The words follow the saved language from the first render (Filipino unless English was chosen).
+setLang(readSettings(store).lang)
 /** This device's place on tonight's board (Phase 9); empty when the board is off. */
 const SECRET = BOARD_ON ? playerSecret(store) : ''
 const yesterday = dayBefore(today)
 /** The dim preview star on the Ready screen. */
 const PREVIEW = Array.from({ length: 12 }, () => 0)
 
-/** What the first runs say, ring by ring: what to do, then what can go wrong, then how to recover. */
-const COACH: [string, string][] = [
-  ['Tap when the points line up', 'Then the next ring spins in'],
-  ['A miss trims the points', `Below ${RULES.minWidth}° the run ends`],
-  [`${RULES.widenEvery} perfect in a row`, `widen the points back by ${RULES.widenBy}°`],
-]
+/** The first runs teach ring by ring (what to do, what can go wrong, how to recover): `coach` in src/copy.ts. */
+const COACH_STEPS = 3
 
 type Phase = 'ready' | 'playing' | 'paused' | 'risen' | 'ended'
 type Panel = 'how' | 'settings' | 'board' | 'name' | 'share' | null
@@ -122,6 +121,9 @@ export default function App() {
 
   useEffect(() => setVibration(settings.vibration), [settings.vibration])
   useEffect(() => {
+    document.documentElement.lang = settings.lang
+  }, [settings.lang])
+  useEffect(() => {
     const query = window.matchMedia('(prefers-reduced-motion: reduce)')
     const update = () => setSystemCalm(query.matches)
     query.addEventListener('change', update)
@@ -140,6 +142,7 @@ export default function App() {
   useEffect(refreshStanding, [])
 
   const saveSettings = (next: SavedSettings) => {
+    setLang(next.lang)
     setSettings(next)
     writeSettings(store, next)
   }
@@ -382,7 +385,7 @@ export default function App() {
   const milestone = inRun && !run.ended && phase !== 'risen' ? milestoneText(run.rings) : null
   const skyStars = inRun ? Math.min(SKY.length, Math.max(0, Math.floor((run.rings - 100) / 10))) : 0
 
-  const coachStep = playing && runsLogged < 3 && run.rings < COACH.length ? COACH[run.rings] : null
+  const coachStep = playing && runsLogged < 3 && run.rings < COACH_STEPS ? t().coach[run.rings] : null
   const star = (
     <div className={`stage${phase === 'ended' ? ' stage-ended' : ''}`} ref={stageRef}>
       <Star
@@ -400,12 +403,12 @@ export default function App() {
     </div>
   )
   const soundButton = (
-    <IconButton label="Sound" pressed={!muted} onPress={() => toggleSound()}>
+    <IconButton label={t().sound} pressed={!muted} onPress={() => toggleSound()}>
       <SoundIcon off={muted} />
     </IconButton>
   )
   const settingsButton = (
-    <IconButton label="Settings" onPress={() => setPanel('settings')}>
+    <IconButton label={t().settings} onPress={() => setPanel('settings')}>
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
         <circle cx="10" cy="10" r="2.6" />
         <path d="M10 2.5v2.2M10 15.3v2.2M2.5 10h2.2M15.3 10h2.2M4.7 4.7l1.6 1.6M13.7 13.7l1.6 1.6M4.7 15.3l1.6-1.6M13.7 6.3l1.6-1.6" />
@@ -422,15 +425,16 @@ export default function App() {
   const coach = coachStep && (
     <p key={run.rings} className="coach" role="status">
       <span className="toast-rings">
-        {run.rings + 1} of {COACH.length}
+        {t().coachStep(run.rings + 1, COACH_STEPS)}
       </span>
-      <span className="coach-line">{run.rings === 0 && wide ? 'Press Space when the points line up' : coachStep[0]}</span>
+      <span className="coach-line">{run.rings === 0 && wide ? t().coachSpace : coachStep[0]}</span>
       <span className="coach-note">{coachStep[1]}</span>
     </p>
   )
   const hint = playing && !coachStep && run.rings === 0 && (
     <p className="hint">
-      <span className="hint-word">{wide ? 'Press Space' : 'Tap'}</span> when the points line up
+      <span className="hint-word">{t().hintWord(wide)}</span>
+      {t().hintRest}
     </p>
   )
   const goal = nextGoal(run.rings)
@@ -438,23 +442,23 @@ export default function App() {
   const garland = <Garland width={width - 32} lit={Math.floor((inRun ? run.rings : best) / RULES.milestoneEvery)} palette={tonight.palette} toGo={inRun ? goal.toGo : undefined} />
   const toast = milestone && (
     <p key={run.rings} className="toast" role="status">
-      <span className="toast-rings">{run.rings} rings</span>
+      <span className="toast-rings">{t().rings(run.rings)}</span>
       <span className="toast-line">{milestone}</span>
     </p>
   )
   const action = (
     <div className="poster-action">
       <button type="button" className="primary" onClick={() => start(performance.now())}>
-        {firstVisit ? 'Start · it takes a minute' : 'Light the first ring'} <span aria-hidden="true">→</span>
+        {firstVisit ? t().startFirst : t().lightFirst} <span aria-hidden="true">→</span>
       </button>
       {best > 0 ? (
         <span className="best-line">
-          Best today <strong>{best}</strong>
+          {t().bestToday} <strong>{best}</strong>
           {standing?.me?.rank ? (
             <>
               <span className="dot">·</span>
               <button type="button" className="link inline-link" onClick={openBoard}>
-                #{count(standing.me.rank)} tonight
+                {t().rankTonight(standing.me.rank)}
               </button>
             </>
           ) : (
@@ -464,7 +468,7 @@ export default function App() {
               <>
                 <span className="dot">·</span>
                 <button type="button" className="link inline-link" onClick={openBoard}>
-                  See the board
+                  {t().seeBoard}
                 </button>
               </>
             )
@@ -475,10 +479,10 @@ export default function App() {
         standing &&
         standing.total > 0 && (
           <span className="best-line">
-            {count(standing.total)} lit tonight’s star
+            {t().litTonight(standing.total)}
             <span className="dot">·</span>
             <button type="button" className="link inline-link" onClick={openBoard}>
-              See the board
+              {t().seeBoard}
             </button>
           </span>
         )
@@ -515,9 +519,9 @@ export default function App() {
           {garland}
           <div className="poster-body">
             <div className="poster-words">
-              <span className="eyebrow">{tonight.araw} · tonight’s star</span>
+              <span className="eyebrow">{t().tonightStar(tonight.araw)}</span>
               <h1 className="poster-title">{tonight.name}</h1>
-              <p className="poster-blurb">Light all ten parols on the street tonight.</p>
+              <p className="poster-blurb">{t().blurb}</p>
               {wide && action}
             </div>
             {star}
@@ -528,12 +532,12 @@ export default function App() {
         // One centred layout on every screen: the count above, the star in its gauge, the message below.
         <div className="run">
           <header className="run-bar">
-            <div className="run-count" aria-label={`${run.rings} rings`}>
+            <div className="run-count" aria-label={t().rings(run.rings)}>
               {live && <span className="count">{run.rings}</span>}
               {live && <Streak streak={run.streak} />}
             </div>
             {live ? (
-              <IconButton label="Pause" ring onPress={() => pauseNow(performance.now())}>
+              <IconButton label={t().pause} ring onPress={() => pauseNow(performance.now())}>
                 <PauseIcon />
               </IconButton>
             ) : (
@@ -552,13 +556,13 @@ export default function App() {
 
       {phase === 'paused' && (
         <section className="over now" role="dialog" aria-labelledby="paused-title" onPointerDown={(event) => event.stopPropagation()}>
-          <h2 id="paused-title" className="over-eyebrow">Paused</h2>
+          <h2 id="paused-title" className="over-eyebrow">{t().paused}</h2>
           <p className="over-score">
             <strong>{run.rings}</strong>
-            <span>{run.rings === 1 ? 'ring' : 'rings'} so far</span>
+            <span>{t().soFar(run.rings)}</span>
           </p>
           <button type="button" className="primary over-button" autoFocus onClick={() => resumeNow(performance.now())}>
-            Resume
+            {t().resume}
           </button>
         </section>
       )}
@@ -566,43 +570,44 @@ export default function App() {
       {phase === 'ended' && (
         // The run-over: no card, just the score floating over the dimmed street and one button.
         <section className="over" role="dialog" aria-labelledby="ended-title" onPointerDown={(event) => event.stopPropagation()}>
-          <h2 id="ended-title" className="over-eyebrow">The star rests</h2>
+          <h2 id="ended-title" className="over-eyebrow">{t().starRests}</h2>
           <p className="over-score">
             {/* Counts up as the words rise (they fade in 1.1 s after the run ends); a new best is gold and gets a sweep of light. */}
             <strong className={newBest ? 'best' : undefined}>
               <CountUp to={run.rings} delayMs={1100} calm={calm} />
             </strong>
             <span>
-              {run.rings === 1 ? 'ring' : 'rings'} · {run.perfects} perfect
+              {t().ringWord(run.rings)} · {t().perfects(run.perfects)}
               {newBest ? (
                 <>
                   {' · '}
-                  <b>new best today</b>
+                  <b>{t().newBest}</b>
                 </>
               ) : (
-                best > run.rings && ` · best today ${best}`
+                best > run.rings && ` · ${t().bestTodayIs(best)}`
               )}
             </span>
           </p>
           {/* Why it ended and how close the next milestone was, in one line: the reason to light again. */}
           <p className="near-miss">
-            Points wore below {RULES.minWidth}° <b>{goal.toGo} more for {goal.what}</b>
+            {t().nearMiss} <b>{t().goalLine(goal.toGo, goal.what)}</b>
           </p>
           {placed && (
             <p className="rank-line">
-              <strong>#{count(placed.rank)}</strong> of {count(placed.total)} tonight
-              {placed.before !== null && placed.before > placed.rank && ` · up ${count(placed.before - placed.rank)}`}
+              <strong>#{count(placed.rank)}</strong>
+              {t().rankOf(placed.total)}
+              {placed.before !== null && placed.before > placed.rank && t().rankUp(placed.before - placed.rank)}
               <span className="dot">·</span>
               <button type="button" className="link inline-link" onClick={openBoard}>
-                See the board
+                {t().seeBoard}
               </button>
             </p>
           )}
           <button type="button" className="primary over-button" autoFocus onClick={() => start(performance.now())}>
-            Light again
+            {t().lightAgain}
           </button>
           <button type="button" className="link" disabled={!card} onClick={shareStar}>
-            Share your star
+            {t().shareStar}
           </button>
         </section>
       )}
@@ -613,6 +618,8 @@ export default function App() {
           sound={!muted}
           vibration={settings.vibration}
           calm={calm}
+          lang={settings.lang}
+          onLang={(lang: Lang) => saveSettings({ ...settings, lang })}
           runs={loggedRuns(store).length}
           onSound={(on) => toggleSound(on)}
           onVibration={(on) => saveSettings({ ...settings, vibration: on })}
@@ -632,7 +639,7 @@ export default function App() {
           secret={SECRET}
           dates={{ tonight: today, yesterday }}
           names={{ tonight: tonight.name, yesterday: NIGHTS[weekdayIndex(yesterday)].name }}
-          back={phase === 'ended' ? 'The star rests' : 'Tonight’s star'}
+          back={phase === 'ended' ? t().backToEnd : t().backToStar}
           onBack={() => setPanel(null)}
         />
       )}

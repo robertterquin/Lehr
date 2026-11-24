@@ -2,6 +2,9 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createEngine, nextAlignmentMs, tap, type Engine } from '../src/game/engine.ts'
 import { lockFeedback, milestoneText, nextGoal } from '../src/game/feedback.ts'
+import { setLang } from '../src/copy.ts'
+
+setLang('en')
 
 const play = (errors: number[], engine: Engine = createEngine(99)) =>
   errors.reduce((e, degrees) => tap(e, nextAlignmentMs(e) + (degrees / e.ring.speed) * 1000), engine)
@@ -27,4 +30,13 @@ test('the next goal counts down to the next milestone and names what it brings',
   assert.deepEqual(nextGoal(30), { at: 40, toGo: 10, what: 'the carolers' })
   assert.deepEqual(nextGoal(99), { at: 100, toGo: 1, what: 'the Star of Bethlehem' })
   assert.deepEqual(nextGoal(105), { at: 110, toGo: 5, what: 'a new star in the sky' })
+})
+
+test('the same messages in Filipino', () => {
+  setLang('fil')
+  assert.equal(lockFeedback(play([0]))?.title, 'Sakto')
+  assert.equal(lockFeedback(play([-7]))?.title, '7° sablay')
+  assert.equal(milestoneText(20), 'Nagsindi ang mga ilaw sa kalye')
+  assert.deepEqual(nextGoal(99), { at: 100, toGo: 1, what: 'Bituin ng Betlehem' })
+  setLang('en')
 })

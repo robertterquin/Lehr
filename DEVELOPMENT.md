@@ -19,7 +19,7 @@ Sizes are relative effort, not dates.
 - [x] Redesign after Phase 7 — lantern-glow look, words floating over the street instead of cards, the garland of ten parols counting milestones, the next reward under it, a coach for the first three runs, the lock word in the gauge's gap, the near-miss line on Run ended. Tonight's board (Phase 9) is mocked in `mockups/board.tsx` as a floating list, phone and desktop
 - [ ] Phase 8 · Playtest and tune
 - [ ] Phase 9 · The daily online loop — tonight's board is live on Supabase: tables in `supabase/migrations`, the `submit-run` edge function replays every run with `src/game` before saving it (deployed; a browser run replayed to the same score), rank lines, the board (tonight / last night) and a one-time name. The share card (P15, gold P18 from 100) is drawn from the run's own star and opens the phone's share menu; desktops get Save image and Copy text. The streak calendar: this week as seven stars under the landing button (gold for a 100-ring night), from a record of played nights that outlasts the playtest log. Phase 9 is done but for the playtest gate
-- [ ] Phase 10 · Launch polish
+- [ ] Phase 10 · Launch polish — done: app icon, link preview, installable app (manifest), and Filipino copy by default with English under Settings › Wika · Language (every word in `src/copy.ts`). Still to do: an accessibility check, a final performance pass, the real domain
 
 ## Phase 0 · Keep the old game, rename everything *(small)*
 

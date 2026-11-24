@@ -13,9 +13,9 @@ function Preview() {
       <Ground w={W} h={H} wide stage={5} />
       <StarAt x={330} size={300} top={96} locks={RUN} glow="rgba(255,170,80,0.55)" />
       <section style={{ position: 'absolute', left: 620, top: 150, width: 520, display: 'flex', flexDirection: 'column', gap: 14, textShadow: '0 2px 18px rgba(20,8,5,0.85)' }}>
-        <Text style={{ font: '700 17px var(--font-ui)', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--gold)' }}>A Filipino Christmas game · every night</Text>
+        <Text style={{ font: '700 17px var(--font-ui)', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--gold)' }}>Larong Pamaskong Pinoy · gabi-gabi</Text>
         <Text style={{ font: `400 150px/0.9 ${serif}` }}>Parol</Text>
-        <Text style={{ fontSize: 28, lineHeight: 1.35, color: cream, textWrap: 'balance' }}>Lock the spinning rings and light tonight’s star.</Text>
+        <Text style={{ fontSize: 28, lineHeight: 1.35, color: cream, textWrap: 'balance' }}>Ikandado ang umiikot na singsing at sindihan ang bituin ngayong gabi.</Text>
       </section>
     </main>
   )

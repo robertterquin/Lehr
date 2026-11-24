@@ -1,7 +1,8 @@
 {
   "name": "Parol",
   "short_name": "Parol",
-  "description": "Lock the spinning rings and light tonight’s star: a Filipino Christmas game, one star for everyone every night.",
+  "description": "Ikandado ang umiikot na singsing at sindihan ang bituin ngayong gabi: larong Pamaskong Pinoy, gabi-gabi.",
+  "lang": "fil",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
