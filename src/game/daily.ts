@@ -34,3 +34,7 @@ export const weekDates = (manilaDate: string) => {
   const monday = Date.parse(`${manilaDate}T00:00:00Z`) - weekdayIndex(manilaDate) * 86_400_000
   return Array.from({ length: 7 }, (_, i) => new Date(monday + i * 86_400_000).toISOString().slice(0, 10))
 }
+
+/** Simbang Gabi: the nine dawn Masses before Christmas, 16 to 24 December (Manila dates) of `manilaDate`'s year. */
+export const novenaDates = (manilaDate: string) => Array.from({ length: 9 }, (_, i) => `${manilaDate.slice(0, 4)}-12-${16 + i}`)
+export const inNovena = (manilaDate: string) => novenaDates(manilaDate).includes(manilaDate)

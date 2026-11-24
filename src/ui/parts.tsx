@@ -4,6 +4,7 @@ import { lockFeedback } from '../game/feedback.ts'
 import { RULES } from '../game/rules.ts'
 import { MiniParol } from '../draw/street.tsx'
 import { t } from '../copy.ts'
+import { weekdayIndex } from '../game/daily.ts'
 import { useEffect, useState } from 'react'
 
 /** The end score counts up from 0 (0.7 s, easing out) once the words have risen; reduced motion shows it at once. */
@@ -147,29 +148,54 @@ export const SoundIcon = ({ off }: { off: boolean }) => (
   </svg>
 )
 
-/** This week, Monday to Sunday: a star for each night played, white-gold for a 100-ring night, tonight dashed
- *  until it's played. Under it the streak, and what tonight's run does to it. */
-export function WeekStars({ days, nights, today, streak }: { days: string[]; nights: Record<string, number>; today: string; streak: number }) {
+/**
+ * The nights row under the landing button: this week (Monday to Sunday), or during Simbang Gabi its nine nights.
+ * A star for each night played, white-gold for a 100-ring night, a moon for a rest night that kept the streak,
+ * tonight dashed until it's played. Under it the streak (or the novena's count) and the way into the album.
+ */
+export function WeekStars({ days, labels, nights, today, streak, rests, season, onAlbum }: {
+  days: string[]
+  labels: string[]
+  nights: Record<string, number>
+  today: string
+  streak: number
+  rests: string[]
+  season: boolean
+  onAlbum: () => void
+}) {
   const playedTonight = today in nights
-  const note = streak === 0 ? t().streakNone : !playedTonight ? t().streakKeep(streak) : streak === 1 ? t().streakStarts : t().streakNights(streak)
   const lit = days.filter((day) => day in nights).length
+  const rest = rests.find((day) => days.includes(day))
+  const note = season
+    ? t().novenaNote(lit)
+    : streak === 0 ? t().streakNone
+    : rest ? t().streakRested(streak, t().weekdays[weekdayIndex(rest)])
+    : !playedTonight ? t().streakKeep(streak)
+    : streak === 1 ? t().streakStarts
+    : t().streakNights(streak)
   return (
-    <div className="week" role="img" aria-label={t().weekLabel(note, lit)}>
-      <div className="week-row" aria-hidden="true">
+    <div className="week">
+      <div className="week-row" role="img" aria-label={t().weekLabel(note, lit)}>
         {days.map((day, i) => {
           const best = nights[day]
-          const state = best !== undefined ? (best >= 100 ? 'gold' : 'lit') : day === today ? 'tonight' : day > today ? 'later' : 'missed'
+          const state = best !== undefined ? (best >= 100 ? 'gold' : 'lit') : rests.includes(day) ? 'rest' : day === today ? 'tonight' : day > today ? 'later' : 'missed'
           return (
-            <span key={day} className={`week-day is-${state}${day === today ? ' is-today' : ''}`}>
+            <span key={day} className={`week-day is-${state}${day === today ? ' is-today' : ''}`} aria-hidden="true">
               <svg className="week-star" viewBox="0 0 16 16">
-                <path d="M8 1.2l1.9 4.2 4.6.5-3.4 3.1 1 4.5L8 11.2 3.9 13.5l1-4.5L1.5 5.9l4.6-.5z" />
+                {state === 'rest' ? <path d="M10.8 2.2a6 6 0 1 0 3 9.6 5 5 0 1 1-3-9.6z" /> : <path d="M8 1.2l1.9 4.2 4.6.5-3.4 3.1 1 4.5L8 11.2 3.9 13.5l1-4.5L1.5 5.9l4.6-.5z" />}
               </svg>
-              {t().weekLetters[i]}
+              {labels[i]}
             </span>
           )
         })}
       </div>
-      <span className="week-note">{note}</span>
+      <span className="week-note">
+        {note}
+        <span className="dot">·</span>
+        <button type="button" className="link inline-link" onClick={onAlbum}>
+          {t().album}
+        </button>
+      </span>
     </div>
   )
 }

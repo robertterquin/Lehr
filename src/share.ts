@@ -13,7 +13,8 @@ const SERIF = '"Young Serif", Georgia, serif'
 const UI = '"Manrope Variable", "Avenir Next", sans-serif'
 const SKYLINE = 'M0 478L28 462L56 478V540H0ZM56 470L100 446L144 470V540H56ZM144 476L196 452L248 476V540H144ZM248 470L300 446L352 470V540H248ZM352 478L392 456L432 478V540H352Z'
 
-export type CardRun = { rings: number; perfects: number; rank: number | null; date: string; site: string }
+/** `golden`: the Christmas Eve card for all nine nights of Simbang Gabi. */
+export type CardRun = { rings: number; perfects: number; rank: number | null; date: string; site: string; golden?: boolean }
 
 /** What goes with the image when shared: the score, the rank if it's this run's, and the link. */
 export const shareText = (run: CardRun) => t().shareText(run.rings, run.rank, `https://${run.site}`)
@@ -57,7 +58,7 @@ const line = (ctx: CanvasRenderingContext2D, y: number, given: [string, string, 
 }
 
 export async function drawCard(run: CardRun, star: HTMLElement): Promise<HTMLCanvasElement> {
-  const gold = run.rings >= 100
+  const gold = run.rings >= 100 || Boolean(run.golden)
   // A canvas only draws a web font the page has loaded.
   await Promise.all([document.fonts.load(`400 70px ${SERIF}`), document.fonts.load(`700 35px ${UI}`), document.fonts.load(`400 30px ${UI}`)])
   const layers = await Promise.all(starLayers(star).map(loadSvg))
@@ -133,10 +134,10 @@ export async function drawCard(run: CardRun, star: HTMLElement): Promise<HTMLCan
   const rank: [string, string, string][] = run.rank ? [[t().cardRank(run.rank), `400 35px ${UI}`, INK]] : []
   if (gold) {
     ctx.letterSpacing = '5px'
-    line(ctx, 850, [[t().cardRose, `700 30px ${UI}`, GOLD]])
+    line(ctx, 850, [[run.golden ? t().cardGolden : t().cardRose, `700 30px ${UI}`, GOLD]])
     ctx.letterSpacing = '0px'
-    line(ctx, 950, [[t().rings(run.rings), `400 85px ${SERIF}`, INK]])
-    line(ctx, 1030, [[t().perfects(run.perfects), `700 35px ${UI}`, GOLD], ...rank])
+    line(ctx, 950, [[run.golden ? 'Simbang Gabi' : t().rings(run.rings), `400 85px ${SERIF}`, INK]])
+    line(ctx, 1030, run.golden ? [[t().eveNote, `700 35px ${UI}`, GOLD]] : [[t().perfects(run.perfects), `700 35px ${UI}`, GOLD], ...rank])
     ctx.strokeStyle = GOLD
     ctx.lineWidth = 10
     ctx.strokeRect(5, 5, CARD_W - 10, CARD_H - 10)
@@ -146,4 +147,22 @@ export async function drawCard(run: CardRun, star: HTMLElement): Promise<HTMLCan
   }
   line(ctx, 1300, [[run.site, `400 30px ${UI}`, MUTED]])
   return canvas
+}
+
+/** A card ready to share: drawn ahead, because a phone allows sharing only right after a tap. */
+export type ReadyCard = { run: CardRun; canvas: HTMLCanvasElement; file: File }
+
+export const readyCard = async (run: CardRun, star: HTMLElement): Promise<ReadyCard | null> => {
+  const canvas = await drawCard(run, star)
+  const blob = await new Promise<Blob | null>((done) => canvas.toBlob(done, 'image/png'))
+  return blob ? { run, canvas, file: new File([blob], `parol-${run.date}.png`, { type: 'image/png' }) } : null
+}
+
+/** The phone's share menu with the card; where images can't be shared, the card is saved instead. */
+export const shareOrSave = (card: ReadyCard) => {
+  if (navigator.canShare?.({ files: [card.file] })) return void navigator.share({ files: [card.file], text: shareText(card.run) }).catch(() => {})
+  const link = document.createElement('a')
+  link.href = card.canvas.toDataURL('image/png')
+  link.download = card.file.name
+  link.click()
 }

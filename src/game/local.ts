@@ -1,6 +1,7 @@
-// What Parol keeps on this device (no accounts): settings, the playtest log of finished runs, today's best
-// worked out from that log, and the random secret that is this device's place on the board. Storage can be blocked (private modes): everything falls back to
-// memory for the visit instead of failing.
+// What Parol keeps on this device (no accounts): settings, the playtest log of finished runs, the nights played
+// and the album of their stars, achievements, and the random secret that is this device's place on the board.
+// Storage can be blocked (private modes): everything falls back to memory for the visit instead of failing.
+import { weekDates } from './daily.ts'
 
 export type Store = Pick<Storage, 'getItem' | 'setItem'>
 
@@ -78,25 +79,55 @@ export const playedNights = (store: Store): Record<string, number> => {
   return nights
 }
 
+/** A night in the album: the best run's star (its lock errors) and where it was lit. */
+export type AlbumNight = { night: string; rings: number; perfects: number; locks: number[] }
+const ALBUM_KEY = 'parol-album'
+
+/** The album: each night's best star, by date. Nights still only in the log are merged in. */
+export const albumNights = (store: Store): Record<string, AlbumNight> => {
+  const album = read<Record<string, AlbumNight>>(store, ALBUM_KEY, {})
+  for (const run of loggedRuns(store))
+    if (!(run.date in album) || album[run.date].rings < run.rings) album[run.date] = { night: run.night, rings: run.rings, perfects: run.perfects, locks: run.locks }
+  return album
+}
+
 export const logRun = (store: Store, run: RunLog) => {
   const nights = playedNights(store)
   write(store, NIGHTS_KEY, { ...nights, [run.date]: Math.max(nights[run.date] ?? 0, run.rings) })
+  const album = albumNights(store)
+  if (!(run.date in album) || album[run.date].rings < run.rings)
+    write(store, ALBUM_KEY, { ...album, [run.date]: { night: run.night, rings: run.rings, perfects: run.perfects, locks: run.locks } })
   write(store, LOG_KEY, [...loggedRuns(store), run].slice(-MAX_LOGGED))
 }
 
 export const dayBefore = (date: string) => new Date(Date.parse(`${date}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10)
 
-/** Nights in a row with at least one run, up to today (or yesterday, before today's first run). */
-export const nightsInARow = (store: Store, today: string) => {
-  const nights = playedNights(store)
+/**
+ * The streak: nights played in a row, up to today (or yesterday, before today's first run). One missed night a
+ * week (Monday to Sunday) is a rest that keeps it, but never two nights in a row. `rests` are the nights kept.
+ */
+export const streakOf = (nights: Record<string, number>, today: string) => {
   let day = today in nights ? today : dayBefore(today)
   let count = 0
-  while (day in nights) {
-    count += 1
+  const rests: string[] = []
+  for (;;) {
+    if (day in nights) count += 1
+    else {
+      const restedBefore = rests[rests.length - 1] === dayAfter(day)
+      const restedThisWeek = rests.some((rest) => weekDates(rest)[0] === weekDates(day)[0])
+      if (restedBefore || restedThisWeek) break
+      rests.push(day)
+    }
     day = dayBefore(day)
   }
-  return count
+  // A rest with no night played before it keeps nothing.
+  if (rests[rests.length - 1] === dayAfter(day)) rests.pop()
+  return { count, rests }
 }
+
+const dayAfter = (date: string) => new Date(Date.parse(`${date}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10)
+
+export const nightsInARow = (store: Store, today: string) => streakOf(playedNights(store), today).count
 
 /** The most rings in a logged run on `date` (0 when none). */
 export const bestOn = (store: Store, date: string) => loggedRuns(store).reduce((best, run) => (run.date === date && run.rings > best ? run.rings : best), 0)
@@ -110,4 +141,15 @@ export const playerSecret = (store: Store) => {
   const secret = crypto.randomUUID()
   write(store, PLAYER_KEY, secret)
   return secret
+}
+
+const ACHIEVED_KEY = 'parol-achievements'
+/** Achievements earned on this device, each with the date it was first earned. */
+export const achieved = (store: Store) => read<Record<string, string>>(store, ACHIEVED_KEY, {})
+/** Records any of `ids` not earned before; returns just the new ones. */
+export const achieve = (store: Store, ids: string[], date: string) => {
+  const had = achieved(store)
+  const fresh = ids.filter((id) => !(id in had))
+  if (fresh.length) write(store, ACHIEVED_KEY, { ...had, ...Object.fromEntries(fresh.map((id) => [id, date])) })
+  return fresh
 }

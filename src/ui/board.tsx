@@ -10,8 +10,8 @@ const DAYS: Day[] = ['tonight', 'yesterday']
 const stop = (event: PointerEvent) => event.stopPropagation()
 export const count = (n: number) => n.toLocaleString('en-US')
 
-export function TonightBoard({ secret, dates, names, back, onBack }: { secret: string; dates: Record<Day, string>; names: Record<Day, string>; back: string; onBack: () => void }) {
-  const [day, setDay] = useState<Day>('tonight')
+export function TonightBoard({ secret, dates, names, back, onBack, initialDay = 'tonight' }: { secret: string; dates: Record<Day, string>; names: Record<Day, string>; back: string; onBack: () => void; initialDay?: Day }) {
+  const [day, setDay] = useState<Day>(initialDay)
   const box = useRef<HTMLDivElement>(null)
   useDialogFocus(box)
   const [boards, setBoards] = useState<Partial<Record<Day, Board | Error>>>({})

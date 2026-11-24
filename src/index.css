@@ -1479,6 +1479,17 @@ a.primary {
   stroke-dasharray: 2 1.6;
 }
 
+/* A rest night: a moon in place of the star, so the streak reads as kept, not broken. */
+.week-day.is-rest .week-star {
+  fill: rgba(255, 207, 122, 0.6);
+  stroke: none;
+}
+
+.week-note .dot {
+  margin: 0 6px;
+  color: var(--dusk);
+}
+
 .week-day.is-later .week-star {
   stroke: rgba(196, 182, 168, 0.3);
 }
@@ -1523,4 +1534,190 @@ a.primary {
 .lang-switch button:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
+}
+
+/* ── Coming back: Kagabi, the Simbang Gabi line, achievements, the album, the golden parol ─────────────── */
+
+.best-line strong.gold {
+  color: var(--gold);
+}
+
+/* Tonight counted: a Simbang Gabi night is in the album; a new achievement. One gold line each. */
+.season-line,
+.achievement-line {
+  margin: 0;
+  max-width: 340px;
+  font-size: 13px;
+  line-height: 1.45;
+  text-wrap: balance;
+}
+
+.season-line {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.achievement-line {
+  color: var(--cream);
+}
+
+.achievement-line b,
+.achievement-line span {
+  color: var(--gold);
+}
+
+.album-grid {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.album-slot {
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--cream);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.album-slot.is-empty {
+  cursor: default;
+}
+
+.album-slot:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+.album-thumb {
+  position: relative;
+  overflow: hidden;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 190, 90, 0.35), rgba(255, 190, 90, 0.04));
+}
+
+.album-ring {
+  width: 56px;
+  height: 56px;
+  margin: 14px;
+  border-radius: 50%;
+  border: 1px dashed rgba(196, 182, 168, 0.4);
+}
+
+.album-slot.is-tonight .album-ring {
+  border-color: var(--gold);
+}
+
+.album-date {
+  font: 700 11px var(--font-ui);
+  color: var(--dusk);
+}
+
+.album-slot:not(.is-empty) .album-date {
+  color: var(--cream);
+}
+
+.album-date b {
+  font-weight: 400;
+  color: var(--gold);
+}
+
+.album-achievements {
+  margin-top: 10px;
+}
+
+.album-achievements ul {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.album-achievements li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  font-size: 14px;
+  color: var(--dusk);
+}
+
+.album-achievements svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  fill: none;
+  stroke: rgba(196, 182, 168, 0.5);
+  stroke-width: 1.2;
+}
+
+.album-achievements li.is-got {
+  color: var(--cream);
+}
+
+.album-achievements li.is-got svg {
+  fill: #fff3d0;
+  stroke: #fff3d0;
+  filter: drop-shadow(0 0 4px rgba(255, 214, 130, 0.95));
+}
+
+/* One parol up close. */
+.parol-view {
+  align-items: center;
+  text-align: center;
+}
+
+.parol-view .board-back {
+  align-self: flex-start;
+}
+
+.parol-view-star {
+  position: relative;
+  margin: 4px 0 8px;
+  filter: drop-shadow(0 0 40px rgba(255, 170, 80, 0.35));
+}
+
+.parol-view-stats {
+  margin: 0 0 10px;
+  font-size: 15px;
+  color: var(--cream);
+}
+
+.parol-view-stats .dot {
+  margin: 0 7px;
+  color: var(--dusk);
+}
+
+.parol-view-stats b {
+  font: 400 18px var(--font-display);
+  color: var(--gold);
+}
+
+.parol-view .primary {
+  width: min(100%, 320px);
+}
+
+/* Christmas Eve: the golden parol rising over the street, its words low like the 100-ring screen's. */
+.overlay.golden {
+  background: radial-gradient(ellipse at 50% 30%, rgba(60, 36, 70, 0.9), rgba(10, 9, 24, 0.96) 70%);
+  backdrop-filter: blur(8px);
+}
+
+.overlay.golden > .over {
+  position: absolute;
+  bottom: clamp(28px, 5vh, 48px);
+}
+
+.golden-note {
+  color: var(--gold);
+  font-weight: 700;
 }

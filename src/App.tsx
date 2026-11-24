@@ -1,8 +1,9 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
-import { getManilaDate, seedForDate, weekDates, weekdayIndex } from './game/daily.ts'
+import { getManilaDate, inNovena, novenaDates, seedForDate, weekDates, weekdayIndex } from './game/daily.ts'
+import { earnedBy } from './game/achievements.ts'
 import { createEngine, nextAlignmentMs, pause, resume, ringOffset, tap, type Engine } from './game/engine.ts'
 import { milestoneText, nextGoal } from './game/feedback.ts'
-import { bestOn, dayBefore, deviceStore, logRun, loggedRuns, nightsInARow, playedNights, playerSecret, readSettings, writeSettings, type Settings as SavedSettings } from './game/local.ts'
+import { achieve, achieved, albumNights, bestOn, dayBefore, deviceStore, logRun, loggedRuns, playedNights, playerSecret, streakOf, readSettings, writeSettings, type Settings as SavedSettings } from './game/local.ts'
 import { BOARD_ON, fetchBoard, submitRun, type Board, type Placed } from './board.ts'
 import { drawCard, shareText, type CardRun } from './share.ts'
 import { setLang, t, type Lang } from './copy.ts'
@@ -15,9 +16,12 @@ import { SOUNDS, buzz, isMuted, play, setMusic, setMuted, setVibration, stopMusi
 import { ArcGauge, Callout, CountUp, Garland, IconButton, PauseIcon, SoundIcon, Streak, WeekStars } from './ui/parts.tsx'
 import { Glints, HowToPlay, NewDay, Settings, ShareSheet, StarRises } from './ui/screens.tsx'
 import { NamePrompt, TonightBoard, count } from './ui/board.tsx'
+import { Album, GoldenParol } from './ui/album.tsx'
 
 const params = new URLSearchParams(location.search)
-const today = getManilaDate()
+// Development only: ?date=2026-12-18 pretends it's another Manila day, to check Simbang Gabi and Kagabi.
+const loadedOn = getManilaDate()
+const today = (import.meta.env.DEV && params.get('date')) || loadedOn
 // ?night=dagat previews another night; the day's star (seed) never changes with it.
 const tonight: Night = params.get('night') ? nightById(params.get('night') as NightId) : NIGHTS[weekdayIndex(today)]
 const seed = seedForDate(today)
@@ -38,7 +42,7 @@ const PREVIEW = Array.from({ length: 12 }, () => 0)
 const COACH_STEPS = 3
 
 type Phase = 'ready' | 'playing' | 'paused' | 'risen' | 'ended'
-type Panel = 'how' | 'settings' | 'board' | 'name' | 'share' | null
+type Panel = 'how' | 'settings' | 'board' | 'name' | 'share' | 'album' | 'golden' | null
 
 const WIDE = '(min-width: 960px) and (min-height: 600px)'
 const DANGER_BELOW = 15
@@ -98,6 +102,12 @@ export default function App() {
   /** Tonight's board as this device stands on it (the landing's rank line), and where the last run placed it. */
   const [standing, setStanding] = useState<Board | null>(null)
   const [placed, setPlaced] = useState<Placed | null>(null)
+  /** Last night's board as this device finished on it: the landing's Kagabi line before tonight's first run. */
+  const [lastNight, setLastNight] = useState<Board | null>(null)
+  /** Achievements the run just ended earned for the first time: one gold line on the end screen. */
+  const [fresh, setFresh] = useState<string[]>([])
+  /** Which night the board opens on. */
+  const [boardDay, setBoardDay] = useState<'tonight' | 'yesterday'>('tonight')
   /** The share card for the run just ended, drawn ahead so Share can open the phone's share menu at once. */
   const [card, setCard] = useState<{ run: CardRun; canvas: HTMLCanvasElement; file: File } | null>(null)
   /** Where the name prompt goes when it's done: the board, or back to Settings. */
@@ -131,7 +141,7 @@ export default function App() {
   }, [])
   // The day changes at midnight in Manila: offer tonight's new star when the run in hand is over.
   useEffect(() => {
-    const check = window.setInterval(() => setNewDay(getManilaDate() !== today), 30_000)
+    const check = window.setInterval(() => setNewDay(getManilaDate() !== loadedOn), 30_000)
     return () => window.clearInterval(check)
   }, [])
 
@@ -140,6 +150,9 @@ export default function App() {
     if (BOARD_ON) fetchBoard(today, SECRET).then(setStanding, () => {})
   }
   useEffect(refreshStanding, [])
+  useEffect(() => {
+    if (BOARD_ON) fetchBoard(yesterday, SECRET).then(setLastNight, () => {})
+  }, [])
 
   const saveSettings = (next: SavedSettings) => {
     setLang(next.lang)
@@ -190,10 +203,17 @@ export default function App() {
       pointer: window.matchMedia('(pointer: coarse)').matches ? 'coarse' : 'fine',
     })
     setBest(bestOn(store, today))
-    if (!FROM && BOARD_ON)
+    if (FROM) return
+    const nights = playedNights(store)
+    const earned = achieve(store, earnedBy({ locks: done.locks, nights, streak: streakOf(nights, today).count, today }), today)
+    setFresh(earned)
+    // All nine nights of Simbang Gabi: the golden parol, once the end words have had a moment.
+    if (earned.includes('novena')) window.setTimeout(() => setPanel('golden'), 2400)
+    if (BOARD_ON)
       submitRun(SECRET, today, inputs).then((where) => {
         setPlaced(where)
         refreshStanding()
+        if (where.rank <= 10 && where.rings === done.run.rings) setFresh((had) => [...had, ...achieve(store, ['top10'], today)])
       }, () => {})
   }
 
@@ -223,7 +243,8 @@ export default function App() {
   }
 
   /** The board, after asking for a name the first time. */
-  const openBoard = () => {
+  const openBoard = (day: 'tonight' | 'yesterday' = 'tonight') => {
+    setBoardDay(day)
     if (standing?.me?.name || settings.askedName) return setPanel('board')
     setAfterName('board')
     setPanel('name')
@@ -244,6 +265,7 @@ export default function App() {
     setPanel(null)
     setPlaced(null)
     setCard(null)
+    setFresh([])
     setPhase('playing')
     ringIn(next)
   }, [])
@@ -334,7 +356,7 @@ export default function App() {
         // Let a focused button or switch handle its own Space or Enter.
         if (event.target instanceof HTMLButtonElement || event.target instanceof HTMLInputElement) return
         // Space on the board or the name prompt never starts a run behind it.
-        if (panelRef.current === 'board' || panelRef.current === 'name') return
+        if (panelRef.current === 'board' || panelRef.current === 'name' || panelRef.current === 'album' || panelRef.current === 'golden') return
         event.preventDefault()
         if (phaseRef.current === 'ready') start(event.timeStamp)
         else press(event.timeStamp)
@@ -438,7 +460,13 @@ export default function App() {
     </p>
   )
   const goal = nextGoal(run.rings)
-  const nights = phase === 'ready' ? nightsInARow(store, today) : 0
+  const playedSoFar = playedNights(store)
+  const streak = streakOf(playedSoFar, today)
+  const novena = inNovena(today)
+  const novenaNight = novenaDates(today).indexOf(today) + 1
+  const novenaLit = novenaDates(today).filter((date) => date in playedSoFar).length
+  // The golden parol is the best star of the nine nights.
+  const goldenEntry = panel === 'golden' ? novenaDates(today).map((date) => albumNights(store)[date]).filter(Boolean).sort((a, b) => b.rings - a.rings)[0] : undefined
   const garland = <Garland width={width - 32} lit={Math.floor((inRun ? run.rings : best) / RULES.milestoneEvery)} palette={tonight.palette} toGo={inRun ? goal.toGo : undefined} />
   const toast = milestone && (
     <p key={run.rings} className="toast" role="status">
@@ -457,7 +485,7 @@ export default function App() {
           {standing?.me?.rank ? (
             <>
               <span className="dot">·</span>
-              <button type="button" className="link inline-link" onClick={openBoard}>
+              <button type="button" className="link inline-link" onClick={() => openBoard()}>
                 {t().rankTonight(standing.me.rank)}
               </button>
             </>
@@ -467,28 +495,49 @@ export default function App() {
             standing.total > 0 && (
               <>
                 <span className="dot">·</span>
-                <button type="button" className="link inline-link" onClick={openBoard}>
+                <button type="button" className="link inline-link" onClick={() => openBoard()}>
                   {t().seeBoard}
                 </button>
               </>
             )
           )}
         </span>
+      ) : lastNight?.me?.rank ? (
+        // Before tonight's first run: how last night ended, a reason to open the game at all.
+        <span className="best-line">
+          {t().lastNight} <strong className="gold">#{count(lastNight.me.rank)}</strong>
+          {t().ofTotal(lastNight.total)}
+          <span className="dot">·</span>
+          <button type="button" className="link inline-link" onClick={() => openBoard('yesterday')}>
+            {t().seeBoard}
+          </button>
+        </span>
       ) : (
-        // Before tonight's first run: the board says the game is alive.
+        // A first night: the board says the game is alive.
         standing &&
         standing.total > 0 && (
           <span className="best-line">
             {t().litTonight(standing.total)}
             <span className="dot">·</span>
-            <button type="button" className="link inline-link" onClick={openBoard}>
+            <button type="button" className="link inline-link" onClick={() => openBoard()}>
               {t().seeBoard}
             </button>
           </span>
         )
       )}
       {/* The streak calendar: this week's nights, once there's a night to show. */}
-      {!firstVisit && <WeekStars days={weekDates(today)} nights={playedNights(store)} today={today} streak={nights} />}
+      {!firstVisit && (
+        <WeekStars
+          days={novena ? novenaDates(today) : weekDates(today)}
+          labels={novena ? novenaDates(today).map((date) => String(Number(date.slice(8)))) : t().weekLetters}
+          nights={playedSoFar}
+          today={today}
+          streak={streak.count}
+          rests={streak.rests}
+          season={novena}
+          onAlbum={() => setPanel('album')}
+        />
+      )}
     </div>
   )
   const newBest = phase === 'ended' && run.rings > bestBefore && run.rings > 0
@@ -496,7 +545,7 @@ export default function App() {
   const live = phase === 'playing'
 
   return (
-    <main className={`game ${wide ? 'wide' : 'narrow'}${danger ? ' in-danger' : ''}${calm ? ' calm' : ''}${phase === 'ended' || phase === 'paused' || phase === 'risen' ? ` is-dim is-${phase}` : ''}${panel === 'board' || panel === 'name' ? ' is-board' : ''}`} onPointerDown={(event) => event.button === 0 && press(event.timeStamp)}>
+    <main className={`game ${wide ? 'wide' : 'narrow'}${danger ? ' in-danger' : ''}${calm ? ' calm' : ''}${phase === 'ended' || phase === 'paused' || phase === 'risen' ? ` is-dim is-${phase}` : ''}${panel === 'board' || panel === 'name' || panel === 'album' ? ' is-board' : ''}`} onPointerDown={(event) => event.button === 0 && press(event.timeStamp)}>
       {/* On a phone the garland hangs where the moon would. */}
       <Scenery stage={stage} wide={wide} width={width} height={height} moon={wide} />
       {skyStars > 0 && (
@@ -519,7 +568,7 @@ export default function App() {
           {garland}
           <div className="poster-body">
             <div className="poster-words">
-              <span className="eyebrow">{t().tonightStar(tonight.araw)}</span>
+              <span className="eyebrow">{novena ? t().novenaEyebrow(tonight.araw, novenaNight) : t().tonightStar(tonight.araw)}</span>
               <h1 className="poster-title">{tonight.name}</h1>
               <p className="poster-blurb">{t().blurb}</p>
               {wide && action}
@@ -592,13 +641,20 @@ export default function App() {
           <p className="near-miss">
             {t().nearMiss} <b>{t().goalLine(goal.toGo, goal.what)}</b>
           </p>
+          {/* Tonight counted: a Simbang Gabi night joins the album; a first-time achievement gets one gold line. */}
+          {novena && <p className="season-line">{t().novenaKept(novenaNight, 9 - novenaLit)}</p>}
+          {fresh.length > 0 && (
+            <p className="achievement-line">
+              <span aria-hidden="true">★</span> {t().newAchievement}: <b>{fresh.map((id) => t().achievements[id]).join(' · ')}</b>
+            </p>
+          )}
           {placed && (
             <p className="rank-line">
               <strong>#{count(placed.rank)}</strong>
               {t().rankOf(placed.total)}
               {placed.before !== null && placed.before > placed.rank && t().rankUp(placed.before - placed.rank)}
               <span className="dot">·</span>
-              <button type="button" className="link inline-link" onClick={openBoard}>
+              <button type="button" className="link inline-link" onClick={() => openBoard()}>
                 {t().seeBoard}
               </button>
             </p>
@@ -638,12 +694,17 @@ export default function App() {
         <TonightBoard
           secret={SECRET}
           dates={{ tonight: today, yesterday }}
+          initialDay={boardDay}
           names={{ tonight: tonight.name, yesterday: NIGHTS[weekdayIndex(yesterday)].name }}
           back={phase === 'ended' ? t().backToEnd : t().backToStar}
           onBack={() => setPanel(null)}
         />
       )}
       {panel === 'share' && card && <ShareSheet image={card.canvas.toDataURL('image/png')} file={card.file.name} text={shareText(card.run)} rings={card.run.rings} onClose={() => setPanel(null)} />}
+      {panel === 'album' && (
+        <Album album={albumNights(store)} achieved={achieved(store)} today={today} secret={SECRET} back={phase === 'ended' ? t().backToEnd : t().backToStar} onBack={() => setPanel(null)} />
+      )}
+      {panel === 'golden' && goldenEntry && <GoldenParol entry={goldenEntry} date={today} onAlbum={() => setPanel('album')} onClose={() => setPanel(null)} />}
       {panel === 'name' && <NamePrompt secret={SECRET} initial={standing?.me?.name ?? null} onDone={nameDone} onSkip={() => nameDone()} />}
       {newDay && (phase === 'ready' || phase === 'ended') && <NewDay best={best} onSee={() => location.reload()} />}
     </main>
