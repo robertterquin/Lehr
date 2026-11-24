@@ -113,6 +113,7 @@ begin
   if lower(replace(v_name, ' ', '')) ~ '(fuck|shit|bitch|cunt|nigg|putang|tangina|kantot|pekpek|burat|gago)' then
     raise exception 'Please pick another name' using errcode = '22023';
   end if;
+  -- Fixed in 20261124000100_fix_set_name.sql: the player must exist before this update can see it.
   update public.players set name = v_name where id = public.ensure_player(p_secret);
   return v_name;
 end $$;

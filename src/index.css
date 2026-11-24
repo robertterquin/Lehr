@@ -1223,8 +1223,7 @@ body {
 }
 
 .board-back:focus-visible,
-.board-tab:focus-visible,
-.name-input:focus-visible {
+.board-tab:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 3px;
 }
@@ -1318,6 +1317,18 @@ body {
 
 .name-form .primary {
   margin-top: 16px;
+}
+
+/* Focus thickens and brightens the gold line, as the mockup draws it, instead of a box round the field. */
+.name-input:focus {
+  outline: none;
+  border-bottom-color: #ffe2a8;
+  box-shadow: 0 2px 0 #ffe2a8;
+}
+
+.name-form .primary:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .name-skip {

@@ -18,7 +18,7 @@ Sizes are relative effort, not dates.
 - [x] Phase 7 · The other screens — Loading, Ready, first-visit How to play, Settings (sound, vibration, reduced motion, playtest log download), the star rising at 100, the sky past 100, Run ended with today's best, the new-day notice and a playtest log on the device; all checked in the browser (`?from=98` in dev starts a run 98 rings in). Offline waits for Phase 9 (v1 needs no network)
 - [x] Redesign after Phase 7 — lantern-glow look, words floating over the street instead of cards, the garland of ten parols counting milestones, the next reward under it, a coach for the first three runs, the lock word in the gauge's gap, the near-miss line on Run ended. Tonight's board (Phase 9) is mocked in `mockups/board.tsx` as a floating list, phone and desktop
 - [ ] Phase 8 · Playtest and tune
-- [ ] Phase 9 · The daily online loop
+- [ ] Phase 9 · The daily online loop — tonight's board is live on Supabase: tables in `supabase/migrations`, the `submit-run` edge function replays every run with `src/game` before saving it (deployed; a browser run replayed to the same score), rank lines, the board (tonight / last night) and a one-time name. Still to do: the streak calendar and the share card
 - [ ] Phase 10 · Launch polish
 
 ## Phase 0 · Keep the old game, rename everything *(small)*
