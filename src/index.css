@@ -1342,6 +1342,12 @@ body {
   background: linear-gradient(90deg, rgba(10, 9, 24, 0) 35%, rgba(10, 9, 24, 0.8) 62%);
 }
 
+/* From the landing, where the star stands on the right, the board takes the words' place on the left. */
+.wide:has(> .poster) .overlay.overlay-board {
+  padding: 0 0 0 max(32px, calc((100vw - 1280px) / 2 + 32px));
+  background: linear-gradient(270deg, rgba(10, 9, 24, 0) 35%, rgba(10, 9, 24, 0.8) 62%);
+}
+
 .wide.is-board .poster-words,
 .wide.is-board > .over {
   visibility: hidden;
@@ -1349,13 +1355,7 @@ body {
 
 .wide .board {
   max-width: 420px;
-  padding: max(140px, 17vh) 0 40px;
-}
-
-.wide .board-head {
-  flex-direction: row;
-  align-items: flex-end;
-  justify-content: space-between;
+  padding: max(96px, 12vh) 0 40px;
 }
 
 .wide .board-title {

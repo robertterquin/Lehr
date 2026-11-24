@@ -427,6 +427,14 @@ export default function App() {
                 #{count(standing.me.rank)} tonight
               </button>
             </>
+          ) : standing && standing.total > 0 ? (
+            // Played, but no rank here (say the run ended offline): the board is still a tap away.
+            <>
+              <span className="dot">·</span>
+              <button type="button" className="link inline-link" onClick={openBoard}>
+                See the board
+              </button>
+            </>
           ) : (
             nights > 1 && (
               <>
