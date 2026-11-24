@@ -122,6 +122,7 @@ const EN = {
 
   // Sheets
   close: 'Close',
+  turnUpright: 'Turn your phone upright to play',
   settingsTitle: 'Settings',
   vibration: 'Vibration',
   androidOnly: 'Android only',

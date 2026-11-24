@@ -43,6 +43,8 @@ type Phase = 'ready' | 'playing' | 'paused' | 'risen' | 'ended'
 type Panel = 'how' | 'settings' | 'board' | 'name' | 'share' | 'album' | 'golden' | null
 
 const WIDE = '(min-width: 960px) and (min-height: 600px)'
+/** A touch phone held sideways: too short for the game, which asks to be turned upright. Matches the CSS. */
+const SIDEWAYS = '(orientation: landscape) and (max-height: 500px) and (pointer: coarse)'
 const DANGER_BELOW = 15
 /** Where the stars of the constellation past 100 sit, as fractions of the screen, clear of the star. */
 const SKY: [number, number][] = [[0.78, 0.17], [0.2, 0.5], [0.82, 0.52], [0.12, 0.22], [0.6, 0.08], [0.33, 0.1], [0.9, 0.33], [0.08, 0.38], [0.5, 0.03], [0.7, 0.42]]
@@ -398,6 +400,14 @@ export default function App() {
     }
   }, [start, press, pauseNow, resumeNow])
 
+  // A phone turned sideways shows "turn upright" over the game (CSS); a run in progress pauses under it.
+  useEffect(() => {
+    const sideways = window.matchMedia(SIDEWAYS)
+    const onTurn = () => sideways.matches && pauseNow(performance.now())
+    sideways.addEventListener('change', onTurn)
+    return () => sideways.removeEventListener('change', onTurn)
+  }, [pauseNow])
+
   // Turn the spinning ring every frame, from the clock: no re-render, no redraw.
   useEffect(() => {
     if (phase !== 'playing') return
@@ -421,7 +431,8 @@ export default function App() {
         ? Math.min(470, height * 0.58)
         : // The week of stars under the button (from the second visit) takes about 52px more.
           Math.max(110, Math.min(300, width - 90, (height - 520 - (firstVisit ? 0 : 52)) / 1.25))
-      : Math.max(190, Math.min(wide ? 460 : 300, (width - 40) / 1.24, (height - 446) / 1.24)),
+      : // Short phones (an SE at 568 tall) let the star shrink so the coach and hint still fit below it.
+        Math.max(140, Math.min(wide ? 460 : 300, (width - 40) / 1.24, (height - 446) / 1.24)),
   )
   const danger = inRun && !run.ended && run.width < DANGER_BELOW
   const milestone = inRun && !run.ended && phase !== 'risen' ? milestoneText(run.rings) : null
@@ -726,6 +737,13 @@ export default function App() {
       )}
       {panel === 'golden' && goldenEntry && <GoldenParol entry={goldenEntry} date={today} onAlbum={() => setPanel('album')} onClose={() => setPanel(null)} />}
       {panel === 'name' && <NamePrompt secret={SECRET} initial={standing?.me?.name ?? null} onDone={nameDone} onSkip={() => nameDone()} />}
+      <div className="turn-upright" role="status">
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="14" y="6" width="16" height="30" rx="3" />
+          <path d="M20 31h4M34 14a12 12 0 0 1 2 8M36 22l2-3M36 22l-3-1" />
+        </svg>
+        <p>{t().turnUpright}</p>
+      </div>
       {newDay && (phase === 'ready' || phase === 'ended') && <NewDay best={best} onSee={() => location.reload()} />}
     </main>
   )
