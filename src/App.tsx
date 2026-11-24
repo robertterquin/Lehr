@@ -3,8 +3,8 @@ import { getManilaDate, inNovena, novenaDates, seedForDate, weekDates, weekdayIn
 import { earnedBy } from './game/achievements.ts'
 import { createEngine, nextAlignmentMs, pause, resume, ringOffset, tap, type Engine } from './game/engine.ts'
 import { milestoneText, nextGoal } from './game/feedback.ts'
-import { achieve, achieved, albumNights, bestOn, dayBefore, deviceStore, logRun, loggedRuns, playedNights, playerSecret, streakOf, readSettings, writeSettings, type Settings as SavedSettings } from './game/local.ts'
-import { BOARD_ON, fetchBoard, submitRun, type Board, type Placed } from './board.ts'
+import { achieve, achieved, albumNights, bestOn, dayBefore, deviceStore, keepPending, logRun, loggedRuns, playedNights, playerSecret, streakOf, takePending, readSettings, writeSettings, type Settings as SavedSettings } from './game/local.ts'
+import { BOARD_ON, fetchBoard, sendAgain, submitRun, type Board, type Placed } from './board.ts'
 import { drawCard, shareText, type CardRun } from './share.ts'
 import { t } from './copy.ts'
 import { RULES } from './game/rules.ts'
@@ -160,6 +160,45 @@ export default function App() {
     setPanel(null)
   }
 
+  // Android's Back closes the open sheet or screen instead of leaving Parol: opening one adds a history step,
+  // Back (popstate) takes it away and closes it, and closing it any other way takes the step back off.
+  const backStep = useRef(false)
+  const closeRef = useRef(closePanel)
+  closeRef.current = closePanel
+  useEffect(() => {
+    if (panel && !backStep.current) {
+      backStep.current = true
+      history.pushState({ parolPanel: true }, '')
+    } else if (!panel && backStep.current) {
+      backStep.current = false
+      history.back()
+    }
+  }, [panel])
+  useEffect(() => {
+    const onBack = () => {
+      if (!backStep.current) return
+      backStep.current = false
+      closeRef.current()
+    }
+    window.addEventListener('popstate', onBack)
+    return () => window.removeEventListener('popstate', onBack)
+  }, [])
+
+  // Runs that ended without a signal are sent again when the game opens and whenever the phone is back online.
+  const sendWaiting = useCallback(() => {
+    if (!BOARD_ON || !navigator.onLine) return
+    for (const run of takePending(store))
+      submitRun(SECRET, run.day, run.inputs).then(
+        () => fetchBoard(today, SECRET).then(setStanding, () => {}),
+        (error) => sendAgain(error) && keepPending(store, run),
+      )
+  }, [])
+  useEffect(() => {
+    sendWaiting()
+    window.addEventListener('online', sendWaiting)
+    return () => window.removeEventListener('online', sendWaiting)
+  }, [sendWaiting])
+
   const commit = (next: Engine) => {
     engineRef.current = next
     setEngine(next)
@@ -233,7 +272,8 @@ export default function App() {
         setPlaced(where)
         refreshStanding()
         if (where.rank <= 10 && where.rings === done.run.rings) setFresh((had) => [...had, ...achieve(store, ['top10'], today)])
-      }, () => {})
+        sendWaiting()
+      }, (error) => sendAgain(error) && keepPending(store, { day: today, inputs }))
   }
 
   // Draw the share card once the run has ended, and again when its rank arrives. The rank shows only when

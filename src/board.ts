@@ -18,16 +18,23 @@ export type Board = {
 export type Placed = { rings: number; rank: number; before: number | null; total: number }
 
 const post = async <T>(path: string, body: unknown): Promise<T> => {
+  // No connection at all throws a TypeError here, with no status: the run can be sent again later.
   const response = await fetch(`${URL}${path}`, {
     method: 'POST',
     headers: { apikey: KEY!, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
   const data = await response.json().catch(() => null)
-  if (!response.ok) throw new Error(data?.message ?? 'The board can’t be reached right now')
+  if (!response.ok) throw Object.assign(new Error(data?.message ?? 'The board can’t be reached right now'), { status: response.status })
   return data as T
 }
 
 export const fetchBoard = (day: string, secret: string) => post<Board>('/rest/v1/rpc/board', { p_day: day, p_secret: secret })
 export const saveName = (secret: string, name: string) => post<string>('/rest/v1/rpc/set_name', { p_secret: secret, p_name: name })
 export const submitRun = (secret: string, day: string, inputs: unknown[]) => post<Placed>('/functions/v1/submit-run', { secret, day, inputs })
+
+/** Worth sending again later: no connection, or the server failing. A run the server rejected (4xx) is not. */
+export const sendAgain = (error: unknown) => {
+  const status = (error as { status?: number })?.status
+  return status === undefined || status >= 500
+}

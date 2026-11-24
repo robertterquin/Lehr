@@ -2,6 +2,7 @@
 // and the album of their stars, achievements, and the random secret that is this device's place on the board.
 // Storage can be blocked (private modes): everything falls back to memory for the visit instead of failing.
 import { weekDates } from './daily.ts'
+import type { Input } from './engine.ts'
 
 export type Store = Pick<Storage, 'getItem' | 'setItem'>
 
@@ -150,4 +151,17 @@ export const achieve = (store: Store, ids: string[], date: string) => {
   const fresh = ids.filter((id) => !(id in had))
   if (fresh.length) write(store, ACHIEVED_KEY, { ...had, ...Object.fromEntries(fresh.map((id) => [id, date])) })
   return fresh
+}
+
+const PENDING_KEY = 'parol-pending'
+/** A finished run that couldn't reach the board (no signal as it ended), kept to send again. */
+export type PendingRun = { day: string; inputs: Input[] }
+/** Runs waiting to be sent, oldest first; at most 10, so a long time offline can't fill the device. */
+export const pendingRuns = (store: Store) => read<PendingRun[]>(store, PENDING_KEY, [])
+export const keepPending = (store: Store, run: PendingRun) => write(store, PENDING_KEY, [...pendingRuns(store), run].slice(-10))
+/** Takes every waiting run off the list, to send; any that fail again are kept again. */
+export const takePending = (store: Store) => {
+  const runs = pendingRuns(store)
+  if (runs.length) write(store, PENDING_KEY, [])
+  return runs
 }

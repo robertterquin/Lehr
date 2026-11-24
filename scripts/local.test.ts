@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { DEFAULT_SETTINGS, MAX_LOGGED, achieve, achieved, albumNights, bestOn, logRun, loggedRuns, playedNights, readSettings, streakOf, writeSettings, type RunLog, type Store } from '../src/game/local.ts'
+import { DEFAULT_SETTINGS, MAX_LOGGED, achieve, achieved, albumNights, bestOn, keepPending, logRun, loggedRuns, pendingRuns, playedNights, takePending, readSettings, streakOf, writeSettings, type RunLog, type Store } from '../src/game/local.ts'
 
 const memoryStore = (): Store => {
   const data = new Map<string, string>()
@@ -94,4 +94,14 @@ test('played nights outlast the log, keep each night’s best, and take in night
   assert.ok(!loggedRuns(store).some((r) => r.date !== '2026-11-03'))
   assert.deepEqual(playedNights(store), { '2026-11-01': 4, '2026-11-02': 30, '2026-11-03': 1 })
   assert.equal(streakOf(playedNights(store), '2026-11-03').count, 3)
+})
+
+test('runs that could not be sent wait on the device, at most ten, and are taken off to send', () => {
+  const store = memoryStore()
+  assert.deepEqual(takePending(store), [])
+  for (let i = 0; i < 12; i++) keepPending(store, { day: '2026-12-01', inputs: [{ type: 'tap', atMs: i }] })
+  assert.equal(pendingRuns(store).length, 10)
+  assert.equal(pendingRuns(store)[0].inputs[0].atMs, 2)
+  assert.equal(takePending(store).length, 10)
+  assert.deepEqual(pendingRuns(store), [])
 })
