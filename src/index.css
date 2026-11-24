@@ -292,6 +292,10 @@ body {
 /* A new best: the number counts up in gold, then a light sweeps across it once as the count lands (1.9 s in, 1.1 s).
    The shade moves to a drop-shadow: a text-shadow would paint over gradient-filled text. */
 .over-score strong.best {
+  /* The gradient only paints inside the box, and this serif's 3, 4, 5, 7 and 9 drop below the baseline:
+     room all round, given back by the margins so nothing moves. */
+  padding: 0.06em 0.08em 0.28em;
+  margin: -0.06em -0.08em calc(6px - 0.28em);
   color: transparent;
   background: linear-gradient(110deg, var(--gold) 40%, #fffaf0 50%, var(--gold) 60%) 0 0 / 300% 100%;
   background-clip: text;

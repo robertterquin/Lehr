@@ -645,7 +645,8 @@ export default function App() {
           {novena && <p className="season-line">{t().novenaKept(novenaNight, 9 - novenaLit)}</p>}
           {fresh.length > 0 && (
             <p className="achievement-line">
-              <span aria-hidden="true">★</span> {t().newAchievement}: <b>{fresh.map((id) => t().achievements[id]).join(' · ')}</b>
+              <span aria-hidden="true">★</span> {t().newAchievement}: <b>{t().achievements[fresh[0]]}</b>
+              {fresh.length > 1 && t().andMore(fresh.length - 1)}
             </p>
           )}
           {placed && (

@@ -36,7 +36,7 @@ test('the same messages in Filipino', () => {
   setLang('fil')
   assert.equal(lockFeedback(play([0]))?.title, 'Sakto')
   assert.equal(lockFeedback(play([-7]))?.title, '7° sablay')
-  assert.equal(milestoneText(20), 'Nagsindi ang mga ilaw sa kalye')
+  assert.equal(milestoneText(20), 'Nagliwanag ang mga ilaw sa kalye')
   assert.deepEqual(nextGoal(99), { at: 100, toGo: 1, what: 'Bituin ng Betlehem' })
   setLang('en')
 })
