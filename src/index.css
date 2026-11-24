@@ -520,8 +520,15 @@ body {
 
 .poster-title {
   margin: 0;
-  font: 400 60px/0.95 var(--font-display);
+  /* Two lines on a phone: they step down on short screens so the week of stars still fits. */
+  font: 400 clamp(46px, 7.4vh, 60px)/0.95 var(--font-display);
   text-shadow: var(--shade);
+}
+
+@media (max-height: 700px) {
+  .narrow .poster-blurb {
+    display: none;
+  }
 }
 
 .poster-blurb {
@@ -1393,4 +1400,88 @@ a.primary {
 
 .share-copy {
   align-self: center;
+}
+
+/* The streak calendar on the landing: this week as seven small stars, under the button. */
+.week {
+  position: relative;
+  isolation: isolate;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-shadow: var(--shade);
+}
+
+/* A soft dark glow behind the row, as the floating words have, so it reads over the crowd and the jeepney. */
+.week::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -16px -48px -12px;
+  background: radial-gradient(closest-side, rgba(16, 8, 18, 0.7), rgba(16, 8, 18, 0));
+  pointer-events: none;
+}
+
+.wide .week {
+  flex-basis: 100%;
+  align-items: flex-start;
+}
+
+.wide .poster-action {
+  flex-wrap: wrap;
+}
+
+.week-row {
+  display: flex;
+  gap: 14px;
+}
+
+.week-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font: 700 10px var(--font-ui);
+  color: var(--dusk);
+}
+
+.week-day.is-today {
+  color: var(--gold);
+}
+
+.week-star {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: rgba(168, 152, 138, 0.45);
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+
+.week-day.is-lit .week-star {
+  fill: var(--gold);
+  stroke: var(--gold);
+}
+
+/* A 100-ring night: the star rose. */
+.week-day.is-gold .week-star {
+  fill: #fff3d0;
+  stroke: #fff3d0;
+  filter: drop-shadow(0 0 4px rgba(255, 214, 130, 0.95));
+}
+
+.week-day.is-tonight .week-star {
+  stroke: var(--gold);
+  stroke-dasharray: 2 1.6;
+}
+
+.week-day.is-later .week-star {
+  stroke: rgba(168, 152, 138, 0.2);
+}
+
+.week-note {
+  font-size: 12px;
+  color: var(--cream);
 }

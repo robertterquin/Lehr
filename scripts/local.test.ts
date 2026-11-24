@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { DEFAULT_SETTINGS, MAX_LOGGED, bestOn, logRun, loggedRuns, nightsInARow, readSettings, writeSettings, type RunLog, type Store } from '../src/game/local.ts'
+import { DEFAULT_SETTINGS, MAX_LOGGED, bestOn, logRun, loggedRuns, nightsInARow, playedNights, readSettings, writeSettings, type RunLog, type Store } from '../src/game/local.ts'
 
 const memoryStore = (): Store => {
   const data = new Map<string, string>()
@@ -50,4 +50,15 @@ test('nights in a row count back from today, or from yesterday before today’s 
   logRun(store, run('2026-12-01', 5))
   assert.equal(nightsInARow(store, '2026-12-01'), 4)
   assert.equal(nightsInARow(store, '2026-12-03'), 0)
+})
+
+test('played nights outlast the log, keep each night’s best, and take in nights only the old log had', () => {
+  const store = memoryStore()
+  store.setItem('parol-runs', JSON.stringify([run('2026-11-01', 4)]))
+  logRun(store, run('2026-11-02', 30))
+  logRun(store, run('2026-11-02', 12))
+  for (let i = 0; i < MAX_LOGGED; i++) logRun(store, run('2026-11-03', 1))
+  assert.ok(!loggedRuns(store).some((r) => r.date !== '2026-11-03'))
+  assert.deepEqual(playedNights(store), { '2026-11-01': 4, '2026-11-02': 30, '2026-11-03': 1 })
+  assert.equal(nightsInARow(store, '2026-11-03'), 3)
 })

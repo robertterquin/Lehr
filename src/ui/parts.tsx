@@ -145,3 +145,37 @@ export const SoundIcon = ({ off }: { off: boolean }) => (
     {off ? <path d="M13.5 8l4 4M17.5 8l-4 4" /> : <path d="M13.5 7.5a3.5 3.5 0 0 1 0 5M15.5 5a7 7 0 0 1 0 10" />}
   </svg>
 )
+
+const LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+const plural = (n: number) => `${n} ${n === 1 ? 'night' : 'nights'}`
+
+/** This week, Monday to Sunday: a star for each night played, white-gold for a 100-ring night, tonight dashed
+ *  until it's played. Under it the streak, and what tonight's run does to it. */
+export function WeekStars({ days, nights, today, streak }: { days: string[]; nights: Record<string, number>; today: string; streak: number }) {
+  const playedTonight = today in nights
+  const note =
+    streak === 0 ? 'Light tonight to start a streak'
+    : !playedTonight ? `${plural(streak)} in a row · light tonight to make it ${streak + 1}`
+    : streak === 1 ? 'Your streak starts tonight'
+    : `${plural(streak)} in a row`
+  const lit = days.filter((day) => day in nights).length
+  return (
+    <div className="week" role="img" aria-label={`${note}. This week: ${lit} of 7 nights lit.`}>
+      <div className="week-row" aria-hidden="true">
+        {days.map((day, i) => {
+          const best = nights[day]
+          const state = best !== undefined ? (best >= 100 ? 'gold' : 'lit') : day === today ? 'tonight' : day > today ? 'later' : 'missed'
+          return (
+            <span key={day} className={`week-day is-${state}${day === today ? ' is-today' : ''}`}>
+              <svg className="week-star" viewBox="0 0 16 16">
+                <path d="M8 1.2l1.9 4.2 4.6.5-3.4 3.1 1 4.5L8 11.2 3.9 13.5l1-4.5L1.5 5.9l4.6-.5z" />
+              </svg>
+              {LETTERS[i]}
+            </span>
+          )
+        })}
+      </div>
+      <span className="week-note">{note}</span>
+    </div>
+  )
+}

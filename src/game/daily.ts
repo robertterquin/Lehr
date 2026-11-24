@@ -28,3 +28,9 @@ export const randomForSeed = (seed: number) => {
 
 /** 0 for Monday through 6 for Sunday: which of the seven nights a Manila date gets. */
 export const weekdayIndex = (manilaDate: string) => (new Date(`${manilaDate}T00:00:00Z`).getUTCDay() + 6) % 7
+
+/** The Manila week a date falls in, Monday to Sunday. */
+export const weekDates = (manilaDate: string) => {
+  const monday = Date.parse(`${manilaDate}T00:00:00Z`) - weekdayIndex(manilaDate) * 86_400_000
+  return Array.from({ length: 7 }, (_, i) => new Date(monday + i * 86_400_000).toISOString().slice(0, 10))
+}

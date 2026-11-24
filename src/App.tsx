@@ -1,8 +1,8 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
-import { getManilaDate, seedForDate, weekdayIndex } from './game/daily.ts'
+import { getManilaDate, seedForDate, weekDates, weekdayIndex } from './game/daily.ts'
 import { createEngine, nextAlignmentMs, pause, resume, ringOffset, tap, type Engine } from './game/engine.ts'
 import { milestoneText, nextGoal } from './game/feedback.ts'
-import { bestOn, dayBefore, deviceStore, logRun, loggedRuns, nightsInARow, playerSecret, readSettings, writeSettings, type Settings as SavedSettings } from './game/local.ts'
+import { bestOn, dayBefore, deviceStore, logRun, loggedRuns, nightsInARow, playedNights, playerSecret, readSettings, writeSettings, type Settings as SavedSettings } from './game/local.ts'
 import { BOARD_ON, fetchBoard, submitRun, type Board, type Placed } from './board.ts'
 import { drawCard, shareText, type CardRun } from './share.ts'
 import { RULES } from './game/rules.ts'
@@ -11,7 +11,7 @@ import { Panorama } from './draw/panorama.tsx'
 import { Star } from './draw/star.tsx'
 import type { Stage } from './draw/street.tsx'
 import { SOUNDS, buzz, isMuted, play, setMusic, setMuted, setVibration, stopMusic, unlockAudio } from './sound/audio.ts'
-import { ArcGauge, Callout, CountUp, Garland, IconButton, PauseIcon, SoundIcon, Streak } from './ui/parts.tsx'
+import { ArcGauge, Callout, CountUp, Garland, IconButton, PauseIcon, SoundIcon, Streak, WeekStars } from './ui/parts.tsx'
 import { Glints, HowToPlay, NewDay, Settings, ShareSheet, StarRises } from './ui/screens.tsx'
 import { NamePrompt, TonightBoard, count } from './ui/board.tsx'
 
@@ -374,7 +374,8 @@ export default function App() {
     phase === 'ready'
       ? wide
         ? Math.min(470, height * 0.58)
-        : Math.max(190, Math.min(300, width - 90, (height - 520) / 1.25))
+        : // The week of stars under the button (from the second visit) takes about 52px more.
+          Math.max(110, Math.min(300, width - 90, (height - 520 - (firstVisit ? 0 : 52)) / 1.25))
       : Math.max(190, Math.min(wide ? 460 : 300, (width - 40) / 1.24, (height - 446) / 1.24)),
   )
   const danger = inRun && !run.ended && run.width < DANGER_BELOW
@@ -456,19 +457,15 @@ export default function App() {
                 #{count(standing.me.rank)} tonight
               </button>
             </>
-          ) : standing && standing.total > 0 ? (
-            // Played, but no rank here (say the run ended offline): the board is still a tap away.
-            <>
-              <span className="dot">·</span>
-              <button type="button" className="link inline-link" onClick={openBoard}>
-                See the board
-              </button>
-            </>
           ) : (
-            nights > 1 && (
+            // Played, but no rank here (say the run ended offline): the board is still a tap away.
+            standing &&
+            standing.total > 0 && (
               <>
                 <span className="dot">·</span>
-                <strong>{nights}</strong> nights in a row
+                <button type="button" className="link inline-link" onClick={openBoard}>
+                  See the board
+                </button>
               </>
             )
           )}
@@ -486,6 +483,8 @@ export default function App() {
           </span>
         )
       )}
+      {/* The streak calendar: this week's nights, once there's a night to show. */}
+      {!firstVisit && <WeekStars days={weekDates(today)} nights={playedNights(store)} today={today} streak={nights} />}
     </div>
   )
   const newBest = phase === 'ended' && run.rings > bestBefore && run.rings > 0

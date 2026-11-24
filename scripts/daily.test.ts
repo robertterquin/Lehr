@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { getManilaDate, randomForSeed, seedForDate, weekdayIndex } from '../src/game/daily.ts'
+import { getManilaDate, randomForSeed, seedForDate, weekDates, weekdayIndex } from '../src/game/daily.ts'
 
 test('the day changes over at midnight in Manila, not UTC', () => {
   assert.equal(getManilaDate(new Date('2026-11-22T15:59:59Z')), '2026-11-22')
@@ -25,4 +25,10 @@ test('the seeded random source repeats exactly and stays in [0, 1)', () => {
 test('the week starts on Monday: 2026-11-23 is a Monday, 2026-11-22 a Sunday', () => {
   assert.equal(weekdayIndex('2026-11-23'), 0)
   assert.equal(weekdayIndex('2026-11-22'), 6)
+})
+
+test('a week runs Monday to Sunday, across a month', () => {
+  assert.deepEqual(weekDates('2026-12-02'), ['2026-11-30', '2026-12-01', '2026-12-02', '2026-12-03', '2026-12-04', '2026-12-05', '2026-12-06'])
+  assert.equal(weekDates('2026-11-30')[0], '2026-11-30')
+  assert.equal(weekDates('2026-12-06')[6], '2026-12-06')
 })

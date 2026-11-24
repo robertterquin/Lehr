@@ -68,21 +68,34 @@ const LOG_KEY = 'parol-runs'
 export const MAX_LOGGED = 200
 
 export const loggedRuns = (store: Store) => read<RunLog[]>(store, LOG_KEY, [])
-export const logRun = (store: Store, run: RunLog) => write(store, LOG_KEY, [...loggedRuns(store), run].slice(-MAX_LOGGED))
+const NIGHTS_KEY = 'parol-nights'
+
+/** Every night played, with its best rings: kept apart from the log, which drops old runs, so a streak never shortens.
+ *  Nights still only in the log (from before this record) are merged in. */
+export const playedNights = (store: Store): Record<string, number> => {
+  const nights = read<Record<string, number>>(store, NIGHTS_KEY, {})
+  for (const run of loggedRuns(store)) if (!(run.date in nights) || nights[run.date] < run.rings) nights[run.date] = run.rings
+  return nights
+}
+
+export const logRun = (store: Store, run: RunLog) => {
+  const nights = playedNights(store)
+  write(store, NIGHTS_KEY, { ...nights, [run.date]: Math.max(nights[run.date] ?? 0, run.rings) })
+  write(store, LOG_KEY, [...loggedRuns(store), run].slice(-MAX_LOGGED))
+}
 
 export const dayBefore = (date: string) => new Date(Date.parse(`${date}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10)
 
 /** Nights in a row with at least one run, up to today (or yesterday, before today's first run). */
-// shortcut: counted from the playtest log, which keeps the last 200 runs; the Phase 9 streak calendar replaces it.
 export const nightsInARow = (store: Store, today: string) => {
-  const dates = new Set(loggedRuns(store).map((run) => run.date))
-  let day = dates.has(today) ? today : dayBefore(today)
-  let nights = 0
-  while (dates.has(day)) {
-    nights += 1
+  const nights = playedNights(store)
+  let day = today in nights ? today : dayBefore(today)
+  let count = 0
+  while (day in nights) {
+    count += 1
     day = dayBefore(day)
   }
-  return nights
+  return count
 }
 
 /** The most rings in a logged run on `date` (0 when none). */
