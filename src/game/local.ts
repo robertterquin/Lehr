@@ -1,5 +1,5 @@
-// What Parol keeps on this device (v1 has no accounts): settings, the playtest log of finished runs, and
-// today's best, worked out from that log. Storage can be blocked (private modes): everything falls back to
+// What Parol keeps on this device (no accounts): settings, the playtest log of finished runs, today's best
+// worked out from that log, and the random secret that is this device's place on the board. Storage can be blocked (private modes): everything falls back to
 // memory for the visit instead of failing.
 
 export type Store = Pick<Storage, 'getItem' | 'setItem'>
@@ -35,10 +35,11 @@ const write = (store: Store, key: string, value: unknown) => {
   }
 }
 
-export type Settings = { vibration: boolean; calm: boolean | null; seenHowTo: boolean }
+/** `askedName`: the board has asked for a name once, so Not now isn't asked again. */
+export type Settings = { vibration: boolean; calm: boolean | null; seenHowTo: boolean; askedName: boolean }
 const SETTINGS_KEY = 'parol-settings'
 /** `calm: null` follows the device's reduced-motion setting. */
-export const DEFAULT_SETTINGS: Settings = { vibration: true, calm: null, seenHowTo: false }
+export const DEFAULT_SETTINGS: Settings = { vibration: true, calm: null, seenHowTo: false, askedName: false }
 
 export const readSettings = (store: Store): Settings => ({ ...DEFAULT_SETTINGS, ...read<Partial<Settings>>(store, SETTINGS_KEY, {}) })
 export const writeSettings = (store: Store, settings: Settings) => write(store, SETTINGS_KEY, settings)
@@ -69,7 +70,7 @@ export const MAX_LOGGED = 200
 export const loggedRuns = (store: Store) => read<RunLog[]>(store, LOG_KEY, [])
 export const logRun = (store: Store, run: RunLog) => write(store, LOG_KEY, [...loggedRuns(store), run].slice(-MAX_LOGGED))
 
-const dayBefore = (date: string) => new Date(Date.parse(`${date}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10)
+export const dayBefore = (date: string) => new Date(Date.parse(`${date}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10)
 
 /** Nights in a row with at least one run, up to today (or yesterday, before today's first run). */
 // shortcut: counted from the playtest log, which keeps the last 200 runs; the Phase 9 streak calendar replaces it.
@@ -86,3 +87,14 @@ export const nightsInARow = (store: Store, today: string) => {
 
 /** The most rings in a logged run on `date` (0 when none). */
 export const bestOn = (store: Store, date: string) => loggedRuns(store).reduce((best, run) => (run.date === date && run.rings > best ? run.rings : best), 0)
+
+const PLAYER_KEY = 'parol-player'
+/** This device's player on the board: a random secret, made once. Only its hash leaves the server's door. */
+// shortcut: clearing site data loses the secret and with it the name and tonight's rank; accounts would fix that.
+export const playerSecret = (store: Store) => {
+  const saved = read<string | null>(store, PLAYER_KEY, null)
+  if (saved) return saved
+  const secret = crypto.randomUUID()
+  write(store, PLAYER_KEY, secret)
+  return secret
+}

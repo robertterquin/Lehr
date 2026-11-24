@@ -83,11 +83,14 @@ export type SettingsProps = {
   onVibration: (on: boolean) => void
   onCalm: (on: boolean) => void
   onHowTo: () => void
+  /** The name on tonight's board: undefined hides the row (board off), null is not set yet. */
+  boardName?: string | null
+  onBoardName?: () => void
   onDownloadLog: () => void
   onClose: () => void
 }
 
-export function Settings({ sound, vibration, calm, runs, onSound, onVibration, onCalm, onHowTo, onDownloadLog, onClose }: SettingsProps) {
+export function Settings({ sound, vibration, calm, runs, onSound, onVibration, onCalm, onHowTo, boardName, onBoardName, onDownloadLog, onClose }: SettingsProps) {
   return (
     <Sheet title="Settings" onClose={onClose}>
       <Toggle label="Sound" on={sound} onChange={onSound} />
@@ -100,6 +103,17 @@ export function Settings({ sound, vibration, calm, runs, onSound, onVibration, o
           Show again
         </button>
       </div>
+      {boardName !== undefined && (
+        <div className="row">
+          <span className="row-text">
+            Name on the board
+            <span className="toggle-note">{boardName ?? 'Not set'}</span>
+          </span>
+          <button type="button" className="link" onClick={onBoardName}>
+            {boardName ? 'Change' : 'Add'}
+          </button>
+        </div>
+      )}
       <div className="row">
         <span className="row-text">
           Playtest log

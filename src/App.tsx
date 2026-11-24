@@ -2,7 +2,8 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { getManilaDate, seedForDate, weekdayIndex } from './game/daily.ts'
 import { createEngine, nextAlignmentMs, pause, resume, ringOffset, tap, type Engine } from './game/engine.ts'
 import { milestoneText, nextGoal } from './game/feedback.ts'
-import { bestOn, deviceStore, logRun, loggedRuns, nightsInARow, readSettings, writeSettings, type Settings as SavedSettings } from './game/local.ts'
+import { bestOn, dayBefore, deviceStore, logRun, loggedRuns, nightsInARow, playerSecret, readSettings, writeSettings, type Settings as SavedSettings } from './game/local.ts'
+import { BOARD_ON, fetchBoard, submitRun, type Board, type Placed } from './board.ts'
 import { RULES } from './game/rules.ts'
 import { NIGHTS, night as nightById, type NightId, type Night } from './draw/nights.tsx'
 import { Panorama } from './draw/panorama.tsx'
@@ -11,6 +12,7 @@ import type { Stage } from './draw/street.tsx'
 import { SOUNDS, buzz, isMuted, play, setMusic, setMuted, setVibration, stopMusic, unlockAudio } from './sound/audio.ts'
 import { ArcGauge, Callout, CountUp, Garland, IconButton, PauseIcon, SoundIcon, Streak } from './ui/parts.tsx'
 import { Glints, HowToPlay, NewDay, Settings, StarRises } from './ui/screens.tsx'
+import { NamePrompt, TonightBoard, count } from './ui/board.tsx'
 
 const params = new URLSearchParams(location.search)
 const today = getManilaDate()
@@ -22,6 +24,9 @@ const BENCH: number[] | null = params.has('bench') ? ((window as unknown as { lo
 // Development only: ?from=98 starts a run 98 perfect rings in, to check the late screens. Never logged.
 const FROM = import.meta.env.DEV ? Math.max(0, Number(params.get('from')) || 0) : 0
 const store = deviceStore()
+/** This device's place on tonight's board (Phase 9); empty when the board is off. */
+const SECRET = BOARD_ON ? playerSecret(store) : ''
+const yesterday = dayBefore(today)
 /** The dim preview star on the Ready screen. */
 const PREVIEW = Array.from({ length: 12 }, () => 0)
 
@@ -33,7 +38,7 @@ const COACH: [string, string][] = [
 ]
 
 type Phase = 'ready' | 'playing' | 'paused' | 'risen' | 'ended'
-type Panel = 'how' | 'settings' | null
+type Panel = 'how' | 'settings' | 'board' | 'name' | null
 
 const WIDE = '(min-width: 960px) and (min-height: 600px)'
 const DANGER_BELOW = 15
@@ -90,6 +95,11 @@ export default function App() {
   const [best, setBest] = useState(() => bestOn(store, today))
   const [bestBefore, setBestBefore] = useState(0)
   const [newDay, setNewDay] = useState(false)
+  /** Tonight's board as this device stands on it (the landing's rank line), and where the last run placed it. */
+  const [standing, setStanding] = useState<Board | null>(null)
+  const [placed, setPlaced] = useState<Placed | null>(null)
+  /** Where the name prompt goes when it's done: the board, or back to Settings. */
+  const [afterName, setAfterName] = useState<Panel>('board')
   const [systemCalm, setSystemCalm] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   const calm = settings.calm ?? systemCalm
   const runsLogged = loggedRuns(store).length
@@ -98,6 +108,8 @@ export default function App() {
   const engineRef = useRef(engine)
   const phaseRef = useRef(phase)
   phaseRef.current = phase
+  const panelRef = useRef(panel)
+  panelRef.current = panel
   const calmRef = useRef(calm)
   calmRef.current = calm
   /** performance.now() at the start of the run: run time is milliseconds since then. */
@@ -117,6 +129,12 @@ export default function App() {
     const check = window.setInterval(() => setNewDay(getManilaDate() !== today), 30_000)
     return () => window.clearInterval(check)
   }, [])
+
+  // The board is a bonus: when it can't be reached the game plays on and the rank lines stay hidden.
+  const refreshStanding = () => {
+    if (BOARD_ON) fetchBoard(today, SECRET).then(setStanding, () => {})
+  }
+  useEffect(refreshStanding, [])
 
   const saveSettings = (next: SavedSettings) => {
     setSettings(next)
@@ -166,6 +184,23 @@ export default function App() {
       pointer: window.matchMedia('(pointer: coarse)').matches ? 'coarse' : 'fine',
     })
     setBest(bestOn(store, today))
+    if (!FROM && BOARD_ON)
+      submitRun(SECRET, today, inputs).then((where) => {
+        setPlaced(where)
+        refreshStanding()
+      }, () => {})
+  }
+
+  /** The board, after asking for a name the first time. */
+  const openBoard = () => {
+    if (standing?.me?.name || settings.askedName) return setPanel('board')
+    setAfterName('board')
+    setPanel('name')
+  }
+  const nameDone = (name?: string) => {
+    saveSettings({ ...settings, askedName: true })
+    if (name) setStanding((board) => (board ? { ...board, me: { rank: null, rings: null, ...board.me, name } } : board))
+    setPanel(afterName)
   }
 
   const start = useCallback((stamp: number) => {
@@ -176,6 +211,7 @@ export default function App() {
     baseRef.current = stamp - next.ring.startMs
     commit(next)
     setPanel(null)
+    setPlaced(null)
     setPhase('playing')
     ringIn(next)
   }, [])
@@ -265,6 +301,8 @@ export default function App() {
       if (event.key === ' ' || event.key === 'Enter') {
         // Let a focused button or switch handle its own Space or Enter.
         if (event.target instanceof HTMLButtonElement || event.target instanceof HTMLInputElement) return
+        // Space on the board or the name prompt never starts a run behind it.
+        if (panelRef.current === 'board' || panelRef.current === 'name') return
         event.preventDefault()
         if (phaseRef.current === 'ready') start(event.timeStamp)
         else press(event.timeStamp)
@@ -379,16 +417,37 @@ export default function App() {
       <button type="button" className="primary" onClick={() => start(performance.now())}>
         {firstVisit ? 'Start · it takes a minute' : 'Light the first ring'} <span aria-hidden="true">→</span>
       </button>
-      {best > 0 && (
+      {best > 0 ? (
         <span className="best-line">
           Best today <strong>{best}</strong>
-          {nights > 1 && (
+          {standing?.me?.rank ? (
             <>
               <span className="dot">·</span>
-              <strong>{nights}</strong> nights in a row
+              <button type="button" className="link inline-link" onClick={openBoard}>
+                #{count(standing.me.rank)} tonight
+              </button>
             </>
+          ) : (
+            nights > 1 && (
+              <>
+                <span className="dot">·</span>
+                <strong>{nights}</strong> nights in a row
+              </>
+            )
           )}
         </span>
+      ) : (
+        // Before tonight's first run: the board says the game is alive.
+        standing &&
+        standing.total > 0 && (
+          <span className="best-line">
+            {count(standing.total)} lit tonight’s star
+            <span className="dot">·</span>
+            <button type="button" className="link inline-link" onClick={openBoard}>
+              See the board
+            </button>
+          </span>
+        )
       )}
     </div>
   )
@@ -397,7 +456,7 @@ export default function App() {
   const live = phase === 'playing'
 
   return (
-    <main className={`game ${wide ? 'wide' : 'narrow'}${danger ? ' in-danger' : ''}${calm ? ' calm' : ''}${phase === 'ended' || phase === 'paused' || phase === 'risen' ? ` is-dim is-${phase}` : ''}`} onPointerDown={(event) => event.button === 0 && press(event.timeStamp)}>
+    <main className={`game ${wide ? 'wide' : 'narrow'}${danger ? ' in-danger' : ''}${calm ? ' calm' : ''}${phase === 'ended' || phase === 'paused' || phase === 'risen' ? ` is-dim is-${phase}` : ''}${panel === 'board' || panel === 'name' ? ' is-board' : ''}`} onPointerDown={(event) => event.button === 0 && press(event.timeStamp)}>
       {/* On a phone the garland hangs where the moon would. */}
       <Scenery stage={stage} wide={wide} width={width} height={height} moon={wide} />
       {skyStars > 0 && (
@@ -493,6 +552,16 @@ export default function App() {
           <p className="near-miss">
             Points wore below {RULES.minWidth}° <b>{goal.toGo} more for {goal.what}</b>
           </p>
+          {placed && (
+            <p className="rank-line">
+              <strong>#{count(placed.rank)}</strong> of {count(placed.total)} tonight
+              {placed.before !== null && placed.before > placed.rank && ` · up ${count(placed.before - placed.rank)}`}
+              <span className="dot">·</span>
+              <button type="button" className="link inline-link" onClick={openBoard}>
+                See the board
+              </button>
+            </p>
+          )}
           <button type="button" className="primary over-button" autoFocus onClick={() => start(performance.now())}>
             Light again
           </button>
@@ -510,10 +579,25 @@ export default function App() {
           onVibration={(on) => saveSettings({ ...settings, vibration: on })}
           onCalm={(on) => saveSettings({ ...settings, calm: on })}
           onHowTo={() => setPanel('how')}
+          boardName={BOARD_ON ? (standing?.me?.name ?? null) : undefined}
+          onBoardName={() => {
+            setAfterName('settings')
+            setPanel('name')
+          }}
           onDownloadLog={downloadLog}
           onClose={closePanel}
         />
       )}
+      {panel === 'board' && (
+        <TonightBoard
+          secret={SECRET}
+          dates={{ tonight: today, yesterday }}
+          names={{ tonight: tonight.name, yesterday: NIGHTS[weekdayIndex(yesterday)].name }}
+          back={phase === 'ended' ? 'The star rests' : 'Tonight’s star'}
+          onBack={() => setPanel(null)}
+        />
+      )}
+      {panel === 'name' && <NamePrompt secret={SECRET} initial={standing?.me?.name ?? null} onDone={nameDone} onSkip={() => nameDone()} />}
       {newDay && (phase === 'ready' || phase === 'ended') && <NewDay best={best} onSee={() => location.reload()} />}
     </main>
   )

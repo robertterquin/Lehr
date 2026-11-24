@@ -1119,3 +1119,246 @@ body {
 .wordmark {
   font: 400 24px var(--font-display);
 }
+
+/* ── Tonight's board and the name prompt (Phase 9): words over the dimmed street, no card ─────────────── */
+
+/* A link inside a line of text (the landing's rank, the end screen's See the board): the tap area grows
+   without moving the line. */
+.inline-link {
+  min-height: 0;
+  margin: -10px 0;
+  padding: 10px 2px;
+  font-size: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 207, 122, 0.4);
+  text-underline-offset: 3px;
+}
+
+.rank-line {
+  margin: 0;
+  font-size: 14px;
+  color: var(--cream);
+}
+
+.rank-line strong {
+  font: 400 20px var(--font-display);
+  color: var(--gold);
+}
+
+.rank-line .dot {
+  margin: 0 8px;
+  color: var(--dusk);
+}
+
+.overlay.overlay-board {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 0;
+  overflow-y: auto;
+  background: rgba(10, 9, 24, 0.72);
+  backdrop-filter: none;
+}
+
+/* On a phone the board takes the whole screen; behind it only the street shows. */
+.narrow.is-board > :not(.scenery):not(.overlay) {
+  visibility: hidden;
+}
+
+.board {
+  width: 100%;
+  max-width: 460px;
+  padding: 22px 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-shadow: var(--shade);
+  animation: fade-in 0.3s ease-out both;
+}
+
+.board-back {
+  align-self: flex-start;
+  min-height: 44px;
+  margin-bottom: 8px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--cream);
+  font: 700 14px var(--font-ui);
+  cursor: pointer;
+}
+
+.board-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.board-title {
+  display: block;
+  margin: 0;
+  font: 400 40px/1.1 var(--font-display);
+  color: var(--ink);
+}
+
+.board-tabs {
+  display: flex;
+  gap: 22px;
+}
+
+.board-tab {
+  min-height: 36px;
+  padding: 0;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--dusk);
+  font: 700 14px var(--font-ui);
+  cursor: pointer;
+}
+
+.board-tab[aria-selected='true'] {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+
+.board-back:focus-visible,
+.board-tab:focus-visible,
+.name-input:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.board-list {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.board-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  color: var(--ink);
+}
+
+.board-rank {
+  width: 32px;
+  flex: none;
+  text-align: right;
+  font: 400 18px var(--font-display);
+  color: var(--dusk);
+}
+
+.board-row.is-top .board-rank,
+.board-row.is-me {
+  color: var(--gold);
+}
+
+.board-row.is-me .board-rank {
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.board-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+}
+
+.board-row.is-me .board-name {
+  font-weight: 700;
+}
+
+.board-rings {
+  font: 400 18px var(--font-display);
+}
+
+.board-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--dusk);
+}
+
+.board-note.is-error {
+  color: var(--coral);
+}
+
+/* The name prompt sits low on a phone, by the thumb. */
+.name-form {
+  margin-top: auto;
+  padding-bottom: clamp(32px, 6vh, 48px);
+}
+
+.name-note {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--cream);
+}
+
+.name-input {
+  width: 100%;
+  height: 56px;
+  margin-top: 10px;
+  padding: 0;
+  border: none;
+  border-bottom: 2px solid var(--gold);
+  border-radius: 0;
+  background: none;
+  color: var(--ink);
+  font: 400 26px var(--font-display);
+}
+
+.name-form .primary {
+  margin-top: 16px;
+}
+
+.name-skip {
+  align-self: center;
+  color: var(--cream);
+}
+
+/* Desktop: the right-hand column, as the end words stand; the star stays in view on the left. */
+.wide .overlay.overlay-board {
+  padding: 0 0 0 55vw;
+  background: linear-gradient(90deg, rgba(10, 9, 24, 0) 35%, rgba(10, 9, 24, 0.8) 62%);
+}
+
+.wide.is-board .poster-words,
+.wide.is-board > .over {
+  visibility: hidden;
+}
+
+.wide .board {
+  max-width: 420px;
+  padding: max(140px, 17vh) 0 40px;
+}
+
+.wide .board-head {
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.wide .board-title {
+  font-size: 44px;
+}
+
+.wide .board-row {
+  padding: 4px 0;
+}
+
+.wide .name-form {
+  margin-top: 0;
+}
+
+.calm .board {
+  animation: none;
+}
