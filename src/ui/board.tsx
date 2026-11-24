@@ -1,6 +1,7 @@
 // Tonight's board and the one-time name prompt: words floating over the dimmed street, no card
 // (mockups/board.tsx, option A). On desktop they stand in the right-hand column with the star still in view.
-import { useEffect, useState, type FormEvent, type PointerEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type PointerEvent } from 'react'
+import { useDialogFocus } from './focus.ts'
 import { fetchBoard, saveName, type Board } from '../board.ts'
 import { t } from '../copy.ts'
 
@@ -11,6 +12,8 @@ export const count = (n: number) => n.toLocaleString('en-US')
 
 export function TonightBoard({ secret, dates, names, back, onBack }: { secret: string; dates: Record<Day, string>; names: Record<Day, string>; back: string; onBack: () => void }) {
   const [day, setDay] = useState<Day>('tonight')
+  const box = useRef<HTMLDivElement>(null)
+  useDialogFocus(box)
   const [boards, setBoards] = useState<Partial<Record<Day, Board | Error>>>({})
   const { tonight: tonightDate, yesterday: yesterdayDate } = dates
   useEffect(() => {
@@ -30,7 +33,7 @@ export function TonightBoard({ secret, dates, names, back, onBack }: { secret: s
   const nameOf = (name: string | null, mine: boolean) => (mine ? `${t().you}${name ? ` · ${name}` : ''}` : (name ?? t().neighbour))
 
   return (
-    <div className="overlay overlay-board" role="dialog" aria-modal="true" aria-labelledby="board-title" onPointerDown={stop}>
+    <div ref={box} className="overlay overlay-board" role="dialog" aria-modal="true" aria-labelledby="board-title" onPointerDown={stop}>
       <section className="board">
         <button type="button" className="board-back" autoFocus onClick={onBack}>
           <span aria-hidden="true">←</span> {back}
@@ -88,6 +91,8 @@ export function NamePrompt({ secret, initial, onDone, onSkip }: { secret: string
   const [name, setName] = useState(initial ?? '')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const box = useRef<HTMLDivElement>(null)
+  useDialogFocus(box)
   const submit = async (event: FormEvent) => {
     event.preventDefault()
     setSaving(true)
@@ -102,7 +107,7 @@ export function NamePrompt({ secret, initial, onDone, onSkip }: { secret: string
     }
   }
   return (
-    <div className="overlay overlay-board" role="dialog" aria-modal="true" aria-labelledby="name-title" onPointerDown={stop}>
+    <div ref={box} className="overlay overlay-board" role="dialog" aria-modal="true" aria-labelledby="name-title" onPointerDown={stop}>
       <form className="board name-form" onSubmit={submit}>
         <span className="over-eyebrow">{t().nameEyebrow}</span>
         <label id="name-title" htmlFor="board-name" className="board-title">

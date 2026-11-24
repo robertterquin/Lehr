@@ -14,7 +14,8 @@
   --coral: #ff8a7a;
   /* Lantern glow: a warm night, gold for the one action, serif numbers, words floating over the street. */
   --cream: #e8d9c8;
-  --dusk: #a8988a;
+  /* Secondary text: light enough for 4.5:1 even where it crosses the street's warm glow. */
+  --dusk: #c4b6a8;
   --button: linear-gradient(180deg, #ffe2a6, #f6a743);
   --button-glow: 0 10px 40px rgba(255, 160, 70, 0.45);
   --on-button: #2a1606;
@@ -1455,7 +1456,8 @@ a.primary {
   width: 16px;
   height: 16px;
   fill: none;
-  stroke: rgba(168, 152, 138, 0.45);
+  /* A missed night: an outline at 3:1 against the street, like any meaningful graphic. */
+  stroke: rgba(196, 182, 168, 0.75);
   stroke-width: 1.2;
   stroke-linejoin: round;
 }
@@ -1478,7 +1480,7 @@ a.primary {
 }
 
 .week-day.is-later .week-star {
-  stroke: rgba(168, 152, 138, 0.2);
+  stroke: rgba(196, 182, 168, 0.3);
 }
 
 .week-note {

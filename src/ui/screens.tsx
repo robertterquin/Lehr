@@ -1,13 +1,16 @@
 // The screens around a run: How to play, Settings, the star rising at 100 and a new day.
-import { useId, useState, type ReactNode } from 'react'
+import { useId, useRef, useState, type ReactNode } from 'react'
+import { useDialogFocus } from './focus.ts'
 import { Star } from '../draw/star.tsx'
 import { t, type Lang } from '../copy.ts'
 
 /** A bottom sheet over the screen; Esc and the close button close it. */
 export function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   const id = useId()
+  const box = useRef<HTMLDivElement>(null)
+  useDialogFocus(box)
   return (
-    <div className="overlay overlay-sheet" role="dialog" aria-modal="true" aria-labelledby={id} onPointerDown={(event) => event.stopPropagation()}>
+    <div ref={box} className="overlay overlay-sheet" role="dialog" aria-modal="true" aria-labelledby={id} onPointerDown={(event) => event.stopPropagation()}>
       <div className="sheet">
         <div className="sheet-head">
           <h2 id={id} className="sheet-title">{title}</h2>
@@ -191,8 +194,10 @@ export function StarRises({ locks, palette, onKeepGoing }: { locks: number[]; pa
 
 /** The day changed in Manila while the game was open. */
 export function NewDay({ best, onSee }: { best: number; onSee: () => void }) {
+  const box = useRef<HTMLDivElement>(null)
+  useDialogFocus(box)
   return (
-    <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="newday-title" onPointerDown={(event) => event.stopPropagation()}>
+    <div ref={box} className="overlay" role="dialog" aria-modal="true" aria-labelledby="newday-title" onPointerDown={(event) => event.stopPropagation()}>
       <section className="over now">
         <span className="over-eyebrow">{t().newDayEyebrow}</span>
         <h2 id="newday-title" className="rise-title">{t().newDayTitle}</h2>
