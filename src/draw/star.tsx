@@ -81,31 +81,42 @@ const Lights = memo(function Lights({ size, height, rings, fit, everyK, palette,
     const count = rings.length
     // Rings closer on screen than a bulb is wide would only blur together: light every k-th ring and the outermost.
     const shown = rings.filter((ring) => ring.index === count - 1 || ring.index % everyK === everyK - 1)
-    const per = (index: number) => Math.max(1, Math.min(5, Math.round((radii(index).ro * 0.56 * fit) / 6)))
+    // Bulbs about 11 px apart on screen: a small star gets a few clear bulbs, not a fuzz of them.
+    const per = (index: number) => Math.max(1, Math.min(6, Math.round((radii(index).ro * 0.56 * fit) / 11)))
+    // How far apart the lit rows sit on screen, 0.3 (packed) to 1: as rows pack in, glows soften and bulbs keep
+    // their colour, so the bands still read at 100 rings instead of adding up to white.
+    const open = Math.max(0.3, Math.min(1, ((radii(1).ro - radii(0).ro) * fit * everyK) / 9))
     const colour = (index: number) => mixRGB(palette[Math.floor(index / 3) % palette.length], '#ffffff', 0.3)
+    const last = rings[count - 1]
+    const tips = last ? [0, 1, 2, 3, 4].map((k) => polar(radii(last.index).ro - 2, last.rotation + k * 72 - 90)) : []
     const spots = shown.map((ring) => bulbSpots(ring.index, ring.width, ring.rotation, per(ring.index)))
     ctx.globalCompositeOperation = 'lighter'
     if (!dim) {
       // The lamp in the middle: warm light across the inner rings.
       const lamp = ctx.createRadialGradient(CENTER, CENTER, 0, CENTER, CENTER, outer * 0.6)
-      lamp.addColorStop(0, 'rgba(255,241,200,0.55)')
-      lamp.addColorStop(0.5, 'rgba(255,208,138,0.18)')
+      lamp.addColorStop(0, `rgba(255,241,200,${(0.55 * (0.4 + 0.6 * open)).toFixed(2)})`)
+      lamp.addColorStop(0.5, `rgba(255,208,138,${(0.18 * (0.4 + 0.6 * open)).toFixed(2)})`)
       lamp.addColorStop(1, 'rgba(255,184,96,0)')
       ctx.fillStyle = lamp
       ctx.beginPath()
       ctx.arc(CENTER, CENTER, outer * 0.6, 0, Math.PI * 2)
       ctx.fill()
       const g = r * 3.4
+      ctx.globalAlpha = open
       shown.forEach((ring, i) => {
         if (!ring.perfect) return
         const sprite = glowOf(colour(ring.index))
         for (const [x, y] of spots[i]) ctx.drawImage(sprite, x - g, y - g, g * 2, g * 2)
       })
+      ctx.globalAlpha = 1
+      // The five tips always shine warm gold, big and clear, as a parol's tip bulbs do.
+      const tipGlow = glowOf([255, 226, 160])
+      for (const [x, y] of tips) ctx.drawImage(tipGlow, x - r * 6, y - r * 6, r * 12, r * 12)
     }
     ctx.globalCompositeOperation = 'source-over'
     shown.forEach((ring, i) => {
       const lit = !dim && ring.perfect
-      ctx.fillStyle = lit ? `rgb(${mixRGB(`#${colour(ring.index).map((c) => c.toString(16).padStart(2, '0')).join('')}`, '#ffffff', 0.45).join(',')})` : UNLIT
+      ctx.fillStyle = lit ? `rgb(${mixRGB(`#${colour(ring.index).map((c) => c.toString(16).padStart(2, '0')).join('')}`, '#ffffff', 0.15 + 0.3 * open).join(',')})` : UNLIT
       ctx.beginPath()
       for (const [x, y] of spots[i]) {
         ctx.moveTo(x + r, y)
@@ -113,6 +124,15 @@ const Lights = memo(function Lights({ size, height, rings, fit, everyK, palette,
       }
       ctx.fill()
     })
+    if (!dim) {
+      ctx.fillStyle = '#fff8e6'
+      ctx.beginPath()
+      for (const [x, y] of tips) {
+        ctx.moveTo(x + r * 1.9, y)
+        ctx.arc(x, y, r * 1.9, 0, Math.PI * 2)
+      }
+      ctx.fill()
+    }
   }, [size, height, rings, fit, everyK, palette, dim, outer])
   return <canvas ref={ref} className="star-lights" style={{ position: 'absolute', inset: 0, width: size, height }} aria-hidden="true" />
 })
@@ -270,7 +290,9 @@ export const Star = memo(function Star({ size, locks, spinning = false, spinRef,
           aria-hidden="true"
         >
           <g transform={camera}>
-            <path d={starPath(count, width, rotation)} fill={body(count)} fillOpacity="0.6" stroke="#fff1c2" strokeWidth="1.4" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+            {/* A frame of light waiting to lock: a faint fill, a soft glow and a thin bright line. */}
+            <path d={starPath(count, width, rotation)} fill="#fff1c2" fillOpacity="0.06" stroke="#ffd98a" strokeWidth="5" strokeOpacity="0.22" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+            <path d={starPath(count, width, rotation)} fill="none" stroke="#fff6dc" strokeWidth="1.5" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
             {[0, 1, 2, 3, 4].map((k) => {
               const ro = radii(count).ro
               const t = rotation + k * 72 - 90
@@ -352,7 +374,13 @@ export const Star = memo(function Star({ size, locks, spinning = false, spinRef,
                 const t = (k + 1) / 10
                 return <circle key={k} cx={x + dir * Math.sin(t * 5) * 6} cy={y + tailLength * t} r="2.3" fill={dim ? UNLIT : light(k % palette.length)} />
               })}
-              <path d={`M${(x + dir * 2).toFixed(1)} ${(y + tailLength - 2).toFixed(1)}l-4 5l4 12l4 -12z`} fill={dim ? '#6a3a3a' : '#d8342c'} />
+              {/* A tassel: a gold cap and a fan of red and gold fringe. */}
+              <g transform={`translate(${(x + dir * 2).toFixed(1)} ${(y + tailLength).toFixed(1)})`} opacity={dim ? 0.5 : 1}>
+                {[-3, -2, -1, 0, 1, 2, 3].map((f) => (
+                  <path key={f} d={`M${f * 0.9} 3l${f * 1.3} 16`} stroke={f % 2 ? '#f2b632' : '#d8342c'} strokeWidth="1.4" strokeLinecap="round" />
+                ))}
+                <rect x="-4" y="-2" width="8" height="6" rx="2.5" fill="#f2b632" />
+              </g>
             </g>
           ))}
       </svg>

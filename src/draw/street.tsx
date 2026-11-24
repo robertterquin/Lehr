@@ -29,6 +29,12 @@ export const MiniParol: React.FC<{ x: number; y: number; r: number; color: strin
     <circle cx={x - r * 0.45} cy={y + r * 2.6} r={r * 0.16} fill={lit ? '#d8342c' : '#2e2846'} />
     <circle cx={x + r * 0.45} cy={y + r * 2.6} r={r * 0.16} fill={lit ? '#d8342c' : '#2e2846'} />
     <circle cx={x} cy={y} r={r * 1.18} fill="none" stroke={lit ? '#8a6a3a' : '#3a3150'} strokeWidth="0.8" />
+    {/* Lit, its halo carries a ring of bulbs, like the big parol's. */}
+    {lit &&
+      Array.from({ length: 10 }, (_, k) => {
+        const a = (k * 36 - 90) * (Math.PI / 180);
+        return <circle key={k} cx={x + Math.cos(a) * r * 1.18} cy={y + Math.sin(a) * r * 1.18} r={r * 0.12} fill={k % 2 ? '#fff3d0' : '#ffcf5a'} />;
+      })}
     <path d={`M${starPoints(x, y, r)}Z`} fill={lit ? color : '#221c3a'} stroke={lit ? '#5b3a1c' : '#3a3150'} strokeWidth="0.7" />
     <path d={`M${starPoints(x, y, r * 0.62)}Z`} fill={lit ? '#fff3d0' : '#2a2346'} opacity={lit ? 0.55 : 1} />
     <circle cx={x} cy={y} r={r * 0.24} fill={lit ? '#fffaf0' : '#3a3150'} />
