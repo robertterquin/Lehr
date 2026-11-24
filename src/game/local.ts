@@ -36,11 +36,11 @@ const write = (store: Store, key: string, value: unknown) => {
   }
 }
 
-/** `askedName`: the board has asked for a name once, so Not now isn't asked again. `lang`: the words, Filipino by default. */
-export type Settings = { vibration: boolean; calm: boolean | null; seenHowTo: boolean; askedName: boolean; lang: 'fil' | 'en' }
+/** `askedName`: the board has asked for a name once, so Not now isn't asked again. */
+export type Settings = { vibration: boolean; calm: boolean | null; seenHowTo: boolean; askedName: boolean }
 const SETTINGS_KEY = 'parol-settings'
 /** `calm: null` follows the device's reduced-motion setting. */
-export const DEFAULT_SETTINGS: Settings = { vibration: true, calm: null, seenHowTo: false, askedName: false, lang: 'fil' }
+export const DEFAULT_SETTINGS: Settings = { vibration: true, calm: null, seenHowTo: false, askedName: false }
 
 export const readSettings = (store: Store): Settings => ({ ...DEFAULT_SETTINGS, ...read<Partial<Settings>>(store, SETTINGS_KEY, {}) })
 export const writeSettings = (store: Store, settings: Settings) => write(store, SETTINGS_KEY, settings)

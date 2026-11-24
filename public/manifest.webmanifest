@@ -1,8 +1,8 @@
 {
   "name": "Parol",
   "short_name": "Parol",
-  "description": "Ilapat ang bawat umiikot na patong at sindihan ang bituin ngayong gabi: larong Pamaskong Pinoy, gabi-gabi.",
-  "lang": "fil",
+  "description": "Lock the spinning rings and light tonight’s star: a Filipino Christmas game, one star for everyone every night.",
+  "lang": "en",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

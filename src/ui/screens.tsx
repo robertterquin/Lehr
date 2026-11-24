@@ -2,7 +2,7 @@
 import { useId, useRef, useState, type ReactNode } from 'react'
 import { useDialogFocus } from './focus.ts'
 import { Star } from '../draw/star.tsx'
-import { t, type Lang } from '../copy.ts'
+import { t } from '../copy.ts'
 
 /** A bottom sheet over the screen; Esc and the close button close it. */
 export function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
@@ -77,12 +77,10 @@ export type SettingsProps = {
   sound: boolean
   vibration: boolean
   calm: boolean
-  lang: Lang
   runs: number
   onSound: (on: boolean) => void
   onVibration: (on: boolean) => void
   onCalm: (on: boolean) => void
-  onLang: (lang: Lang) => void
   onHowTo: () => void
   /** The name on tonight's board: undefined hides the row (board off), null is not set yet. */
   boardName?: string | null
@@ -91,20 +89,9 @@ export type SettingsProps = {
   onClose: () => void
 }
 
-export function Settings({ sound, vibration, calm, lang, runs, onSound, onVibration, onCalm, onLang, onHowTo, boardName, onBoardName, onDownloadLog, onClose }: SettingsProps) {
+export function Settings({ sound, vibration, calm, runs, onSound, onVibration, onCalm, onHowTo, boardName, onBoardName, onDownloadLog, onClose }: SettingsProps) {
   return (
     <Sheet title={t().settingsTitle} onClose={onClose}>
-      {/* Named in both languages, so the switch can be found whichever one is showing. */}
-      <div className="row">
-        <span id="lang-label">Wika · Language</span>
-        <div className="lang-switch" role="group" aria-labelledby="lang-label">
-          {(['fil', 'en'] as const).map((option) => (
-            <button key={option} type="button" lang={option} aria-pressed={lang === option} onClick={() => onLang(option)}>
-              {option === 'fil' ? 'Filipino' : 'English'}
-            </button>
-          ))}
-        </div>
-      </div>
       <Toggle label={t().sound} on={sound} onChange={onSound} />
       <Toggle label={t().vibration} note={t().androidOnly} on={vibration} onChange={onVibration} />
       <Toggle label={t().reducedMotion} on={calm} onChange={onCalm} />

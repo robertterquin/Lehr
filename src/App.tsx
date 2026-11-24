@@ -6,7 +6,7 @@ import { milestoneText, nextGoal } from './game/feedback.ts'
 import { achieve, achieved, albumNights, bestOn, dayBefore, deviceStore, logRun, loggedRuns, playedNights, playerSecret, streakOf, readSettings, writeSettings, type Settings as SavedSettings } from './game/local.ts'
 import { BOARD_ON, fetchBoard, submitRun, type Board, type Placed } from './board.ts'
 import { drawCard, shareText, type CardRun } from './share.ts'
-import { setLang, t, type Lang } from './copy.ts'
+import { t } from './copy.ts'
 import { RULES } from './game/rules.ts'
 import { NIGHTS, night as nightById, type NightId, type Night } from './draw/nights.tsx'
 import { Panorama } from './draw/panorama.tsx'
@@ -30,8 +30,6 @@ const BENCH: number[] | null = params.has('bench') ? ((window as unknown as { lo
 // Development only: ?from=98 starts a run 98 perfect rings in, to check the late screens. Never logged.
 const FROM = import.meta.env.DEV ? Math.max(0, Number(params.get('from')) || 0) : 0
 const store = deviceStore()
-// The words follow the saved language from the first render (Filipino unless English was chosen).
-setLang(readSettings(store).lang)
 /** This device's place on tonight's board (Phase 9); empty when the board is off. */
 const SECRET = BOARD_ON ? playerSecret(store) : ''
 const yesterday = dayBefore(today)
@@ -131,9 +129,6 @@ export default function App() {
 
   useEffect(() => setVibration(settings.vibration), [settings.vibration])
   useEffect(() => {
-    document.documentElement.lang = settings.lang
-  }, [settings.lang])
-  useEffect(() => {
     const query = window.matchMedia('(prefers-reduced-motion: reduce)')
     const update = () => setSystemCalm(query.matches)
     query.addEventListener('change', update)
@@ -155,7 +150,6 @@ export default function App() {
   }, [])
 
   const saveSettings = (next: SavedSettings) => {
-    setLang(next.lang)
     setSettings(next)
     writeSettings(store, next)
   }
@@ -675,8 +669,6 @@ export default function App() {
           sound={!muted}
           vibration={settings.vibration}
           calm={calm}
-          lang={settings.lang}
-          onLang={(lang: Lang) => saveSettings({ ...settings, lang })}
           runs={loggedRuns(store).length}
           onSound={(on) => toggleSound(on)}
           onVibration={(on) => saveSettings({ ...settings, vibration: on })}
