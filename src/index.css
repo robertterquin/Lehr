@@ -209,6 +209,43 @@ body {
   100% { opacity: 0; }
 }
 
+/* A perfect lock's tip sparkles: a quick twinkle that turns as it opens and closes (0.5 s). */
+.tip-spark {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: tip-spark 0.5s ease-out both;
+}
+
+@keyframes tip-spark {
+  0% { scale: 0; rotate: 0deg; }
+  35% { scale: 1.25; }
+  100% { scale: 0; rotate: 90deg; }
+}
+
+/* Five perfect in a row: a ring of light goes out from the star as the points widen (0.8 s). */
+.widen-ring {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.widen-ring circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: widen-ring 0.8s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@keyframes widen-ring {
+  from { scale: 1; opacity: 1; }
+  to { scale: 1.45; opacity: 0; }
+}
+
+.calm .tip-spark,
+.calm .widen-ring {
+  display: none;
+}
+
 /* An off-angle lock's overhang falls away under gravity, drifting and tumbling (1.2 s). */
 .lock-drop {
   transform-origin: 50% 35.7143%;
@@ -1057,6 +1094,28 @@ body {
 }
 
 .calm .garland-on { animation: fade-in 0.15s both; }
+
+/* During a run the newly lit parol waits for the spark flying up from the star (0.65 s). */
+.run .garland-on {
+  animation-delay: 0.6s;
+}
+
+.calm .run .garland-on {
+  animation-delay: 0s;
+}
+
+.spark {
+  position: fixed;
+  z-index: 3;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: #fff3d0;
+  box-shadow: 0 0 10px 3px rgba(255, 214, 130, 0.95), 0 0 28px 10px rgba(255, 170, 80, 0.5);
+  pointer-events: none;
+  will-change: translate, scale, opacity;
+}
 
 /* The points' width in plain numbers, at the arc's tip. */
 .gauge-width {

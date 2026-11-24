@@ -97,7 +97,7 @@ export function Garland({ width, lit, palette, toGo }: { width: number; lit: num
         const x = t * w
         const y = top + sag * 4 * t * (1 - t) + 20
         return (
-          <g key={`${i}-${i < on}`} className={i < on ? 'garland-on' : undefined}>
+          <g key={`${i}-${i < on}`} className={i < on ? 'garland-on' : undefined} data-parol={i}>
             <MiniParol x={x} y={y} r={10} color={palette[(i % (palette.length - 1)) + 1]} lit={i < on} string={9} />
             {i === on && <circle cx={x} cy={y} r={16} className="garland-next" />}
             {i === on && toGo !== undefined && (

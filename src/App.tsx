@@ -167,6 +167,29 @@ export default function App() {
     const inputs = engineRef.current.inputs
     return Math.max(inputs.length ? inputs[inputs.length - 1].atMs : 0, stamp - baseRef.current)
   }
+  /** A milestone: a spark flies from the star up to the parol it lights on the garland (the parol waits for it). */
+  const spark = (rings: number) => {
+    const star = stageRef.current?.firstElementChild?.getBoundingClientRect()
+    const parol = document.querySelector(`.run .garland [data-parol="${rings / RULES.milestoneEvery - 1}"]`)?.getBoundingClientRect()
+    if (calmRef.current || !star || !parol) return
+    const from = { x: star.left + star.width / 2, y: star.top + star.width / 2 }
+    const dx = parol.left + parol.width / 2 - from.x
+    const dy = parol.top + parol.height / 2 - from.y
+    const dot = document.createElement('div')
+    dot.className = 'spark'
+    dot.style.left = `${from.x}px`
+    dot.style.top = `${from.y}px`
+    document.querySelector('.game')?.append(dot)
+    // A gentle arc up and over, quick at the start like a thrown light, slowing into the parol.
+    dot.animate(
+      [
+        { translate: '0 0', scale: 1.3, opacity: 0 },
+        { translate: `${dx * 0.35}px ${dy * 0.6 - 30}px`, scale: 1, opacity: 1, offset: 0.45 },
+        { translate: `${dx}px ${dy}px`, scale: 0.55, opacity: 1 },
+      ],
+      { duration: 650, easing: 'cubic-bezier(0.3, 0.6, 0.4, 1)' },
+    ).finished.then(() => dot.remove(), () => dot.remove())
+  }
   /** Moves the star for a moment, on the GPU; skipped with reduced motion. */
   const nudge = (frames: Keyframe[], duration: number) => {
     if (!calmRef.current) stageRef.current?.animate(frames, { duration, easing: 'ease-out' })
@@ -304,7 +327,10 @@ export default function App() {
       return
     }
     const milestone = rings % RULES.milestoneEvery === 0
-    if (milestone) play(SOUNDS.milestone, 0.2)
+    if (milestone) {
+      play(SOUNDS.milestone, 0.2)
+      spark(rings)
+    }
     setMusic(rings)
     ringIn(next, milestone ? RULES.milestoneBreakMs / 1000 : 0)
   }, [])
@@ -412,6 +438,7 @@ export default function App() {
         palette={tonight.palette}
         danger={danger}
         failed={phase === 'ended' ? engine.endError : undefined}
+        streak={inRun ? run.streak : 0}
       />
       {phase === 'playing' && <ArcGauge size={starSize} width={run.width} danger={danger} />}
       {/* The lock word sits in the gauge's open bottom, right under the star; the coach and a milestone take its turn. */}

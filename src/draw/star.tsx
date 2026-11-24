@@ -50,6 +50,8 @@ type Props = {
   danger?: boolean
   /** The error of the lock that ended the run: its overhang falls away. */
   failed?: number
+  /** Perfect locks in a row (the run's streak): a perfect lock's sparkles grow with it, and a widen sends a ring out. */
+  streak?: number
 }
 
 /**
@@ -58,7 +60,7 @@ type Props = {
  * The locked star only redraws when a ring locks; the spinning ring is a separate layer the browser turns
  * on the GPU, so spinning costs no redraw.
  */
-export const Star = memo(function Star({ size, locks, spinning = false, spinRef, palette = PALETTE, dim = false, danger = false, failed }: Props) {
+export const Star = memo(function Star({ size, locks, spinning = false, spinRef, palette = PALETTE, dim = false, danger = false, failed, streak = 1 }: Props) {
   const id = useId().replace(/:/g, '')
   const rings = drawnRings(locks)
   const count = locks.length
@@ -139,10 +141,29 @@ export const Star = memo(function Star({ size, locks, spinning = false, spinRef,
               <g transform={camera}>
                 <path d={starPath(newest.index, newest.width, newest.rotation)} fill="none" stroke="#ffe7a8" strokeWidth="6" filter={`url(#${id}-glow)`} vectorEffect="non-scaling-stroke" />
                 <path d={starPath(newest.index, newest.width, newest.rotation)} fill="none" stroke="#fff6dc" strokeWidth="1.6" vectorEffect="non-scaling-stroke" />
+                {/* A sparkle at each tip, bigger with every perfect in a row (1 to 5), the same size on screen at any ring count. */}
+                {[0, 1, 2, 3, 4].map((k) => {
+                  const [x, y] = polar(radii(newest.index).ro - 1, newest.rotation + k * 72 - 90)
+                  const level = ((Math.max(1, streak) - 1) % RULES.widenEvery) + 1
+                  return (
+                    <g key={k} transform={`translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${((0.5 + level * 0.22) / fit).toFixed(3)})`}>
+                      <path className="tip-spark" d="M0 -7L1.5 -1.5L7 0L1.5 1.5L0 7L-1.5 1.5L-7 0L-1.5 -1.5Z" fill="#fff6dc" style={{ animationDelay: `${k * 30}ms` }} />
+                    </g>
+                  )
+                })}
               </g>
             </svg>
           )
         : newest && drop(newest.index, before?.width ?? RULES.startWidth, before?.rotation ?? 0, locks[count - 1])
+  // Five perfect in a row widen the points: a ring of light goes out from the star, on a layer of its own.
+  const widen =
+    !dim && newest?.perfect && failed === undefined && streak > 0 && streak % RULES.widenEvery === 0 ? (
+      <svg key={`widen-${count}`} className="widen-ring" {...layer}>
+        <g transform={camera}>
+          <circle cx={CENTER} cy={CENTER} r={radii(newest.index).ro + 8} fill="none" stroke="#ffe7a8" strokeWidth={(3 / fit).toFixed(2)} />
+        </g>
+      </svg>
+    ) : null
   // After a milestone the next ring waits before it spins in.
   const spinDelay = count > 0 && count % RULES.milestoneEvery === 0 ? RULES.milestoneBreakMs : 0
 
@@ -266,6 +287,7 @@ export const Star = memo(function Star({ size, locks, spinning = false, spinRef,
       </svg>
       {chase}
       {effect}
+      {widen}
     </div>
   )
 })
