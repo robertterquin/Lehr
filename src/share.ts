@@ -35,8 +35,9 @@ const loadSvg = (svg: SVGSVGElement) =>
     image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(new XMLSerializer().serializeToString(copy))}`
   })
 
-/** The star's own layers, minus the moving ones: the ring spinning in, the lock flash, the falling sliver. */
-const starLayers = (star: HTMLElement) => [...star.querySelectorAll('svg')].filter((svg) => !svg.matches('.spin-in, .lock-glow, .lock-drop'))
+/** The star's own layers in order, minus the moving ones (the ring spinning in, the lock flash, the falling
+ *  sliver): its SVGs and the canvas its bulbs are drawn on. */
+const starLayers = (star: HTMLElement) => [...star.querySelectorAll<SVGSVGElement | HTMLCanvasElement>('svg, canvas')].filter((layer) => !layer.matches('.spin-in, .lock-glow, .lock-drop'))
 
 /** Text centred on x, in runs of [text, font, colour], as one line; a line too wide for the card (Filipino runs
  *  longer) steps its type down to fit. */
@@ -61,7 +62,7 @@ export async function drawCard(run: CardRun, star: HTMLElement): Promise<HTMLCan
   const gold = run.rings >= 100 || Boolean(run.golden)
   // A canvas only draws a web font the page has loaded.
   await Promise.all([document.fonts.load(`400 70px ${SERIF}`), document.fonts.load(`700 35px ${UI}`), document.fonts.load(`400 30px ${UI}`)])
-  const layers = await Promise.all(starLayers(star).map(loadSvg))
+  const layers = await Promise.all(starLayers(star).map((layer) => (layer instanceof HTMLCanvasElement ? layer : loadSvg(layer))))
 
   const canvas = document.createElement('canvas')
   canvas.width = CARD_W
@@ -116,7 +117,10 @@ export async function drawCard(run: CardRun, star: HTMLElement): Promise<HTMLCan
   const pad = (PAD * size) / 300
   // The risen star burns gold-white, as on the 100-ring screen (the .rise-parol kindle).
   if (gold) ctx.filter = 'brightness(2.9) saturate(0.85) drop-shadow(0 0 14px rgba(255, 230, 160, 0.95))'
-  for (const layer of layers) ctx.drawImage(layer, left - pad, top - pad, size + 2 * pad, (size * 420) / 300 + 2 * pad)
+  for (const layer of layers)
+    // The bulbs' canvas covers the star's box; the SVGs were padded for their glow.
+    if (layer instanceof HTMLCanvasElement) ctx.drawImage(layer, left, top, size, (size * 420) / 300)
+    else ctx.drawImage(layer, left - pad, top - pad, size + 2 * pad, (size * 420) / 300 + 2 * pad)
   ctx.filter = 'none'
 
   // Words: the name and date at the top, the score under the star, the link at the bottom.

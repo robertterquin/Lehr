@@ -1,37 +1,120 @@
-import { memo, useId, type Ref } from 'react'
+import { memo, useId, useLayoutEffect, useRef, type Ref } from 'react'
 import { RULES } from '../game/rules.ts'
-import { CENTER, PALETTE, drawnRings, polar, radii, sliverPath, starPath } from './geometry.ts'
+import { CENTER, PALETTE, drawnRings, polar, radii, sliverPath, starPath, type DrawnRing } from './geometry.ts'
 
-const BAMBOO = '#5b3a1c'
-const BAMBOO_SHEEN = '#c8995a'
+/** Halo lights, innermost first: gold, warm white, coral. */
+const HALO_LIGHTS = ['#ffcf5a', '#fff6d6', '#ff8a6a']
+/** A bulb that isn't lit: a missed ring's, or every bulb on the unlit Ready star. */
+const UNLIT = '#4a3a4a'
+const CORD = '#e9b25a'
 
 const channel = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16)
-const mix = (from: string, to: string, t: number) =>
-  `rgb(${[0, 1, 2].map((i) => Math.round(channel(from, i) + (channel(to, i) - channel(from, i)) * t)).join(' ')})`
+const mixRGB = (from: string, to: string, t: number) => [0, 1, 2].map((i) => Math.round(channel(from, i) + (channel(to, i) - channel(from, i)) * t))
+const mix = (from: string, to: string, t: number) => `rgb(${mixRGB(from, to, t).join(' ')})`
 
-/** One locked ring. Memoised: a lock redraws only the rings whose shape or line weight changed. */
-const RingShape = memo(function RingShape({ index, width, rotation, fill, frame, dim, sheen }: { index: number; width: number; rotation: number; fill: string; frame: number; dim: boolean; sheen: boolean }) {
-  const d = starPath(index, width, rotation)
-  return (
-    <g>
-      <path d={d} fill={fill} fillOpacity={dim ? 0.3 : 1} stroke={dim ? 'rgba(244,236,216,0.35)' : BAMBOO} strokeWidth={frame} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-      {sheen && <path d={d} fill="none" stroke={BAMBOO_SHEEN} strokeWidth={frame * 0.35} opacity="0.5" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
-    </g>
-  )
+/** Where a ring's bulbs sit: along its whole outline, out along each point and in round each valley. */
+const bulbSpots = (index: number, width: number, rotation: number, per: number) => {
+  const { ri, ro, rv } = radii(index)
+  const spots: [number, number][] = []
+  const run = (p: [number, number], q: [number, number], steps: number) => {
+    for (let s = 0; s < steps; s++) spots.push([p[0] + ((q[0] - p[0]) * s) / steps, p[1] + ((q[1] - p[1]) * s) / steps])
+  }
+  for (let k = 0; k < 5; k++) {
+    const t = rotation + k * 72 - 90
+    const a = polar(ri, t - width / 2)
+    const b = polar(ro, t)
+    const c = polar(ri, t + width / 2)
+    const v = polar(rv, t + 36)
+    run(a, b, per)
+    run(b, c, per)
+    run(c, v, Math.max(1, per >> 1))
+    run(v, polar(ri, t + 72 - width / 2), Math.max(1, per >> 1))
+  }
+  return spots
+}
+
+/** One locked ring: deep coloured vinyl with a light seam. Memoised: a lock redraws only the rings that changed. */
+const RingShape = memo(function RingShape({ index, width, rotation, fill, edge, line }: { index: number; width: number; rotation: number; fill: string; edge: string; line: number }) {
+  return <path d={starPath(index, width, rotation)} fill={fill} stroke={edge} strokeOpacity="0.5" strokeWidth={line} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
 })
 
-/** One ring's five point bulbs: the soft glow (drawn inside the shared blur) or the bright core. */
-const RingBulbs = memo(function RingBulbs({ index, rotation, rotor, part, alpha }: { index: number; rotation: number; rotor: boolean; part: 'glow' | 'core'; alpha: number }) {
-  return [0, 1, 2, 3, 4].map((k) => {
-    const [x, y] = polar(radii(index).ro - 3, rotation + k * 72 - 90)
-    const lead = rotor && (index + k) % 3 === 0
-    const bright = rotor && !lead ? 0.35 : 1
-    return part === 'glow' ? (
-      <circle key={k} cx={x} cy={y} r="4" fill={lead ? '#fff1c2' : '#ffe7a8'} opacity={0.6 * bright * alpha} />
-    ) : (
-      <circle key={k} cx={x} cy={y} r="1.6" fill="#fffaf0" opacity={bright * alpha} />
-    )
-  })
+/** A bulb's glow, one image per colour, drawn once and then stamped for every bulb of that colour. */
+const glows = new Map<string, HTMLCanvasElement>()
+const glowOf = ([r, g, b]: number[]) => {
+  const key = `${r},${g},${b}`
+  let sprite = glows.get(key)
+  if (!sprite) {
+    sprite = document.createElement('canvas')
+    sprite.width = sprite.height = 64
+    const ctx = sprite.getContext('2d')!
+    const fade = ctx.createRadialGradient(32, 32, 0, 32, 32, 32)
+    fade.addColorStop(0, `rgba(${key},1)`)
+    fade.addColorStop(0.35, `rgba(${key},0.55)`)
+    fade.addColorStop(1, `rgba(${key},0)`)
+    ctx.fillStyle = fade
+    ctx.fillRect(0, 0, 64, 64)
+    glows.set(key, sprite)
+  }
+  return sprite
+}
+
+type LightsProps = { size: number; height: number; rings: DrawnRing[]; fit: number; everyK: number; palette: string[]; dim: boolean; outer: number }
+
+/**
+ * Every ring's row of bulbs, on a canvas: lit in its band's colour on a perfect lock, dark on a miss and on the
+ * unlit star. A few thousand bulbs as SVG made each lock repaint them all (30 ms at 100 rings); stamped on a
+ * canvas they take a couple of milliseconds, and their glows add up ('lighter') the way real bulbs' light does.
+ */
+const Lights = memo(function Lights({ size, height, rings, fit, everyK, palette, dim, outer }: LightsProps) {
+  const ref = useRef<HTMLCanvasElement>(null)
+  useLayoutEffect(() => {
+    const canvas = ref.current
+    const ctx = canvas?.getContext('2d')
+    if (!canvas || !ctx) return
+    const dpr = Math.min(2, window.devicePixelRatio || 1)
+    canvas.width = Math.round(size * dpr)
+    canvas.height = Math.round(height * dpr)
+    // Star space (the 300×420 box) through the camera, onto device pixels.
+    const k = (size / 300) * dpr * fit
+    ctx.setTransform(k, 0, 0, k, (size / 300) * dpr * CENTER * (1 - fit), (size / 300) * dpr * CENTER * (1 - fit))
+    const r = 1.35 / fit
+    const count = rings.length
+    // Rings closer on screen than a bulb is wide would only blur together: light every k-th ring and the outermost.
+    const shown = rings.filter((ring) => ring.index === count - 1 || ring.index % everyK === everyK - 1)
+    const per = (index: number) => Math.max(1, Math.min(5, Math.round((radii(index).ro * 0.56 * fit) / 6)))
+    const colour = (index: number) => mixRGB(palette[Math.floor(index / 3) % palette.length], '#ffffff', 0.3)
+    const spots = shown.map((ring) => bulbSpots(ring.index, ring.width, ring.rotation, per(ring.index)))
+    ctx.globalCompositeOperation = 'lighter'
+    if (!dim) {
+      // The lamp in the middle: warm light across the inner rings.
+      const lamp = ctx.createRadialGradient(CENTER, CENTER, 0, CENTER, CENTER, outer * 0.6)
+      lamp.addColorStop(0, 'rgba(255,241,200,0.55)')
+      lamp.addColorStop(0.5, 'rgba(255,208,138,0.18)')
+      lamp.addColorStop(1, 'rgba(255,184,96,0)')
+      ctx.fillStyle = lamp
+      ctx.beginPath()
+      ctx.arc(CENTER, CENTER, outer * 0.6, 0, Math.PI * 2)
+      ctx.fill()
+      const g = r * 3.4
+      shown.forEach((ring, i) => {
+        if (!ring.perfect) return
+        const sprite = glowOf(colour(ring.index))
+        for (const [x, y] of spots[i]) ctx.drawImage(sprite, x - g, y - g, g * 2, g * 2)
+      })
+    }
+    ctx.globalCompositeOperation = 'source-over'
+    shown.forEach((ring, i) => {
+      const lit = !dim && ring.perfect
+      ctx.fillStyle = lit ? `rgb(${mixRGB(`#${colour(ring.index).map((c) => c.toString(16).padStart(2, '0')).join('')}`, '#ffffff', 0.45).join(',')})` : UNLIT
+      ctx.beginPath()
+      for (const [x, y] of spots[i]) {
+        ctx.moveTo(x + r, y)
+        ctx.arc(x, y, r, 0, Math.PI * 2)
+      }
+      ctx.fill()
+    })
+  }, [size, height, rings, fit, everyK, palette, dim, outer])
+  return <canvas ref={ref} className="star-lights" style={{ position: 'absolute', inset: 0, width: size, height }} aria-hidden="true" />
 })
 
 type Props = {
@@ -42,9 +125,9 @@ type Props = {
   spinning?: boolean
   /** Receives the spinning layer; set its `style.transform` to `rotate(<ringOffset>deg)` every frame. */
   spinRef?: Ref<SVGSVGElement>
-  /** Paper colours, ring by ring: each night has its own. */
+  /** Each night's colours, ring by ring. */
   palette?: string[]
-  /** Unlit: paper not yet glowing (the Ready screen). */
+  /** Unlit: the lantern before tonight's first ring (the Ready screen), its bulbs dark. */
   dim?: boolean
   /** The points are nearly too thin: the glow turns red. */
   danger?: boolean
@@ -55,10 +138,14 @@ type Props = {
 }
 
 /**
- * A parol: concentric five-pointed rings of backlit paper on a bamboo frame, a tambor (drum) at the centre,
- * two fringed tails (buntot) with tassels, and halos with bulbs like Pampanga lanterns.
- * The locked star only redraws when a ring locks; the spinning ring is a separate layer the browser turns
- * on the GPU, so spinning costs no redraw.
+ * A parol as San Fernando's giant lanterns are made (design lab: mockups/parol.tsx, B): concentric five-pointed
+ * rings of deep coloured vinyl, each traced by a row of bulbs, round a tambor (drum) that is a flower of light,
+ * with halos of bulbs and two tails of lights. Lights come in bands of three rings, like a rotor's pattern; a
+ * missed ring's bulbs stay dark, so perfect play lights more of the lantern. Bulbs, halos and tails keep their
+ * size on screen at any ring count, and every ring is drawn upright (geometry.ts), so a long run ends on the most
+ * spectacular parol rather than a faded one.
+ * The locked star only redraws the rings that changed when a ring locks; the spinning ring is a separate layer
+ * the browser turns on the GPU, so spinning costs no redraw.
  */
 export const Star = memo(function Star({ size, locks, spinning = false, spinRef, palette = PALETTE, dim = false, danger = false, failed, streak = 1 }: Props) {
   const id = useId().replace(/:/g, '')
@@ -67,43 +154,31 @@ export const Star = memo(function Star({ size, locks, spinning = false, spinRef,
   const last = rings[rings.length - 1]
   const width = last?.width ?? 36
   const rotation = last?.rotation ?? 0
-  // Milestones on the star itself: halos at 10/50/80, longer tails at 25/50/75, rotor colours from 60.
+  // Milestones on the star itself: halos at 10, 50 and 80, longer tails at 25, 50 and 75, the rotor chase from 60.
   const halo = count >= 80 ? 3 : count >= 50 ? 2 : count >= 10 ? 1 : 0
-  const tailScale = 1 + 0.25 * Math.min(3, Math.floor(count / 25))
   const rotor = count >= 60 && !dim
   const outer = radii(Math.max(0, count - 1 + (spinning ? 1 : 0))).ro
-  const haloR = outer + 16
-  const glow = dim ? 0.12 : 1
-  // The camera pulls back as the star grows, so any number of rings fits the frame.
-  const fit = Math.min(1, 138 / (halo > 0 ? haloR + (halo - 1) * 12 : outer))
+  // The camera pulls back as the star grows, leaving room (in screen units) for the halos round it.
+  const fit = Math.min(1, (138 - (halo ? 14 + (halo - 1) * 9 : 2)) / outer)
   const camera = `translate(${CENTER} ${CENTER}) scale(${fit.toFixed(4)}) translate(${-CENTER} ${-CENTER})`
-  // Frame lines thin out as the camera pulls back, so a big star keeps its colours instead of turning to bamboo.
-  // Rounded to steps so most locks leave every older ring's line weight, and so its drawing, untouched.
-  const frame = Math.round(Math.max(0.25, Math.min(1.4, fit * 1.8)) * 10) / 10
-  // On a big star the rings are thin bands: bulbs soften so the paper colours still read.
-  const crowd = Math.round(Math.min(1, fit * 1.6) * 20) / 20
-  const ringFill = (index: number) => `url(#${id}-paper-${index % palette.length})`
+  /** A length that stays the same on screen whatever the camera does (the box is 300 wide). */
+  const u = (px: number) => px / fit
   const height = (size * 420) / 300
-
-  const tails = [54, 126].map((deg, side) => {
-    const [x, y] = polar(radii(Math.max(0, count - 1)).ro - 4, deg + rotation)
-    const dir = side === 0 ? 1 : -1
-    const strand = (dx: number, len: number, wobble: number) =>
-      `M${x + dx} ${y}C${x + dx + dir * 10} ${y + len * 0.35} ${x + dx - dir * wobble} ${y + len * 0.65} ${x + dx + dir * 4} ${y + len}`
-    return {
-      strands: [strand(-3, 112 * tailScale, 10), strand(0, 120 * tailScale, 14), strand(3, 106 * tailScale, 9)],
-      end: [x + dir * 4, y + 120 * tailScale] as [number, number],
-    }
-  })
-
   const layer = { width: size, height, viewBox: '0 0 300 420', 'aria-hidden': true as const }
-  const lit = dim ? [] : rings.filter((ring) => rotor || ring.perfect)
 
+  // Colours: deep vinyl for the body and the night's colours brightened for the lights (in bands of three rings, see Lights).
+  const body = (index: number) => mix(palette[index % palette.length], '#120612', dim ? 0.62 : 0.45)
+  const seam = (index: number) => mix(palette[index % palette.length], '#ffffff', 0.35)
+  const light = (i: number) => mix(palette[i], '#ffffff', 0.3)
+  const line = fit > 0.5 ? 1 : 0.6
+  const everyK = Math.max(1, Math.ceil(3 / ((radii(1).ro - radii(0).ro) * fit)))
+
+  const haloR = (h: number) => outer + u(10 + h * 9)
   const haloBulbs = (h: number, phase?: number) =>
-    Array.from({ length: 15 }, (_, k) => {
+    Array.from({ length: 60 }, (_, k) => {
       if (phase !== undefined && k % 3 !== phase) return null
-      const [x, y] = polar(haloR + h * 12, k * 24 + h * 12)
-      return <circle key={k} cx={x} cy={y} r="2.2" fill="#fff6d6" />
+      const [x, y] = polar(haloR(h), k * 6 + h * 3)
+      return <circle key={k} cx={x} cy={y} r={u(k % 2 ? 1.2 : 1.9)} fill={dim ? UNLIT : HALO_LIGHTS[h]} />
     })
   // Rotor mode (60+): the halo bulbs chase round the star. Three layers, one per third of the bulbs, fade in
   // turn; fading a whole layer runs on the GPU, so the chase never redraws the star.
@@ -115,6 +190,17 @@ export const Star = memo(function Star({ size, locks, spinning = false, spinRef,
       ))
     : null
 
+  // Tails of lights on gold cords, hanging from the two lower tips: in screen units, so they never shrink, and
+  // longer at 25, 50 and 75 rings.
+  const tailLength = 96 + 18 * Math.min(3, Math.floor(count / 25))
+  const tails = [54, 126].map((deg, side) => {
+    const [sx, sy] = polar(radii(Math.max(0, count - 1)).ro - 3, deg + rotation)
+    const x = CENTER + (sx - CENTER) * fit
+    const y = CENTER + (sy - CENTER) * fit
+    const dir = side === 0 ? 1 : -1
+    return { x, y, dir }
+  })
+
   // The newest lock's effect, on a small layer of its own: animating it never redraws the star.
   // A perfect lock flashes gold; an off-angle lock (or the one that ended the run) drops its overhang.
   const newest = rings[count - 1]
@@ -122,7 +208,7 @@ export const Star = memo(function Star({ size, locks, spinning = false, spinRef,
   const drop = (index: number, w: number, turn: number, error: number) => (
     <svg key={`drop-${count}-${failed ?? ''}`} className="lock-drop" {...layer}>
       <g transform={camera}>
-        <path d={sliverPath(index, w, turn, error)} fill={palette[index % palette.length]} stroke={BAMBOO} strokeWidth="1.2" vectorEffect="non-scaling-stroke" />
+        <path d={sliverPath(index, w, turn, error)} fill={body(index)} stroke={seam(index)} strokeWidth="1.2" vectorEffect="non-scaling-stroke" />
       </g>
     </svg>
   )
@@ -167,24 +253,12 @@ export const Star = memo(function Star({ size, locks, spinning = false, spinRef,
   // After a milestone the next ring waits before it spins in.
   const spinDelay = count > 0 && count % RULES.milestoneEvery === 0 ? RULES.milestoneBreakMs : 0
 
-  const paper = (
-    <defs>
-      {palette.map((color, i) => (
-        // The gradient spans the whole star, so outer rings of a big star keep their colour.
-        <radialGradient key={i} id={`${id}-paper-${i}`} gradientUnits="userSpaceOnUse" cx={CENTER} cy={CENTER} r={Math.max(150, outer + 10)}>
-          <stop offset="0" stopColor={mix(color, '#fffaf0', dim ? 0.1 : 0.6)} />
-          <stop offset="0.45" stopColor={color} />
-          <stop offset="1" stopColor={mix(color, '#120a04', 0.28)} />
-        </radialGradient>
-      ))}
-    </defs>
-  )
-
   return (
     <div style={{ position: 'relative', width: size, height }}>
       {spinning && (
-        // The spinning ring, behind the locked rings so only its rim shows outside them: bamboo spokes, translucent paper and light streaks behind each tip. It turns about the
-        // star's centre (150, 150 of the 300×420 box), and the camera's scale about that centre doesn't change that.
+        // The spinning ring, behind the locked rings so only its rim shows outside them: translucent vinyl, a bright
+        // seam, light streaks behind each tip and a bulb at each. It turns about the star's centre (150, 150 of the
+        // 300×420 box), and the camera's scale about that centre doesn't change that.
         <svg
           key={count}
           ref={spinRef}
@@ -195,9 +269,8 @@ export const Star = memo(function Star({ size, locks, spinning = false, spinRef,
           style={{ position: 'absolute', inset: 0, overflow: 'visible', transformOrigin: '50% 35.7143%', willChange: 'transform', animationDelay: `${spinDelay}ms` }}
           aria-hidden="true"
         >
-          {paper}
           <g transform={camera}>
-            <path d={starPath(count, width, rotation)} fill={ringFill(count)} fillOpacity="0.5" stroke={BAMBOO} strokeWidth="1.6" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+            <path d={starPath(count, width, rotation)} fill={body(count)} fillOpacity="0.6" stroke="#fff1c2" strokeWidth="1.4" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
             {[0, 1, 2, 3, 4].map((k) => {
               const ro = radii(count).ro
               const t = rotation + k * 72 - 90
@@ -205,9 +278,8 @@ export const Star = memo(function Star({ size, locks, spinning = false, spinRef,
               const [sx, sy] = polar(ro - 2, t - 16)
               return (
                 <g key={k}>
-                  <path d={`M${CENTER} ${CENTER}L${tx} ${ty}`} stroke={BAMBOO_SHEEN} strokeWidth="1" opacity="0.75" vectorEffect="non-scaling-stroke" />
                   <path d={`M${sx} ${sy}A${ro - 2} ${ro - 2} 0 0 1 ${tx} ${ty}`} fill="none" stroke="#fff1c2" strokeWidth="1.6" strokeLinecap="round" opacity="0.55" vectorEffect="non-scaling-stroke" />
-                  <circle cx={tx} cy={ty} r={2.2 / fit} fill="#fffaf0" opacity="0.9" />
+                  <circle cx={tx} cy={ty} r={u(2.4)} fill="#fffaf0" />
                 </g>
               )
             })}
@@ -216,74 +288,73 @@ export const Star = memo(function Star({ size, locks, spinning = false, spinRef,
       )}
 
       <svg width={size} height={height} viewBox="0 0 300 420" style={{ position: 'absolute', inset: 0, overflow: 'visible' }} aria-hidden="true">
-        {paper}
         <defs>
-          <radialGradient id={`${id}-halo`}>
-            <stop offset="0" stopColor={danger ? '#ff6a4a' : '#ffbe5a'} stopOpacity={0.55 * glow} />
-            <stop offset="1" stopColor="#ffbe5a" stopOpacity="0" />
+          <radialGradient id={`${id}-aura`}>
+            <stop offset="0" stopColor={danger ? '#ff6a4a' : '#ff9a5a'} stopOpacity={dim ? 0.12 : 0.42} />
+            <stop offset="0.6" stopColor={danger ? '#ff6a4a' : '#7a3ab8'} stopOpacity={dim ? 0.04 : 0.14} />
+            <stop offset="1" stopColor="#7a3ab8" stopOpacity="0" />
           </radialGradient>
-          <radialGradient id={`${id}-tambor`}>
-            <stop offset="0" stopColor="#fffaf0" />
-            <stop offset="0.6" stopColor={dim ? '#8a7650' : '#ffe39a'} />
-            <stop offset="1" stopColor={dim ? '#5a4a30' : '#f2b632'} />
-          </radialGradient>
-          <filter id={`${id}-bulb`} x="-10%" y="-10%" width="120%" height="120%">
-            <feGaussianBlur stdDeviation="2.2" />
-          </filter>
         </defs>
         <g transform={camera}>
-          <circle cx={CENTER} cy={CENTER} r={outer + 60} fill={`url(#${id}-halo)`} />
+          <circle cx={CENTER} cy={CENTER} r={outer + u(85)} fill={`url(#${id}-aura)`} />
 
-          {Array.from({ length: halo }, (_, h) => {
-            const r = haloR + h * 12
-            return (
-              <g key={h}>
-                <circle cx={CENTER} cy={CENTER} r={r} fill="none" stroke="#f2b632" strokeWidth="6" opacity={dim ? 0.15 : 0.35} />
-                <circle cx={CENTER} cy={CENTER} r={r} fill="none" stroke={BAMBOO} strokeWidth="1.8" />
-                {!dim && !rotor && haloBulbs(h)}
-              </g>
-            )
-          })}
-
-          {count > 0 &&
-            tails.map((tail, side) => (
-              <g key={side} opacity={dim ? 0.4 : 1}>
-                {tail.strands.map((d, s) => (
-                  <path key={s} d={d} fill="none" stroke={['#f2b632', '#d8342c', '#f4ecd8'][s]} strokeWidth="2.6" strokeLinecap="round" />
-                ))}
-                <path d={`M${tail.end[0]} ${tail.end[1] - 4}l-5 6l5 14l5 -14z`} fill="#d8342c" stroke={BAMBOO} strokeWidth="0.8" />
-                {[-4, -2, 0, 2, 4].map((dx) => (
-                  <path key={dx} d={`M${tail.end[0] + dx * 0.6} ${tail.end[1] + 14}l${dx * 0.5} 9`} stroke="#f2b632" strokeWidth="1" />
-                ))}
-              </g>
-            ))}
+          {/* Halos: rings of light with their own bulbs, as giant lanterns stack them. */}
+          {Array.from({ length: halo }, (_, h) => (
+            <g key={h}>
+              <circle cx={CENTER} cy={CENTER} r={haloR(h)} fill="none" stroke={HALO_LIGHTS[h]} strokeWidth={u(5)} opacity={dim ? 0.05 : 0.16} />
+              <circle cx={CENTER} cy={CENTER} r={haloR(h)} fill="none" stroke={HALO_LIGHTS[h]} strokeWidth={u(1)} opacity={dim ? 0.25 : 0.7} />
+              {!rotor && haloBulbs(h)}
+            </g>
+          ))}
 
           {/* Gold dashes where the spinning ring's points belong */}
           {spinning && <path d={starPath(count, width, rotation)} fill="none" stroke="#ffd27a" strokeWidth="1.5" strokeDasharray="5 4" vectorEffect="non-scaling-stroke" />}
 
           {/* Locked rings, outside in, so each inner ring leaves a coloured rim */}
           {[...rings].reverse().map((ring) => (
-            <RingShape key={ring.index} index={ring.index} width={ring.width} rotation={ring.rotation} fill={ringFill(ring.index)} frame={frame} dim={dim} sheen={!dim && fit > 0.5} />
+            <RingShape key={ring.index} index={ring.index} width={ring.width} rotation={ring.rotation} fill={body(ring.index)} edge={seam(ring.index)} line={line} />
           ))}
 
-          {/* Bulbs on perfect rings' points: one blur for all the glows, not one per bulb */}
-          <g filter={`url(#${id}-bulb)`}>
-            {lit.map((ring) => (
-              <RingBulbs key={ring.index} index={ring.index} rotation={ring.rotation} rotor={rotor} part="glow" alpha={crowd} />
-            ))}
-          </g>
-          {lit.map((ring) => (
-            <RingBulbs key={ring.index} index={ring.index} rotation={ring.rotation} rotor={rotor} part="core" alpha={0.4 + 0.6 * crowd} />
-          ))}
-
-          <circle cx={CENTER} cy={CENTER} r="17" fill={`url(#${id}-tambor)`} stroke={BAMBOO} strokeWidth="2" />
-          <circle cx={CENTER} cy={CENTER} r="10" fill="none" stroke={BAMBOO} strokeWidth="0.9" opacity="0.8" />
-          {Array.from({ length: 8 }, (_, k) => {
-            const [sx, sy] = polar(10, k * 45)
-            const [ex, ey] = polar(17, k * 45)
-            return <path key={k} d={`M${sx} ${sy}L${ex} ${ey}`} stroke={BAMBOO} strokeWidth="0.8" opacity="0.8" />
-          })}
+          {/* Spokes of light from the tambor out to the tips */}
+          {!dim &&
+            [0, 1, 2, 3, 4].map((k) => {
+              const [x, y] = polar(radii(Math.max(0, count - 1)).ro, rotation + k * 72 - 90)
+              return <path key={k} d={`M${CENTER} ${CENTER}L${x.toFixed(1)} ${y.toFixed(1)}`} stroke="#fff3d0" strokeWidth={u(1)} opacity="0.5" />
+            })}
         </g>
+      </svg>
+
+      <Lights size={size} height={height} rings={rings} fit={fit} everyK={everyK} palette={palette} dim={dim} outer={outer} />
+
+      {/* Above the lights: the tambor and the tails. */}
+      <svg width={size} height={height} viewBox="0 0 300 420" style={{ position: 'absolute', inset: 0, overflow: 'visible' }} aria-hidden="true">
+        <defs>
+          <radialGradient id={`${id}-heart`}>
+            <stop offset="0" stopColor="#fff1c8" stopOpacity={dim ? 0.15 : 0.6} />
+            <stop offset="1" stopColor="#fff1c8" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        <g transform={camera}>
+          {/* The tambor: a flower of light, ten petals in the night's colours round a white heart. */}
+          <circle cx={CENTER} cy={CENTER} r={u(18)} fill={`url(#${id}-heart)`} />
+          {Array.from({ length: 10 }, (_, k) => (
+            <ellipse key={k} cx={CENTER} cy={CENTER - u(9)} rx={u(3.4)} ry={u(8)} fill={dim ? mix(palette[k % palette.length], '#120612', 0.55) : light(k % palette.length)} opacity="0.92" transform={`rotate(${k * 36} ${CENTER} ${CENTER})`} />
+          ))}
+          <circle cx={CENTER} cy={CENTER} r={u(5.5)} fill={dim ? '#cbb98f' : '#fffaf0'} />
+          <circle cx={CENTER} cy={CENTER} r={u(16)} fill="none" stroke={dim ? '#8a7650' : '#ffcf5a'} strokeWidth={u(1.2)} />
+        </g>
+
+        {count > 0 &&
+          tails.map(({ x, y, dir }, side) => (
+            <g key={side}>
+              <path d={`M${x.toFixed(1)} ${y.toFixed(1)}c${dir * 8} ${tailLength * 0.4} ${-dir * 10} ${tailLength * 0.7} ${dir * 2} ${tailLength}`} fill="none" stroke={CORD} strokeWidth="1.4" opacity={dim ? 0.45 : 0.8} />
+              {Array.from({ length: 9 }, (_, k) => {
+                const t = (k + 1) / 10
+                return <circle key={k} cx={x + dir * Math.sin(t * 5) * 6} cy={y + tailLength * t} r="2.3" fill={dim ? UNLIT : light(k % palette.length)} />
+              })}
+              <path d={`M${(x + dir * 2).toFixed(1)} ${(y + tailLength - 2).toFixed(1)}l-4 5l4 12l4 -12z`} fill={dim ? '#6a3a3a' : '#d8342c'} />
+            </g>
+          ))}
       </svg>
       {chase}
       {effect}
