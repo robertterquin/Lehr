@@ -1005,11 +1005,11 @@ body {
 }
 
 .run-count {
-  min-height: 64px;
+  min-height: 84px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 10px;
+  gap: 7px;
 }
 
 .count {
@@ -1034,6 +1034,22 @@ body {
 .streak span.lit {
   background: var(--gold);
   border-color: var(--gold);
+}
+
+.personal-progress,
+.personal-target {
+  font: 700 11px/1.25 var(--font-ui);
+  letter-spacing: 0.04em;
+  color: var(--gold);
+}
+
+.personal-progress {
+  max-width: 150px;
+  text-wrap: balance;
+}
+
+.ready-target {
+  text-align: center;
 }
 
 .run .stage {
@@ -1201,8 +1217,16 @@ body {
 }
 
 .best-line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
   font-size: 13px;
   color: var(--cream);
+}
+
+.wide .best-line {
+  align-items: flex-start;
 }
 
 .best-line strong {

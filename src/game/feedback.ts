@@ -22,6 +22,12 @@ export const nextGoal = (rings: number) => {
   return { at, toGo: at - rings, what: t().goals[at] ?? t().goalSky }
 }
 
+/** A reason to try one more time: ten rings on a first night, then one beyond tonight's best. */
+export const personalGoal = (best: number, rings = 0) => {
+  const target = best > 0 ? best + 1 : RULES.milestoneEvery
+  return { target, toGo: Math.max(0, target - rings), met: rings >= target }
+}
+
 /** What a milestone brings, when `rings` is one; past 100 every 10 rings adds a star to the sky. */
 export const milestoneText = (rings: number) =>
   rings <= 0 || rings % RULES.milestoneEvery !== 0 ? null : (t().milestones[rings] ?? t().milestoneSky)

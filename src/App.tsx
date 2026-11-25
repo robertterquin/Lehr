@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { getManilaDate, inNovena, novenaDates, seedForDate, weekDates, weekdayIndex } from './game/daily.ts'
 import { earnedBy } from './game/achievements.ts'
 import { createEngine, nextAlignmentMs, pause, resume, ringOffset, tap, type Engine } from './game/engine.ts'
-import { milestoneText, nextGoal } from './game/feedback.ts'
+import { milestoneText, nextGoal, personalGoal } from './game/feedback.ts'
 import { achieve, achieved, albumNights, bestOn, dayBefore, deviceStore, keepPending, logRun, loggedRuns, playedNights, playerSecret, streakOf, takePending, readSettings, writeSettings, type Settings as SavedSettings } from './game/local.ts'
 import { BOARD_ON, fetchBoard, sendAgain, submitRun, type Board, type Placed } from './board.ts'
 import { drawCard, shareText, type CardRun } from './share.ts'
@@ -532,6 +532,7 @@ export default function App() {
     </p>
   )
   const goal = nextGoal(run.rings)
+  const personal = personalGoal(best, run.rings)
   const playedSoFar = playedNights(store)
   const streak = streakOf(playedSoFar, today)
   const novena = inNovena(today)
@@ -551,9 +552,11 @@ export default function App() {
       <button type="button" className="primary" onClick={() => start(performance.now())}>
         {firstVisit ? t().startFirst : t().lightFirst} <span aria-hidden="true">→</span>
       </button>
+      {best === 0 && <span className="personal-target ready-target">{t().personalTarget(personal.target, false)}</span>}
       {best > 0 ? (
-        <span className="best-line">
-          {t().bestToday} <strong>{best}</strong>
+        <div className="best-line">
+          <span>{t().bestToday} <strong>{best}</strong></span>
+          <span className="personal-target">{t().personalTarget(personal.target, true)}</span>
           {standing?.me?.rank ? (
             <>
               <span className="dot">·</span>
@@ -573,7 +576,7 @@ export default function App() {
               </>
             )
           )}
-        </span>
+        </div>
       ) : lastNight?.me?.rank ? (
         // Before tonight's first run: how last night ended, a reason to open the game at all.
         <span className="best-line">
@@ -656,6 +659,7 @@ export default function App() {
             <div className="run-count" aria-label={t().rings(run.rings)}>
               {live && <span className="count">{run.rings}</span>}
               {live && <Streak streak={run.streak} />}
+              {live && <span className="personal-progress">{personal.met ? t().personalGoalMet(best > 0) : t().personalProgress(personal.toGo, best > 0)}</span>}
             </div>
             {live ? (
               <IconButton label={t().pause} ring onPress={() => pauseNow(performance.now())}>

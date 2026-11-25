@@ -12,6 +12,10 @@ const EN = {
   startFirst: 'Start · it takes a minute',
   lightFirst: 'Light the first ring',
   bestToday: 'Best today',
+  personalTarget: (target: number, hasBest: boolean) => hasBest ? `Beat your best: ${n(target)} rings` : `First goal: ${n(target)} rings`,
+  personalProgress: (toGo: number, hasBest: boolean) =>
+    hasBest ? `${n(toGo)} more ${toGo === 1 ? 'ring' : 'rings'} to a new best` : `${n(toGo)} more to your first 10`,
+  personalGoalMet: (hasBest: boolean) => hasBest ? 'New personal best' : 'First goal lit',
   rankTonight: (rank: number) => `#${n(rank)} tonight`,
   seeBoard: 'See the board',
   litTonight: (total: number) => `${n(total)} lit tonight’s star`,

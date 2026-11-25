@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createEngine, nextAlignmentMs, tap, type Engine } from '../src/game/engine.ts'
-import { lockFeedback, milestoneText, nextGoal } from '../src/game/feedback.ts'
+import { lockFeedback, milestoneText, nextGoal, personalGoal } from '../src/game/feedback.ts'
 
 const play = (errors: number[], engine: Engine = createEngine(99)) =>
   errors.reduce((e, degrees) => tap(e, nextAlignmentMs(e) + (degrees / e.ring.speed) * 1000), engine)
@@ -27,4 +27,10 @@ test('the next goal counts down to the next milestone and names what it brings',
   assert.deepEqual(nextGoal(30), { at: 40, toGo: 10, what: 'the carolers' })
   assert.deepEqual(nextGoal(99), { at: 100, toGo: 1, what: 'the Star of Bethlehem' })
   assert.deepEqual(nextGoal(105), { at: 110, toGo: 5, what: 'a new star in the sky' })
+})
+
+test('the personal goal starts at ten, then asks for one more than tonight’s best', () => {
+  assert.deepEqual(personalGoal(0), { target: 10, toGo: 10, met: false })
+  assert.deepEqual(personalGoal(23, 22), { target: 24, toGo: 2, met: false })
+  assert.deepEqual(personalGoal(23, 24), { target: 24, toGo: 0, met: true })
 })
