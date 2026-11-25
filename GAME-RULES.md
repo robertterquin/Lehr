@@ -14,7 +14,7 @@ The numbers live in [src/game/rules.ts](src/game/rules.ts) and are checked by `n
 1. A new ring spins in around the star, starting **36° from alignment** (halfway between two), so it first lines up after turning 36°. Taps in its first **0.15 s** (while it fades in) are ignored. Each ring starts the moment the one before it locks, except after every 10th ring: then the next waits **1.5 s**, so the milestone lands (taps in that wait are ignored).
 2. The player taps (or clicks, or presses Space) to lock it. One tap locks one ring.
 3. The lock's **error** is how far the ring sits from the nearest alignment, from −36° to 36°.
-   - **Perfect** (error within **2.5°** either way): nothing is trimmed and the streak grows.
+   - **Perfect** (error within **2.7°** either way): nothing is trimmed and the streak grows.
    - **Off-angle**: the overhang is trimmed off, so the points lose width equal to the error (a 7° miss turns 29° points into 22°). The streak resets. The star turns by half the error, which only changes the drawing.
    - Every **5 perfects in a row** widen the points by **6°**, never past 36°.
 4. If a lock would leave the points under **8°** wide, they can't hold the ring: **the run ends**, and that ring doesn't count. Points left at exactly 8° still hold.
@@ -57,10 +57,10 @@ The numbers live in [src/game/rules.ts](src/game/rules.ts) and are checked by `n
 
 | Player | Timing spread | Target | Median run | Middle 80% | Perfect locks | Reach 100 |
 |---|---|---|---|---|---|---|
-| Casual | 40 ms | ~15 | 15 | 10–22 | 61% | 0% |
-| Average | 30 ms | ~30 | 23 | 15–35 | 70% | 0% |
-| Good | 22 ms | ~60 | 46 | 30–70 | 78% | 0% |
-| Great | 16 ms | 100+ | 124 | 75–196 | 84% | 73% |
+| Casual | 40 ms | ~15 | 15 | 10–23 | 64% | 0% |
+| Average | 30 ms | ~30 | 25 | 16–38 | 72% | 0% |
+| Good | 22 ms | ~60 | 53 | 33–81 | 80% | 3% |
+| Great | 16 ms | 100+ | 154 | 93–265 | 85% | 87% |
 
 - How the numbers were chosen: a search over the first ring's speed, the perfect window, how fast the speed climbs and the cap, scored by how close each skill's median lands to its target. The starting numbers from the mockups (90° a second, 1.5° perfect) gave a great player a median of 21 rings.
 - Average and good players land a little under their targets with every setting tried. That gap comes from the assumed timing spreads, not the rules, so the playtest logs (Phase 8) replace these guesses with real players before any further tuning.

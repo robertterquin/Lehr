@@ -25,7 +25,7 @@ test('the lock error comes from the exact tap time, not a frame', () => {
   assert.equal(tap(engine, at(engine, 1)).run.perfects, 1)
 })
 
-test('exactly 2.5° off is perfect, worked out from time; 3° off trims 3°', () => {
+test('exactly at the perfect limit is perfect, worked out from time; 3° off trims 3°', () => {
   assert.equal(play([RULES.perfectWithin]).run.perfects, 1)
   assert.ok(Math.abs(play([3]).run.width - 33) < 1e-9)
   assert.ok(Math.abs(play([-3]).run.width - 33) < 1e-9)

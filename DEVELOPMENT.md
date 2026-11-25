@@ -10,7 +10,7 @@ Sizes are relative effort, not dates.
 
 - [x] Phase 0 · Keep the old game, rename everything — `lehr-prototype` tagged; repo, remote and folder are Parol (no Vercel project existed yet)
 - [ ] Phase 1 · Clear Lehr out — Lehr code gone, empty Parol screen builds and runs; Vercel deploy still to do
-- [x] Phase 2 · The rules on paper — rules in `src/game/rules.ts` and GAME-RULES.md; simulated medians 15 / 23 / 46 / 124 rings
+- [x] Phase 2 · The rules on paper — rules in `src/game/rules.ts` and GAME-RULES.md; simulated medians 15 / 25 / 53 / 154 rings
 - [x] Phase 3 · Game engine, no visuals — `src/game/engine.ts`; runs replay exactly from seed + inputs; the simulation plays on it
 - [ ] Phase 4 · The star and the street — star, street and seven nights in `src/draw/`; production build at 100+ rings on a Mac: steady 120 fps, a lock redraws in 1.9 ms (`?bench`); real-phone check waits for the Vercel deploy
 - [x] Phase 5 · A playable run — tap, click, Space; Esc and tab switch pause; phone and desktop layouts; full runs checked in the browser at both sizes
@@ -48,7 +48,7 @@ Sizes are relative effort, not dates.
 
 - One engine built on `src/game/rules.ts`, where a run is the day's seed plus timed inputs, so a server can replay runs later: daily seed (each ring's speed and direction), spin-in, lock, trim, widen, streak, run end, pause.
 - Taps are timed to the millisecond and the lock error comes from the exact tap time, never a frame (one 60 Hz frame is nearly the whole perfect window at speed). Time drives the ring, so the engine needs no fixed-tick loop.
-- Tests for each rule and its edges: exactly 2.5° off, exactly 8° wide, the widen cap at 36°, a tap during spin-in.
+- Tests for each rule and its edges: exactly 2.7° off, exactly 8° wide, the widen cap at 36°, a tap during spin-in.
 - The simulation runs on the real engine, so the two can never disagree.
 
 **Done when:** all tests pass, and the simulation reproduces the table in `GAME-RULES.md`.

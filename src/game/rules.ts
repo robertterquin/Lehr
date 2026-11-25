@@ -8,7 +8,7 @@ export const RULES = {
   /** Below this the points can't hold a ring and the run ends. */
   minWidth: 8,
   /** A lock within this many degrees of alignment is perfect: nothing is trimmed. */
-  perfectWithin: 2.5,
+  perfectWithin: 2.7,
   /** This many perfects in a row widen the points again… */
   widenEvery: 5,
   /** …by this many degrees, never past startWidth. */
@@ -68,7 +68,7 @@ export const startRun = (rules: Rules = RULES): Run => ({ rings: 0, perfects: 0,
 export const lock = (run: Run, error: number, rules: Rules = RULES): Run => {
   if (run.ended) return run
   const off = Math.abs(error)
-  // The epsilon keeps a lock computed as 2.5000000001° (float rounding) perfect.
+  // The epsilon keeps a lock computed just over the limit by float rounding perfect.
   if (off <= rules.perfectWithin + 1e-9) {
     const streak = run.streak + 1
     const width = streak % rules.widenEvery === 0 ? Math.min(rules.startWidth, run.width + rules.widenBy) : run.width
