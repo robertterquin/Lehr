@@ -28,6 +28,15 @@ export const personalGoal = (best: number, rings = 0) => {
   return { target, toGo: Math.max(0, target - rings), met: rings >= target }
 }
 
+/** The final ring's direction turns its signed alignment error into an actionable early-or-late cue. */
+export const endCoach = (error: number, direction: 1 | -1) => {
+  const early = error * direction < 0
+  return {
+    title: early ? t().endEarly : t().endLate,
+    detail: t().endMiss(Math.round(Math.abs(error) * 10) / 10),
+  }
+}
+
 /** What a milestone brings, when `rings` is one; past 100 every 10 rings adds a star to the sky. */
 export const milestoneText = (rings: number) =>
   rings <= 0 || rings % RULES.milestoneEvery !== 0 ? null : (t().milestones[rings] ?? t().milestoneSky)

@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { getManilaDate, inNovena, novenaDates, seedForDate, weekDates, weekdayIndex } from './game/daily.ts'
 import { earnedBy } from './game/achievements.ts'
 import { createEngine, nextAlignmentMs, pause, resume, ringOffset, tap, type Engine } from './game/engine.ts'
-import { milestoneText, nextGoal, personalGoal } from './game/feedback.ts'
+import { endCoach, milestoneText, nextGoal, personalGoal } from './game/feedback.ts'
 import { achieve, achieved, albumNights, bestOn, dayBefore, deviceStore, keepPending, logRun, loggedRuns, playedNights, playerSecret, streakOf, takePending, readSettings, writeSettings, type Settings as SavedSettings } from './game/local.ts'
 import { BOARD_ON, fetchBoard, sendAgain, submitRun, type Board, type Placed } from './board.ts'
 import { drawCard, shareText, type CardRun } from './share.ts'
@@ -533,6 +533,7 @@ export default function App() {
   )
   const goal = nextGoal(run.rings)
   const personal = personalGoal(best, run.rings)
+  const finalCoach = phase === 'ended' && engine.endError !== undefined ? endCoach(engine.endError, engine.ring.direction) : null
   const playedSoFar = playedNights(store)
   const streak = streakOf(playedSoFar, today)
   const novena = inNovena(today)
@@ -713,9 +714,9 @@ export default function App() {
               )}
             </span>
           </p>
-          {/* Why it ended and how close the next milestone was, in one line: the reason to light again. */}
+          {/* A concrete correction and the next milestone: the reason to light again. */}
           <p className="near-miss">
-            {t().nearMiss} <b>{t().goalLine(goal.toGo, goal.what)}</b>
+            {finalCoach?.title ?? t().nearMiss} <b>{finalCoach?.detail} · {t().goalLine(goal.toGo, goal.what)}</b>
           </p>
           {/* Tonight counted: a Simbang Gabi night joins the album; a first-time achievement gets one gold line. */}
           {novena && <p className="season-line">{t().novenaKept(novenaNight, 9 - novenaLit)}</p>}

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createEngine, nextAlignmentMs, tap, type Engine } from '../src/game/engine.ts'
-import { lockFeedback, milestoneText, nextGoal, personalGoal } from '../src/game/feedback.ts'
+import { endCoach, lockFeedback, milestoneText, nextGoal, personalGoal } from '../src/game/feedback.ts'
 
 const play = (errors: number[], engine: Engine = createEngine(99)) =>
   errors.reduce((e, degrees) => tap(e, nextAlignmentMs(e) + (degrees / e.ring.speed) * 1000), engine)
@@ -33,4 +33,10 @@ test('the personal goal starts at ten, then asks for one more than tonight’s b
   assert.deepEqual(personalGoal(0), { target: 10, toGo: 10, met: false })
   assert.deepEqual(personalGoal(23, 22), { target: 24, toGo: 2, met: false })
   assert.deepEqual(personalGoal(23, 24), { target: 24, toGo: 0, met: true })
+})
+
+test('the final-lock coach says whether to wait or tap sooner, even after a reversal', () => {
+  assert.deepEqual(endCoach(-3.24, 1), { title: 'Too early — wait a little longer next time.', detail: 'Final lock: 3.2° from alignment' })
+  assert.deepEqual(endCoach(3.24, 1), { title: 'Too late — tap a little sooner next time.', detail: 'Final lock: 3.2° from alignment' })
+  assert.deepEqual(endCoach(3.24, -1), { title: 'Too early — wait a little longer next time.', detail: 'Final lock: 3.2° from alignment' })
 })
