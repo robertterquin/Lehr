@@ -8,11 +8,12 @@ const BULBS = ['#f2b632', '#d8342c', '#2e9a5a', '#2f6fd0', '#f4ecd8', '#c43a8a']
 const random = (seed: number) => () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff
 
 /**
- * A dedicated wide version of tonight's setting. It never composites the phone scene, so its horizon,
- * ground and foreground stay continuous at every desktop width.
+ * Tonight's detailed scene remains in the middle of the wide view, with a matching landscape continuing
+ * to both edges. Shared horizons use the phone scene's exact coordinates so their joins stay invisible.
  */
 export const Panorama = memo(function Panorama({ night, stage, width, height }: { night: Night; stage: Stage; width: number; height: number }) {
-  const side = Math.max(0, (width - Math.round((390 * height) / 844)) / 2)
+  const sceneWidth = Math.round((390 * height) / 844)
+  const side = Math.max(0, (width - sceneWidth) / 2)
   const k = height / 844
   const ground = height - 2 * k
   const next = random(7)
@@ -24,7 +25,7 @@ export const Panorama = memo(function Panorama({ night, stage, width, height }: 
   const edgeBulbs = city || night.id === 'sanfernando' || night.id === 'simbahan'
 
   if (city) {
-    for (const [from, to] of [[0, width]]) {
+    for (const [from, to] of [[0, side + 4], [width - side - 4, width]]) {
       for (const row of [0, 1]) {
         let x = from - next() * 30
         while (x < to) {
@@ -53,10 +54,12 @@ export const Panorama = memo(function Panorama({ night, stage, width, height }: 
   }
 
   if (night.id === 'palayan') {
-    const paddyTop = ground - 116 * k
+    // Frame shifts scene art down 30 units; these are the same paddy rows as the phone scene.
+    const paddyTop = 758 * k
     surface.push(<path key="palayan-hills" d={`M0 ${paddyTop}L${width * 0.2} ${paddyTop - 58 * k}L${width * 0.42} ${paddyTop - 6 * k}L${width * 0.7} ${paddyTop - 76 * k}L${width} ${paddyTop - 12 * k}V${paddyTop}Z`} fill="#17123a" />)
+    surface.push(<rect key="paddy-base" x="0" y={paddyTop} width={width} height={height - paddyTop} fill="#0a0b16" />)
     for (let row = 0; row < 5; row += 1) {
-      const y = paddyTop + row * 23 * k
+      const y = paddyTop + row * 21 * k
       surface.push(<rect key={`paddy-${row}`} x="0" y={y} width={width} height={18 * k} fill={row % 2 ? '#1c1846' : '#201c52'} />)
       surface.push(<path key={`dike-${row}`} d={`M0 ${y + 18 * k}Q${width / 2} ${y + 15 * k} ${width} ${y + 18 * k}`} stroke="#0f0c22" strokeWidth={4 * k} fill="none" />)
     }
@@ -89,7 +92,8 @@ export const Panorama = memo(function Panorama({ night, stage, width, height }: 
     }
     surface.push(<path key="intramuros-garita" d={`M${side * 0.56} ${wallTop}V${wallTop - 38 * k}H${side * 0.56 + 28 * k}V${wallTop}M${side * 0.56 - 3 * k} ${wallTop - 38 * k}A${17 * k} ${14 * k} 0 0 1 ${side * 0.56 + 31 * k} ${wallTop - 38 * k}`} stroke="#352c40" strokeWidth={5 * k} fill="#352c40" />)
   } else if (night.id === 'dagat') {
-    const seaTop = ground - 122 * k
+    // The sea begins at 724 in Dagat, inside Frame's 30-unit scene shift.
+    const seaTop = 754 * k
     surface.push(<path key="islands" d={`M0 ${seaTop}Q${width * 0.14} ${seaTop - 26 * k} ${width * 0.3} ${seaTop - 8 * k}Q${width * 0.5} ${seaTop - 38 * k} ${width * 0.68} ${seaTop - 8 * k}Q${width * 0.86} ${seaTop - 30 * k} ${width} ${seaTop - 10 * k}V${seaTop}Z`} fill="#141034" />)
     surface.push(<rect key="sea" x="0" y={seaTop} width={width} height={height - seaTop} fill="#141a44" />)
     for (let y = seaTop + 14 * k, i = 0; y < height; y += 15 * k, i += 1) {
@@ -158,6 +162,7 @@ export const Panorama = memo(function Panorama({ night, stage, width, height }: 
   const y0 = ground - 170 * k
   if (edgeBulbs) {
     for (let i = 0, x = 6; x < width; i += 1, x += 22 * k) {
+      if (x > side - 6 && x < width - side + 6) continue
       const t = (x % (260 * k)) / (260 * k)
       shapes.push(<circle key={`bulb-${i}`} cx={x} cy={y0 + Math.sin(Math.PI * t) * 26 * k} r={2.2 * k} fill={BULBS[i % BULBS.length]} opacity={lightsOn || i % 4 === 0 ? 0.95 : 0.3} />)
     }
@@ -165,6 +170,7 @@ export const Panorama = memo(function Panorama({ night, stage, width, height }: 
   const stars = Array.from({ length: Math.round(width / 9) }, (_, i) => (
     <circle key={i} cx={next() * width} cy={next() * height * 0.55} r={next() < 0.2 ? 1.3 : 0.8} fill="#fff" opacity={(0.25 + next() * 0.4) * (stage >= 9 ? 0.45 : 1)} />
   ))
+  const sceneEdge = 'linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent)'
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }} aria-hidden="true">
       <svg width={width} height={height} style={{ position: 'absolute', inset: 0 }}>
@@ -182,6 +188,9 @@ export const Panorama = memo(function Panorama({ night, stage, width, height }: 
         {city && <rect x="0" y={ground} width={width} height={height - ground} fill="#0b0916" />}
         {surface}
       </svg>
+      <div style={{ position: 'absolute', left: side, bottom: 0, width: sceneWidth, height, maskImage: sceneEdge, WebkitMaskImage: sceneEdge }}>
+        <night.Scene stage={stage} moon={false} />
+      </div>
     </div>
   )
 })
