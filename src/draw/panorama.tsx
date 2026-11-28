@@ -8,12 +8,11 @@ const BULBS = ['#f2b632', '#d8342c', '#2e9a5a', '#2f6fd0', '#f4ecd8', '#c43a8a']
 const random = (seed: number) => () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff
 
 /**
- * A wide extension of tonight's setting: the phone-width scene sits in the middle while its landscape
- * continues to both edges. The bulbs come on with the street lights (20 rings) and the sky warms at dawn (90).
+ * A dedicated wide version of tonight's setting. It never composites the phone scene, so its horizon,
+ * ground and foreground stay continuous at every desktop width.
  */
 export const Panorama = memo(function Panorama({ night, stage, width, height }: { night: Night; stage: Stage; width: number; height: number }) {
-  const sceneWidth = Math.round((390 * height) / 844)
-  const side = Math.max(0, (width - sceneWidth) / 2)
+  const side = Math.max(0, (width - Math.round((390 * height) / 844)) / 2)
   const k = height / 844
   const ground = height - 2 * k
   const next = random(7)
@@ -25,7 +24,7 @@ export const Panorama = memo(function Panorama({ night, stage, width, height }: 
   const edgeBulbs = city || night.id === 'sanfernando' || night.id === 'simbahan'
 
   if (city) {
-    for (const [from, to] of [[0, side + 4], [width - side - 4, width]]) {
+    for (const [from, to] of [[0, width]]) {
       for (const row of [0, 1]) {
         let x = from - next() * 30
         while (x < to) {
@@ -159,7 +158,6 @@ export const Panorama = memo(function Panorama({ night, stage, width, height }: 
   const y0 = ground - 170 * k
   if (edgeBulbs) {
     for (let i = 0, x = 6; x < width; i += 1, x += 22 * k) {
-      if (x > side - 6 && x < width - side + 6) continue
       const t = (x % (260 * k)) / (260 * k)
       shapes.push(<circle key={`bulb-${i}`} cx={x} cy={y0 + Math.sin(Math.PI * t) * 26 * k} r={2.2 * k} fill={BULBS[i % BULBS.length]} opacity={lightsOn || i % 4 === 0 ? 0.95 : 0.3} />)
     }
@@ -184,9 +182,6 @@ export const Panorama = memo(function Panorama({ night, stage, width, height }: 
         {city && <rect x="0" y={ground} width={width} height={height - ground} fill="#0b0916" />}
         {surface}
       </svg>
-      <div style={{ position: 'absolute', left: side, bottom: 0, width: sceneWidth, height }}>
-        <night.Scene stage={stage} moon={false} />
-      </div>
     </div>
   )
 })
