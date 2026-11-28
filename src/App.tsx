@@ -102,8 +102,6 @@ export default function App() {
   /** Tonight's board as this device stands on it (the landing's rank line), and where the last run placed it. */
   const [standing, setStanding] = useState<Board | null>(null)
   const [placed, setPlaced] = useState<Placed | null>(null)
-  /** Last night's board as this device finished on it: the landing's Kagabi line before tonight's first run. */
-  const [lastNight, setLastNight] = useState<Board | null>(null)
   /** Achievements the run just ended earned for the first time: one gold line on the end screen. */
   const [fresh, setFresh] = useState<string[]>([])
   /** Which night the board opens on. */
@@ -147,9 +145,6 @@ export default function App() {
     if (BOARD_ON) fetchBoard(today, SECRET).then(setStanding, () => {})
   }
   useEffect(refreshStanding, [])
-  useEffect(() => {
-    if (BOARD_ON) fetchBoard(yesterday, SECRET).then(setLastNight, () => {})
-  }, [])
 
   const saveSettings = (next: SavedSettings) => {
     setSettings(next)
@@ -553,59 +548,10 @@ export default function App() {
       <button type="button" className="primary" onClick={() => start(performance.now())}>
         {firstVisit ? t().startFirst : t().lightFirst} <span aria-hidden="true">→</span>
       </button>
-      {best === 0 && <span className="personal-target ready-target">{t().personalTarget(personal.target, false)}</span>}
-      {best > 0 ? (
-        <div className="best-line">
-          <span>{t().bestToday} <strong>{best}</strong></span>
-          <span className="personal-target">{t().personalTarget(personal.target, true)}</span>
-          {standing?.me?.rank ? (
-            <>
-              <span className="dot">·</span>
-              <button type="button" className="link inline-link" onClick={() => openBoard()}>
-                {t().rankTonight(standing.me.rank)}
-              </button>
-            </>
-          ) : (
-            // Played, but no rank here (say the run ended offline): the board is still a tap away.
-            standing &&
-            standing.total > 0 && (
-              <>
-                <span className="dot">·</span>
-                <button type="button" className="link inline-link" onClick={() => openBoard()}>
-                  {t().seeBoard}
-                </button>
-              </>
-            )
-          )}
-        </div>
-      ) : lastNight?.me?.rank ? (
-        // Before tonight's first run: how last night ended, a reason to open the game at all.
-        <span className="best-line">
-          {t().lastNight} <strong className="gold">#{count(lastNight.me.rank)}</strong>
-          {t().ofTotal(lastNight.total)}
-          <span className="dot">·</span>
-          <button type="button" className="link inline-link" onClick={() => openBoard('yesterday')}>
-            {t().seeBoard}
-          </button>
-        </span>
-      ) : (
-        // A first night: the board says the game is alive.
-        standing &&
-        standing.total > 0 && (
-          <span className="best-line">
-            {t().litTonight(standing.total)}
-            <span className="dot">·</span>
-            <button type="button" className="link inline-link" onClick={() => openBoard()}>
-              {t().seeBoard}
-            </button>
-          </span>
-        )
-      )}
-      {/* The streak calendar: this week's nights, once there's a night to show. */}
+      {/* The streak is the landing's only secondary cue; it also opens the album. */}
       {!firstVisit && (
         <WeekStars
           days={novena ? novenaDates(today) : weekDates(today)}
-          labels={novena ? novenaDates(today).map((date) => String(Number(date.slice(8)))) : t().weekLetters}
           nights={playedSoFar}
           today={today}
           streak={streak.count}
@@ -646,7 +592,6 @@ export default function App() {
             <div className="poster-words">
               <span className="eyebrow">{novena ? t().novenaEyebrow(tonight.araw, novenaNight) : t().tonightStar(tonight.araw)}</span>
               <h1 className="poster-title">{tonight.name}</h1>
-              <p className="poster-blurb">{t().blurb}</p>
               {wide && action}
             </div>
             {star}
