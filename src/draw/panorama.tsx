@@ -167,7 +167,6 @@ export const Panorama = memo(function Panorama({ night, stage, width, height }: 
   const stars = Array.from({ length: Math.round(width / 9) }, (_, i) => (
     <circle key={i} cx={next() * width} cy={next() * height * 0.55} r={next() < 0.2 ? 1.3 : 0.8} fill="#fff" opacity={(0.25 + next() * 0.4) * (stage >= 9 ? 0.45 : 1)} />
   ))
-  const fade = 'linear-gradient(90deg, transparent, rgba(13,10,28,0.55), transparent)'
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }} aria-hidden="true">
       <svg width={width} height={height} style={{ position: 'absolute', inset: 0 }}>
@@ -188,9 +187,6 @@ export const Panorama = memo(function Panorama({ night, stage, width, height }: 
       <div style={{ position: 'absolute', left: side, bottom: 0, width: sceneWidth, height }}>
         <night.Scene stage={stage} moon={false} />
       </div>
-      {/* Soft seams where the scene meets the skyline */}
-      <div style={{ position: 'absolute', left: side - 40, width: 80, bottom: 0, height: height * 0.35, background: fade }} />
-      <div style={{ position: 'absolute', left: width - side - 40, width: 80, bottom: 0, height: height * 0.35, background: fade }} />
     </div>
   )
 })
